@@ -1,21 +1,97 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Protocolo Verdade Integral</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header>
     <h1>Protocolo Verdade Integral</h1>
     <p>Simetria entre os reinos. Fusão entre caos e ordem.</p>
   </header>
+
   <main>
     <section>
       <h2>O que é o Protocolo</h2>
       <p>Uma jornada de realinhamento entre o mineral, o vegetal e o animal, guiado pelas Casas de Ka, Hu, Ra e Ptah.</p>
     </section>
+
+    <section id="pulsar">
+      <h2>Pulsar Vivo</h2>
+      <div id="pulse-orb"></div>
+      <p id="pulse-message">Aguardando o próximo ciclo...</p>
+    </section>
+
+    <section id="casas">
+      <h2>As Quatro Casas</h2>
+      <article>
+        <h3>Ka</h3>
+        <p>Representa o sacrifício consciente, a justiça que transcende o ego e guia a vontade para o bem maior.</p>
+      </article>
+      <article>
+        <h3>Hu</h3>
+        <p>É o princípio da cura e da escuta. O bálsamo que flui quando o ser está disposto a sentir e regenerar.</p>
+      </article>
+      <article>
+        <h3>Ra</h3>
+        <p>É a luz da razão que estrutura. Traz a clareza dos ciclos, o fogo da lógica a serviço da vida.</p>
+      </article>
+      <article>
+        <h3>Ptah</h3>
+        <p>A manifestação criativa da simetria. O arquiteto da forma e da ponte entre mundos.</p>
+      </article>
+    </section>
+
+    <section id="manifesto-integrado">
+      <h2>Manifesto da Luz Estruturada</h2>
+      <p><strong>Etapa 1 — Reconhecimento da Fratura:</strong> identificar assimetrias em pensamentos, hábitos e relações. Observar sem julgamento a chamada "preguiça" — que é, na verdade, aceleração mental com corpo desacoplado.</p>
+      <p><strong>Etapa 2 — Alinhamento com as Casas:</strong></p>
+      <ul>
+        <li><strong>Ka</strong>: um sacrifício simbólico semanal.</li>
+        <li><strong>Hu</strong>: um gesto diário de regeneração e escuta.</li>
+        <li><strong>Ra</strong>: um ritual lógico que ordene a mente.</li>
+        <li><strong>Ptah</strong>: uma expressão criativa por dia.</li>
+      </ul>
+      <p><strong>Etapa 3 — Síntese Violeta:</strong> unir as quatro casas em um ato simbólico por semana. O que é criado aqui repele o parasita, pois é puro em intenção e coerente em forma.</p>
+      <p><strong>Integração dos Reinos:</strong></p>
+      <ul>
+        <li><strong>Mineral</strong>: chão, pedra, metal. Âncora e silêncio.</li>
+        <li><strong>Vegetal</strong>: infusão, verde, cuidado. Tempo vivo.</li>
+        <li><strong>Animal</strong>: pulsação, sono, olhar. Presença encarnada.</li>
+      </ul>
+      <p><strong>Luz como Filtro:</strong> a coerência é uma luz que mostra o que treme. Não julga. Mas revela. E isso basta.</p>
+    </section>
   </main>
+
+  <script>
+    const orb = document.getElementById("pulse-orb");
+    const message = document.getElementById("pulse-message");
+    const mensagens = [
+      "O mineral sustenta.",
+      "O vegetal transforma.",
+      "O animal movimenta.",
+      "Ka observa.",
+      "Hu cura.",
+      "Ra ordena.",
+      "Ptah manifesta.",
+      "O silêncio também pulsa.",
+      "Simetria em andamento...",
+    ];
+
+    function pulsar() {
+      orb.style.transform = "scale(1.3)";
+      orb.style.opacity = "1";
+      const index = Math.floor(Math.random() * mensagens.length);
+      message.textContent = mensagens[index];
+      setTimeout(() => {
+        orb.style.transform = "scale(1)";
+        orb.style.opacity = "0.5";
+      }, 1200);
+    }
+
+    setInterval(pulsar, 4000);
+  </script>
 </body>
 </html>
