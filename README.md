@@ -1,1 +1,3 @@
 # protocolo-verdade-integral
+
+.
