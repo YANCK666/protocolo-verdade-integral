@@ -415,3 +415,88 @@
       rotation = startRotation + delta;
       applyRotation();
     });
+
+    mapWrap.addEventListener("pointerup", () => {
+      isRotating = false;
+      mapWrap.classList.remove("grabbing");
+    });
+
+    // Bandeiras
+    function renderFlags() {
+      flagsLayer.innerHTML = "";
+      Object.values(countries).forEach(data => {
+        const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        g.setAttribute("transform", `translate(${data.cx - 10}, ${data.cy - 7})`);
+        const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
+        img.setAttributeNS("http://www.w3.org/1999/xlink", "href", data.flag);
+        img.setAttribute("width", "20");
+        img.setAttribute("height", "13");
+        g.appendChild(img);
+        flagsLayer.appendChild(g);
+      });
+    }
+
+    // População
+    function renderPop() {
+      popLayer.innerHTML = "";
+      Object.values(countries).forEach(data => {
+        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        text.setAttribute("x", data.cx);
+        text.setAttribute("y", data.cy + 20);
+        text.setAttribute("text-anchor", "middle");
+        text.setAttribute("fill", "#e8d9ff");
+        text.setAttribute("font-size", "10");
+        text.setAttribute("font-family", "IBM Plex Mono");
+        text.textContent = data.pop.split(" ")[0];
+        popLayer.appendChild(text);
+      });
+    }
+
+    document.getElementById("layerFlags").addEventListener("change", e => {
+      flagsLayer.style.display = e.target.checked ? "block" : "none";
+      if (e.target.checked) renderFlags();
+    });
+
+    document.getElementById("layerPop").addEventListener("change", e => {
+      popLayer.style.display = e.target.checked ? "block" : "none";
+      if (e.target.checked) renderPop();
+    });
+
+    // Seleção de país
+    document.querySelectorAll(".c").forEach(el => {
+      el.addEventListener("click", () => {
+        document.querySelectorAll(".c").forEach(c => c.classList.remove("sel"));
+        el.classList.add("sel");
+        showInfo(el.dataset.id);
+      });
+    });
+
+    function showInfo(id) {
+      const data = countries[id];
+      if (!data) return;
+      countryInfo.innerHTML = `
+        <h2>${data.name}</h2>
+        <div class="info-row"><span>População</span><span>${data.pop}</span></div>
+        <div class="info-row"><span>Ano</span><span>${data.year}</span></div>
+        <div class="info-row"><span>Fonte</span><span>${data.source}</span></div>
+      `;
+    }
+
+    // Busca
+    document.getElementById("searchInput").addEventListener("input", e => {
+      const term = e.target.value.toLowerCase().trim();
+      if (!term) return;
+      const found = Object.entries(countries).find(([_, d]) => d.name.toLowerCase().includes(term));
+      if (found) {
+        const [id] = found;
+        document.querySelectorAll(".c").forEach(c => c.classList.remove("sel"));
+        const el = document.querySelector(`.c[data-id="${id}"]`);
+        if (el) {
+          el.classList.add("sel");
+          showInfo(id);
+        }
+      }
+    });
+  </script>
+</body>
+</html>
