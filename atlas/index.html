@@ -3,21 +3,20 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>MAPA LUCIFERIANO — Atlas Multicamadas</title>
+  <title>MAPA LUCIFERIANO — Atlas Polar</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Young+Serif&display=swap">
   <style>
     :root {
-      --bg: #0f0a14;
-      --panel: #1a1224;
-      --soft: #2a1d3a;
-      --ink: #f1e8fc;
-      --muted: #b7a5cb;
-      --line: #49345e;
-      --sea: #1a1228;
-      --land: #3d2d52;
-      --accent: #c2a0ef;
-      --on-accent: #1a1224;
-      --sel: #f0b5ff;
+      --bg: #0c0812;
+      --panel: #16101f;
+      --soft: #241a32;
+      --ink: #f0e8fc;
+      --muted: #a996c0;
+      --line: #3d2d52;
+      --sea: #120c1c;
+      --land: #3a2a4f;
+      --accent: #c4a1f0;
+      --sel: #e9b8ff;
       --f-display: "Young Serif", Georgia, serif;
       --f-body: "Hanken Grotesk", system-ui, sans-serif;
       --f-mono: "IBM Plex Mono", ui-monospace, monospace;
@@ -34,36 +33,39 @@
     }
 
     .wrap {
-      max-width: 1400px;
+      max-width: 1380px;
       margin: 0 auto;
-      padding: 20px 16px 40px;
+      padding: 20px 16px 50px;
     }
 
     h1 {
       font-family: var(--f-display);
       font-weight: 400;
-      font-size: clamp(26px, 4vw, 36px);
-      margin-bottom: 6px;
+      font-size: clamp(26px, 4vw, 34px);
+      margin-bottom: 4px;
     }
-
-    .lede { color: var(--muted); margin-bottom: 20px; max-width: 70ch; }
+    .lede {
+      color: var(--muted);
+      margin-bottom: 22px;
+      max-width: 62ch;
+    }
 
     .layout {
       display: grid;
-      grid-template-columns: minmax(0, 1.2fr) minmax(300px, 1fr);
-      gap: 24px;
+      grid-template-columns: minmax(0, 1.15fr) minmax(300px, 380px);
+      gap: 28px;
       align-items: start;
     }
-
-    @media (max-width: 980px) {
+    @media (max-width: 960px) {
       .layout { grid-template-columns: 1fr; }
     }
 
-    .mapcol { position: sticky; top: 12px; }
+    /* ===== MAPA ===== */
+    .mapcol { position: sticky; top: 14px; }
     .mapwrap {
       position: relative;
       width: 100%;
-      max-width: 640px;
+      max-width: 620px;
       margin: 0 auto;
       aspect-ratio: 1;
       border-radius: 50%;
@@ -73,6 +75,7 @@
       cursor: grab;
       user-select: none;
       touch-action: none;
+      box-shadow: 0 0 0 1px rgba(196,161,240,0.08);
     }
     .mapwrap.grabbing { cursor: grabbing; }
 
@@ -82,38 +85,43 @@
       display: block;
     }
 
+    /* Grupo que gira — centro = Polo Norte */
     #landGroup {
-      transform-origin: 50% 50%;
+      transform-origin: 500px 500px;
     }
 
     .sea { fill: var(--sea); }
     .c {
       fill: var(--land);
       stroke: #2a1d3a;
-      stroke-width: 0.6;
+      stroke-width: 0.7;
       cursor: pointer;
       transition: fill 0.15s;
     }
-    .c:hover { fill: #5a3f7a; }
-    .c.sel { stroke: var(--sel); stroke-width: 2.2; }
+    .c:hover { fill: #55406e; }
+    .c.sel {
+      stroke: var(--sel);
+      stroke-width: 2.4;
+      fill: #6b4d8a;
+    }
 
     .map-controls {
       position: absolute;
-      top: 10px;
-      right: 10px;
+      top: 12px;
+      right: 12px;
       display: flex;
       flex-direction: column;
       gap: 6px;
-      z-index: 10;
+      z-index: 20;
     }
     .map-controls button {
-      width: 36px;
-      height: 36px;
-      border-radius: 8px;
+      width: 38px;
+      height: 38px;
+      border-radius: 9px;
       border: 1px solid var(--line);
       background: var(--panel);
       color: var(--ink);
-      font-size: 18px;
+      font-size: 17px;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -122,9 +130,17 @@
     .map-controls button:hover { border-color: var(--accent); }
     .map-controls button.active {
       background: var(--accent);
-      color: var(--on-accent);
+      color: #160f22;
     }
 
+    .map-note {
+      text-align: center;
+      margin-top: 12px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    /* ===== PAINEL ===== */
     .panel {
       background: var(--panel);
       border: 1px solid var(--line);
@@ -132,20 +148,37 @@
       padding: 18px;
     }
 
+    .search label {
+      font-size: 11px;
+      font-family: var(--f-mono);
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .search input {
+      width: 100%;
+      margin-top: 6px;
+      padding: 11px 13px;
+      border-radius: 9px;
+      border: 1px solid var(--line);
+      background: var(--bg);
+      color: var(--ink);
+      font: inherit;
+    }
+
     .layerbox {
       margin-top: 16px;
-      padding: 14px;
+      padding: 13px;
       border: 1px solid var(--line);
-      border-radius: 12px;
+      border-radius: 11px;
       background: var(--soft);
     }
     .layerhead {
       display: flex;
       justify-content: space-between;
-      align-items: center;
       margin-bottom: 10px;
       font-family: var(--f-mono);
-      font-size: 12px;
+      font-size: 11px;
       letter-spacing: 0.06em;
       text-transform: uppercase;
       color: var(--muted);
@@ -168,41 +201,35 @@
     }
     .layeritem input { accent-color: var(--accent); }
 
-    .search input {
-      width: 100%;
-      padding: 11px 14px;
-      border-radius: 10px;
-      border: 1px solid var(--line);
-      background: var(--bg);
-      color: var(--ink);
-      font: inherit;
-      margin-top: 6px;
-    }
-
     #countryInfo {
       margin-top: 18px;
       padding-top: 16px;
       border-top: 1px solid var(--line);
+      min-height: 120px;
     }
     #countryInfo h2 {
       font-family: var(--f-display);
-      font-size: 24px;
-      margin-bottom: 8px;
+      font-size: 22px;
+      margin-bottom: 10px;
     }
     .info-row {
       display: flex;
       justify-content: space-between;
-      padding: 6px 0;
+      padding: 5px 0;
       border-bottom: 1px solid var(--line);
       font-size: 14px;
     }
-    .info-row span:last-child { color: var(--accent); font-family: var(--f-mono); }
+    .info-row span:last-child {
+      color: var(--accent);
+      font-family: var(--f-mono);
+      font-size: 13px;
+    }
 
     .note {
       margin-top: 16px;
       font-size: 12px;
       color: var(--muted);
-      line-height: 1.4;
+      line-height: 1.45;
     }
   </style>
 </head>
@@ -210,35 +237,61 @@
   <div class="wrap">
     <h1>MAPA LUCIFERIANO</h1>
     <p class="lede">
-      Um único mapa multicamadas. Gire o disco terrestre independentemente.
-      Ative ou desative camadas como em um editor gráfico.
+      Projeção azimutal polar. Centro = Polo Norte. Borda = Polo Sul.
+      Gire o disco terrestre independentemente das outras camadas.
     </p>
 
     <div class="layout">
+      <!-- MAPA -->
       <div class="mapcol">
         <div class="mapwrap" id="mapWrap">
           <svg id="mapSvg" viewBox="0 0 1000 1000">
-            <circle class="sea" cx="500" cy="500" r="490" />
+            <!-- Oceano de fundo -->
+            <circle class="sea" cx="500" cy="500" r="495" />
 
-            <!-- GRUPO QUE GIRA -->
+            <!-- GRUPO QUE GIRA (centro = Polo Norte) -->
             <g id="landGroup">
-              <path class="c" data-id="BRA" data-name="Brasil" d="M620,680 Q640,720 610,760 Q580,780 550,750 Q530,720 560,690 Z" />
-              <path class="c" data-id="USA" data-name="Estados Unidos" d="M280,380 Q320,360 360,390 Q340,430 300,420 Q270,400 280,380 Z" />
-              <path class="c" data-id="RUS" data-name="Rússia" d="M620,280 Q720,260 780,320 Q740,360 680,340 Q640,310 620,280 Z" />
-              <path class="c" data-id="CHN" data-name="China" d="M700,420 Q740,400 770,440 Q750,470 710,460 Q690,440 700,420 Z" />
-              <path class="c" data-id="IND" data-name="Índia" d="M680,500 Q700,530 680,560 Q660,540 680,500 Z" />
-              <path class="c" data-id="AUS" data-name="Austrália" d="M780,720 Q820,700 840,740 Q810,760 780,720 Z" />
-              <path class="c" data-id="ZAF" data-name="África do Sul" d="M520,780 Q540,800 520,820 Q500,800 520,780 Z" />
-              <path class="c" data-id="DEU" data-name="Alemanha" d="M480,340 Q500,330 510,350 Q495,360 480,340 Z" />
-              <path class="c" data-id="FRA" data-name="França" d="M450,360 Q470,350 475,375 Q460,380 450,360 Z" />
-              <path class="c" data-id="JPN" data-name="Japão" d="M820,400 Q835,390 840,410 Q825,415 820,400 Z" />
+              <!-- América do Norte -->
+              <path class="c" data-id="CAN" data-name="Canadá" d="M380,280 Q420,220 480,240 Q520,260 510,320 Q470,360 420,340 Q380,320 380,280 Z" />
+              <path class="c" data-id="USA" data-name="Estados Unidos" d="M360,360 Q420,340 470,370 Q460,420 410,430 Q360,410 360,360 Z" />
+              <path class="c" data-id="MEX" data-name="México" d="M370,450 Q400,440 420,470 Q400,500 370,490 Q360,470 370,450 Z" />
+
+              <!-- América do Sul -->
+              <path class="c" data-id="BRA" data-name="Brasil" d="M480,620 Q530,590 560,650 Q540,720 490,730 Q450,690 480,620 Z" />
+              <path class="c" data-id="ARG" data-name="Argentina" d="M470,750 Q500,740 510,800 Q490,840 470,820 Q460,780 470,750 Z" />
+
+              <!-- Europa -->
+              <path class="c" data-id="RUS" data-name="Rússia" d="M580,220 Q680,180 760,260 Q740,340 660,330 Q600,290 580,220 Z" />
+              <path class="c" data-id="DEU" data-name="Alemanha" d="M520,340 Q540,330 550,355 Q535,365 520,340 Z" />
+              <path class="c" data-id="FRA" data-name="França" d="M490,360 Q515,350 520,380 Q500,390 490,360 Z" />
+              <path class="c" data-id="GBR" data-name="Reino Unido" d="M470,310 Q485,300 490,325 Q475,330 470,310 Z" />
+
+              <!-- África -->
+              <path class="c" data-id="DZA" data-name="Argélia" d="M480,450 Q520,440 530,490 Q500,510 480,490 Q470,470 480,450 Z" />
+              <path class="c" data-id="COD" data-name="RD Congo" d="M530,580 Q560,570 570,620 Q545,640 530,620 Q520,600 530,580 Z" />
+              <path class="c" data-id="ZAF" data-name="África do Sul" d="M530,720 Q560,710 570,760 Q545,780 530,760 Q520,740 530,720 Z" />
+
+              <!-- Ásia -->
+              <path class="c" data-id="CHN" data-name="China" d="M700,380 Q760,360 790,420 Q760,470 710,450 Q690,410 700,380 Z" />
+              <path class="c" data-id="IND" data-name="Índia" d="M660,500 Q700,490 710,550 Q680,580 660,550 Q650,520 660,500 Z" />
+              <path class="c" data-id="JPN" data-name="Japão" d="M820,390 Q840,380 845,410 Q830,415 820,390 Z" />
+              <path class="c" data-id="SAU" data-name="Arábia Saudita" d="M600,480 Q630,470 640,510 Q615,525 600,510 Q595,495 600,480 Z" />
+
+              <!-- Oceania -->
+              <path class="c" data-id="AUS" data-name="Austrália" d="M780,680 Q830,660 860,720 Q830,760 790,750 Q770,710 780,680 Z" />
             </g>
 
+            <!-- Camadas que NÃO giram -->
             <g id="flagsLayer" style="display:none;"></g>
             <g id="popLayer" style="display:none;"></g>
 
-            <circle cx="500" cy="500" r="6" fill="#c2a0ef" />
-            <text x="500" y="30" text-anchor="middle" fill="#b7a5cb" font-size="12" font-family="IBM Plex Mono">N</text>
+            <!-- Polo Norte (fixo) -->
+            <circle cx="500" cy="500" r="7" fill="#c4a1f0" />
+            <circle cx="500" cy="500" r="3" fill="#0c0812" />
+
+            <!-- Indicação de orientação -->
+            <text x="500" y="28" text-anchor="middle" fill="#a996c0" font-size="13" font-family="IBM Plex Mono">N</text>
+            <text x="500" y="980" text-anchor="middle" fill="#a996c0" font-size="11" font-family="IBM Plex Mono">S</text>
           </svg>
 
           <div class="map-controls">
@@ -246,22 +299,22 @@
             <button id="btnReset" title="Resetar rotação">↺</button>
           </div>
         </div>
-        <p style="text-align:center; margin-top:10px; font-size:13px; color:var(--muted);">
-          Ative "Girar disco" e arraste o mapa para girar apenas a terra
+        <p class="map-note">
+          Centro = Polo Norte · Borda = Polo Sul<br>
+          Ative “Girar disco” e arraste para girar
         </p>
       </div>
 
+      <!-- PAINEL -->
       <div class="panel">
-        <div>
-          <label style="font-size:12px; font-family:var(--f-mono); color:var(--muted); text-transform:uppercase; letter-spacing:0.06em;">Buscar país</label>
-          <div class="search">
-            <input type="text" id="searchInput" placeholder="Digite o nome do país..." />
-          </div>
+        <div class="search">
+          <label>Buscar país</label>
+          <input type="text" id="searchInput" placeholder="Digite o nome do país..." />
         </div>
 
         <div class="layerbox">
           <div class="layerhead">
-            <strong>Camadas</strong>
+            <span>Camadas</span>
             <span>ligar / desligar</span>
           </div>
           <div class="layergrid">
@@ -281,12 +334,12 @@
         </div>
 
         <div id="countryInfo">
-          <p style="color:var(--muted);">Selecione um país no mapa ou busque pelo nome.</p>
+          <p style="color:var(--muted)">Selecione um país no mapa ou busque pelo nome.</p>
         </div>
 
         <p class="note">
-          Versão com rotação independente do disco terrestre, camada de bandeiras e população.
-          As subdivisões (estados) serão adicionadas país por país.
+          Projeção azimutal polar. O disco terrestre gira em torno do Polo Norte.
+          Bandeiras e população são camadas independentes.
         </p>
       </div>
     </div>
@@ -294,16 +347,23 @@
 
   <script>
     const countries = {
-      BRA: { name: "Brasil", pop: "203 milhões", year: "2022", source: "IBGE", flag: "https://flagcdn.com/w40/br.png", cx: 580, cy: 720 },
-      USA: { name: "Estados Unidos", pop: "331 milhões", year: "2020", source: "US Census", flag: "https://flagcdn.com/w40/us.png", cx: 320, cy: 400 },
-      RUS: { name: "Rússia", pop: "146 milhões", year: "2021", source: "Rosstat", flag: "https://flagcdn.com/w40/ru.png", cx: 700, cy: 310 },
-      CHN: { name: "China", pop: "1,41 bilhão", year: "2021", source: "NBS China", flag: "https://flagcdn.com/w40/cn.png", cx: 735, cy: 430 },
-      IND: { name: "Índia", pop: "1,39 bilhão", year: "2021", source: "Census India", flag: "https://flagcdn.com/w40/in.png", cx: 690, cy: 530 },
-      AUS: { name: "Austrália", pop: "26 milhões", year: "2022", source: "ABS", flag: "https://flagcdn.com/w40/au.png", cx: 810, cy: 730 },
-      ZAF: { name: "África do Sul", pop: "60 milhões", year: "2022", source: "Stats SA", flag: "https://flagcdn.com/w40/za.png", cx: 520, cy: 800 },
-      DEU: { name: "Alemanha", pop: "83 milhões", year: "2021", source: "Destatis", flag: "https://flagcdn.com/w40/de.png", cx: 495, cy: 345 },
-      FRA: { name: "França", pop: "68 milhões", year: "2021", source: "INSEE", flag: "https://flagcdn.com/w40/fr.png", cx: 462, cy: 365 },
-      JPN: { name: "Japão", pop: "125 milhões", year: "2021", source: "Statistics Bureau", flag: "https://flagcdn.com/w40/jp.png", cx: 830, cy: 405 }
+      CAN: { name: "Canadá", pop: "38 milhões", year: "2022", source: "Statistics Canada", flag: "https://flagcdn.com/w40/ca.png", cx: 450, cy: 280 },
+      USA: { name: "Estados Unidos", pop: "331 milhões", year: "2020", source: "US Census", flag: "https://flagcdn.com/w40/us.png", cx: 415, cy: 390 },
+      MEX: { name: "México", pop: "126 milhões", year: "2020", source: "INEGI", flag: "https://flagcdn.com/w40/mx.png", cx: 395, cy: 470 },
+      BRA: { name: "Brasil", pop: "203 milhões", year: "2022", source: "IBGE", flag: "https://flagcdn.com/w40/br.png", cx: 510, cy: 670 },
+      ARG: { name: "Argentina", pop: "46 milhões", year: "2022", source: "INDEC", flag: "https://flagcdn.com/w40/ar.png", cx: 490, cy: 790 },
+      RUS: { name: "Rússia", pop: "146 milhões", year: "2021", source: "Rosstat", flag: "https://flagcdn.com/w40/ru.png", cx: 680, cy: 270 },
+      DEU: { name: "Alemanha", pop: "83 milhões", year: "2021", source: "Destatis", flag: "https://flagcdn.com/w40/de.png", cx: 535, cy: 348 },
+      FRA: { name: "França", pop: "68 milhões", year: "2021", source: "INSEE", flag: "https://flagcdn.com/w40/fr.png", cx: 505, cy: 370 },
+      GBR: { name: "Reino Unido", pop: "67 milhões", year: "2021", source: "ONS", flag: "https://flagcdn.com/w40/gb.png", cx: 480, cy: 315 },
+      DZA: { name: "Argélia", pop: "45 milhões", year: "2022", source: "ONS Algérie", flag: "https://flagcdn.com/w40/dz.png", cx: 505, cy: 470 },
+      COD: { name: "RD Congo", pop: "96 milhões", year: "2022", source: "UN", flag: "https://flagcdn.com/w40/cd.png", cx: 550, cy: 605 },
+      ZAF: { name: "África do Sul", pop: "60 milhões", year: "2022", source: "Stats SA", flag: "https://flagcdn.com/w40/za.png", cx: 550, cy: 745 },
+      CHN: { name: "China", pop: "1,41 bilhão", year: "2021", source: "NBS", flag: "https://flagcdn.com/w40/cn.png", cx: 745, cy: 415 },
+      IND: { name: "Índia", pop: "1,39 bilhão", year: "2021", source: "Census India", flag: "https://flagcdn.com/w40/in.png", cx: 685, cy: 535 },
+      JPN: { name: "Japão", pop: "125 milhões", year: "2021", source: "Statistics Bureau", flag: "https://flagcdn.com/w40/jp.png", cx: 832, cy: 398 },
+      SAU: { name: "Arábia Saudita", pop: "35 milhões", year: "2022", source: "GASTAT", flag: "https://flagcdn.com/w40/sa.png", cx: 620, cy: 500 },
+      AUS: { name: "Austrália", pop: "26 milhões", year: "2022", source: "ABS", flag: "https://flagcdn.com/w40/au.png", cx: 820, cy: 710 }
     };
 
     let rotation = 0;
@@ -311,7 +371,6 @@
     let rotateEnabled = false;
     let startX = 0;
     let startRotation = 0;
-    let selectedId = null;
 
     const landGroup = document.getElementById("landGroup");
     const mapWrap = document.getElementById("mapWrap");
@@ -323,8 +382,8 @@
       landGroup.setAttribute("transform", `rotate(${rotation} 500 500)`);
     }
 
-    // Ativar/desativar rotação
-    document.getElementById("layerRotate").addEventListener("change", (e) => {
+    // Ativar rotação
+    document.getElementById("layerRotate").addEventListener("change", e => {
       rotateEnabled = e.target.checked;
       document.getElementById("btnRotate").classList.toggle("active", rotateEnabled);
     });
@@ -340,8 +399,8 @@
       applyRotation();
     });
 
-    // Arrastar para girar
-    mapWrap.addEventListener("pointerdown", (e) => {
+    // Arrastar para girar o disco
+    mapWrap.addEventListener("pointerdown", e => {
       if (!rotateEnabled) return;
       isRotating = true;
       mapWrap.classList.add("grabbing");
@@ -350,101 +409,9 @@
       mapWrap.setPointerCapture(e.pointerId);
     });
 
-    mapWrap.addEventListener("pointermove", (e) => {
+    mapWrap.addEventListener("pointermove", e => {
       if (!isRotating || !rotateEnabled) return;
-      const delta = (e.clientX - startX) * 0.45;
+      const delta = (e.clientX - startX) * 0.5;
       rotation = startRotation + delta;
       applyRotation();
     });
-
-    mapWrap.addEventListener("pointerup", () => {
-      isRotating = false;
-      mapWrap.classList.remove("grabbing");
-    });
-
-    // Bandeiras
-    function renderFlags() {
-      flagsLayer.innerHTML = "";
-      Object.entries(countries).forEach(([id, data]) => {
-        const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-        g.setAttribute("transform", `translate(${data.cx - 9}, ${data.cy - 6})`);
-        const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
-        img.setAttribute("href", data.flag);
-        img.setAttribute("width", "18");
-        img.setAttribute("height", "12");
-        g.appendChild(img);
-        flagsLayer.appendChild(g);
-      });
-    }
-
-    // População
-    function renderPop() {
-      popLayer.innerHTML = "";
-      Object.entries(countries).forEach(([id, data]) => {
-        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        text.setAttribute("x", data.cx);
-        text.setAttribute("y", data.cy + 18);
-        text.setAttribute("text-anchor", "middle");
-        text.setAttribute("fill", "#fff");
-        text.setAttribute("font-size", "10");
-        text.setAttribute("font-family", "IBM Plex Mono");
-        text.textContent = data.pop.split(" ")[0];
-        popLayer.appendChild(text);
-      });
-    }
-
-    document.getElementById("layerFlags").addEventListener("change", (e) => {
-      flagsLayer.style.display = e.target.checked ? "block" : "none";
-      if (e.target.checked) renderFlags();
-    });
-
-    document.getElementById("layerPop").addEventListener("change", (e) => {
-      popLayer.style.display = e.target.checked ? "block" : "none";
-      if (e.target.checked) renderPop();
-    });
-
-    // Seleção de país
-    document.querySelectorAll(".c").forEach(el => {
-      el.addEventListener("click", () => {
-        document.querySelectorAll(".c").forEach(c => c.classList.remove("sel"));
-        el.classList.add("sel");
-        selectedId = el.dataset.id;
-        showCountryInfo(selectedId);
-      });
-    });
-
-    function showCountryInfo(id) {
-      const data = countries[id];
-      if (!data) return;
-      countryInfo.innerHTML = `
-        <h2>${data.name}</h2>
-        <div class="info-row"><span>População</span><span>${data.pop}</span></div>
-        <div class="info-row"><span>Ano</span><span>${data.year}</span></div>
-        <div class="info-row"><span>Fonte</span><span>${data.source}</span></div>
-      `;
-    }
-
-    // Busca
-    document.getElementById("searchInput").addEventListener("input", (e) => {
-      const term = e.target.value.toLowerCase().trim();
-      if (!term) return;
-      const found = Object.entries(countries).find(([id, data]) => 
-        data.name.toLowerCase().includes(term)
-      );
-      if (found) {
-        const [id] = found;
-        document.querySelectorAll(".c").forEach(c => c.classList.remove("sel"));
-        const el = document.querySelector(`.c[data-id="${id}"]`);
-        if (el) {
-          el.classList.add("sel");
-          showCountryInfo(id);
-        }
-      }
-    });
-
-    // Inicializa
-    renderFlags();
-    renderPop();
-  </script>
-</body>
-</html>
