@@ -1,504 +1,364 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>MAPA LUCIFERIANO</title>
-  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Young+Serif&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg: #0b0710;
-      --panel: #15101c;
-      --soft: #221a2e;
-      --ink: #f0e9fb;
-      --muted: #a996c0;
-      --line: #3a2d4c;
-      --sea: #110c18;
-      --land: #2e2340;
-      --accent: #c4a1f0;
-      --sel: #e9b8ff;
-    }
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Atlas Polar — MAPA LUCIFERIANO</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Young+Serif&display=swap">
+<style>
+:root {
+  --bg: #0b0710; --panel: #15101c; --soft: #221a2e; --ink: #f0e9fb; --muted: #a996c0;
+  --line: #3a2d4c; --sea: #110c18; --land: #2e2340; --accent: #c4a1f0; --sel: #e9b8ff;
+  --green: #4ade80; --f-display: "Young Serif", Georgia, serif; --f-body: "Hanken Grotesk", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1280px; margin: 0 auto; padding: 20px 16px 40px; }
+h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw, 40px); margin-bottom: 6px; }
+.lede { color: var(--muted); margin-bottom: 20px; max-width: 62ch; }
+.layout { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 28px; align-items: start; }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      background: var(--bg);
-      color: var(--ink);
-      font-family: "Hanken Grotesk", system-ui, sans-serif;
-      font-size: 15px;
-      min-height: 100vh;
-    }
+/* MAPA */
+.mapcol { position: sticky; top: 16px; }
+.mapwrap { position: relative; width: min(100%, calc(100vh - 100px)); margin: 0 auto; user-select: none; touch-action: none; }
+#map { display: block; width: 100%; height: auto; }
+.sea { fill: var(--sea); }
+.grat { fill: none; stroke: var(--ink); stroke-opacity: .1; stroke-width: .6; pointer-events: none; }
+.c { fill: var(--land); stroke: var(--bg); stroke-width: .7; cursor: pointer; transition: opacity .2s; }
+.c:hover { opacity: 0.8; }
+.c.sel { stroke: var(--sel); stroke-width: 2.6; }
+.c.historical { fill: #8b5fc7 !important; }
 
-    .wrap {
-      max-width: 1360px;
-      margin: 0 auto;
-      padding: 20px 16px 40px;
-    }
+/* GRADE GEOMÉTRICA (Linhas Verdes) */
+.grid-line { stroke: var(--green); stroke-width: 1.2; opacity: 0.4; pointer-events: none; }
+.grid-circle { fill: none; stroke: var(--green); stroke-width: 1; opacity: 0.3; pointer-events: none; }
+.axis-line { stroke: var(--muted); stroke-width: 1; opacity: 0.2; pointer-events: none; }
+.ring { fill: none; stroke: var(--line); stroke-width: 2; pointer-events: none; }
+.pole { fill: var(--accent); pointer-events: none; filter: drop-shadow(0 0 6px var(--accent)); }
 
-    h1 {
-      font-family: "Young Serif", Georgia, serif;
-      font-weight: 400;
-      font-size: clamp(26px, 4vw, 34px);
-      margin-bottom: 4px;
-    }
-    .lede {
-      color: var(--muted);
-      margin-bottom: 20px;
-      max-width: 60ch;
-    }
-
-    .layout {
-      display: grid;
-      grid-template-columns: minmax(0, 1.2fr) 340px;
-      gap: 24px;
-      align-items: start;
-    }
-    @media (max-width: 920px) {
-      .layout { grid-template-columns: 1fr; }
-    }
-
-    /* ===== MAPA ===== */
-    .mapcol { position: sticky; top: 12px; }
-    .mapwrap {
-      position: relative;
-      width: 100%;
-      max-width: 600px;
-      margin: 0 auto;
-      aspect-ratio: 1;
-      border-radius: 50%;
-      overflow: hidden;
-      background: var(--sea);
-      border: 1px solid var(--line);
-      cursor: grab;
-      user-select: none;
-      touch-action: none;
-    }
-    .mapwrap.grabbing { cursor: grabbing; }
-
-    #mapSvg {
-      width: 100%;
-      height: 100%;
-      display: block;
-    }
-
-    #landGroup {
-      transform-origin: 500px 500px;
-    }
-
-    .sea { fill: var(--sea); }
-
-    .c {
-      fill: var(--land);
-      stroke: #1e1628;
-      stroke-width: 0.8;
-      cursor: pointer;
-      transition: opacity 0.2s;
-    }
-    .c:hover { opacity: 0.85; }
-    .c.sel {
-      stroke: var(--sel);
-      stroke-width: 2.5;
-    }
-
-    /* Quando a camada de bandeiras estiver ativa */
-    .flags-on .c {
-      fill: none;
-      stroke: rgba(255,255,255,0.25);
-      stroke-width: 0.6;
-    }
-
-    .map-controls {
-      position: absolute;
-      top: 12px;
-      right: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      z-index: 30;
-    }
-    .map-controls button {
-      width: 40px;
-      height: 40px;
-      border-radius: 10px;
-      border: 1px solid var(--line);
-      background: var(--panel);
-      color: var(--ink);
-      font-size: 18px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .map-controls button:hover { border-color: var(--accent); }
-    .map-controls button.active {
-      background: var(--accent);
-      color: #120c1a;
-    }
-
-    .map-note {
-      text-align: center;
-      margin-top: 12px;
-      font-size: 13px;
-      color: var(--muted);
-    }
-
-    /* ===== PAINEL ===== */
-    .panel {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 18px;
-    }
-
-    .search label {
-      font-size: 11px;
-      font-family: "IBM Plex Mono", monospace;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-    .search input {
-      width: 100%;
-      margin-top: 6px;
-      padding: 11px 13px;
-      border-radius: 9px;
-      border: 1px solid var(--line);
-      background: var(--bg);
-      color: var(--ink);
-      font: inherit;
-    }
-
-    .layerbox {
-      margin-top: 16px;
-      padding: 13px;
-      border: 1px solid var(--line);
-      border-radius: 11px;
-      background: var(--soft);
-    }
-    .layerhead {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 10px;
-      font-family: "IBM Plex Mono", monospace;
-      font-size: 11px;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-    .layergrid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px;
-    }
-    .layeritem {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 10px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: var(--panel);
-      font-size: 13px;
-      cursor: pointer;
-    }
-    .layeritem input { accent-color: var(--accent); }
-
-    #countryInfo {
-      margin-top: 18px;
-      padding-top: 16px;
-      border-top: 1px solid var(--line);
-      min-height: 110px;
-    }
-    #countryInfo h2 {
-      font-family: "Young Serif", Georgia, serif;
-      font-size: 22px;
-      margin-bottom: 10px;
-    }
-    .info-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 5px 0;
-      border-bottom: 1px solid var(--line);
-      font-size: 14px;
-    }
-    .info-row span:last-child {
-      color: var(--accent);
-      font-family: "IBM Plex Mono", monospace;
-      font-size: 13px;
-    }
-
-    .note {
-      margin-top: 14px;
-      font-size: 12px;
-      color: var(--muted);
-      line-height: 1.4;
-    }
-  </style>
+/* PAINEL */
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
+.search input { width: 100%; padding: 11px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); font: inherit; margin-top: 6px; }
+.layerbox { margin-top: 16px; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--soft); }
+.layerhead { display: flex; justify-content: space-between; margin-bottom: 10px; font-family: var(--f-mono); font-size: 12px; text-transform: uppercase; color: var(--muted); }
+.layergrid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.layeritem { display: flex; align-items: center; gap: 8px; padding: 7px 9px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); font-size: 13px; cursor: pointer; }
+.layeritem input { accent-color: var(--accent); }
+.zoomctl { position: absolute; right: 4px; top: 4px; display: flex; flex-direction: column; gap: 4px; z-index: 10; }
+.zoomctl button { width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font: 600 18px/1 var(--f-body); cursor: pointer; }
+.timeline { margin-top: 16px; padding: 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); }
+.timeline h3 { font-family: var(--f-display); font-size: 18px; margin-bottom: 6px; }
+.era-buttons { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
+.era-buttons button { border: 1px solid var(--line); border-radius: 999px; padding: 6px 10px; background: var(--soft); color: var(--ink); font-size: 12px; cursor: pointer; }
+.era-buttons button[aria-pressed="true"] { background: var(--accent); color: var(--bg); }
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <h1>MAPA LUCIFERIANO</h1>
-    <p class="lede">
-      Projeção azimutal polar · Centro = Polo Norte · Borda = Polo Sul<br>
-      Gire o disco e ative as bandeiras preenchendo os países.
-    </p>
+<div class="wrap">
+  <header>
+    <h1>Atlas Polar</h1>
+    <p class="lede">Projeção azimutal polar. Centro = Polo Norte. Borda = Polo Sul.<br>Gire o disco terrestre independentemente das outras camadas.</p>
+  </header>
 
-    <div class="layout">
-      <div class="mapcol">
-        <div class="mapwrap" id="mapWrap">
-          <svg id="mapSvg" viewBox="0 0 1000 1000">
-            <defs>
-              <!-- Padrões de bandeira (preenchimento) -->
-              <pattern id="flag-br" patternUnits="userSpaceOnUse" width="40" height="28">
-                <image href="https://flagcdn.com/w80/br.png" width="40" height="28" preserveAspectRatio="xMidYMid slice"/>
-              </pattern>
-              <pattern id="flag-us" patternUnits="userSpaceOnUse" width="40" height="28">
-                <image href="https://flagcdn.com/w80/us.png" width="40" height="28" preserveAspectRatio="xMidYMid slice"/>
-              </pattern>
-              <pattern id="flag-ru" patternUnits="userSpaceOnUse" width="40" height="28">
-                <image href="https://flagcdn.com/w80/ru.png" width="40" height="28" preserveAspectRatio="xMidYMid slice"/>
-              </pattern>
-              <pattern id="flag-cn" patternUnits="userSpaceOnUse" width="40" height="28">
-                <image href="https://flagcdn.com/w80/cn.png" width="40" height="28" preserveAspectRatio="xMidYMid slice"/>
-              </pattern>
-              <pattern id="flag-in" patternUnits="userSpaceOnUse" width="40" height="28">
-                <image href="https://flagcdn.com/w80/in.png" width="40" height="28" preserveAspectRatio="xMidYMid slice"/>
-              </pattern>
-              <pattern id="flag-au" patternUnits="userSpaceOnUse" width="40" height="28">
-                <image href="https://flagcdn.com/w80/au.png" width="40" height="28" preserveAspectRatio="xMidYMid slice"/>
-              </pattern>
-              <pattern id="flag-de" patternUnits="userSpaceOnUse" width="40" height="28">
-                <image href="https://flagcdn.com/w80/de.png" width="40" height="28" preserveAspectRatio="xMidYMid slice"/>
-              </pattern>
-              <pattern id="flag-fr" patternUnits="userSpaceOnUse" width="40" height="28">
-                <image href="https://flagcdn.com/w80/fr.png" width="40" height="28" preserveAspectRatio="xMidYMid slice"/>
-              </pattern>
-              <pattern id="flag-jp" patternUnits="userSpaceOnUse" width="40" height="28">
-                <image href="https://flagcdn.com/w80/jp.png" width="40" height="28" preserveAspectRatio="xMidYMid slice"/>
-              </pattern>
-              <pattern id="flag-za" patternUnits="userSpaceOnUse" width="40" height="28">
-                <image href="https://flagcdn.com/w80/za.png" width="40" height="28" preserveAspectRatio="xMidYMid slice"/>
-              </pattern>
-              <pattern id="flag-ca" patternUnits="userSpaceOnUse" width="40" height="28">
-                <image href="https://flagcdn.com/w80/ca.png" width="40" height="28" preserveAspectRatio="xMidYMid slice"/>
-              </pattern>
-              <pattern id="flag-ar" patternUnits="userSpaceOnUse" width="40" height="28">
-                <image href="https://flagcdn.com/w80/ar.png" width="40" height="28" preserveAspectRatio="xMidYMid slice"/>
-              </pattern>
-              <pattern id="flag-mx" patternUnits="userSpaceOnUse" width="40" height="28">
-                <image href="https://flagcdn.com/w80/mx.png" width="40" height="28" preserveAspectRatio="xMidYMid slice"/>
-              </pattern>
-              <pattern id="flag-gb" patternUnits="userSpaceOnUse" width="40" height="28">
-                <image href="https://flagcdn.com/w80/gb.png" width="40" height="28" preserveAspectRatio="xMidYMid slice"/>
-              </pattern>
-            </defs>
+  <main class="layout">
+    <!-- MAPA -->
+    <section class="mapcol">
+      <div class="mapwrap" id="mapwrap">
+        <svg id="map" viewBox="0 0 800 800">
+          <defs>
+            <clipPath id="mapclip"><circle cx="400" cy="400" r="372"/></clipPath>
+            <!-- Padrões de Bandeiras -->
+            <pattern id="flag-br" patternUnits="userSpaceOnUse" width="40" height="28"><image href="https://flagcdn.com/w80/br.png" width="40" height="28" preserveAspectRatio="xMidYMid slice"/></pattern>
+            <pattern id="flag-us" patternUnits="userSpaceOnUse" width="40" height="28"><image href="https://flagcdn.com/w80/us.png" width="40" height="28" preserveAspectRatio="xMidYMid slice"/></pattern>
+            <pattern id="flag-ru" patternUnits="userSpaceOnUse" width="40" height="28"><image href="https://flagcdn.com/w80/ru.png" width="40" height="28" preserveAspectRatio="xMidYMid slice"/></pattern>
+            <pattern id="flag-cn" patternUnits="userSpaceOnUse" width="40" height="28"><image href="https://flagcdn.com/w80/cn.png" width="40" height="28" preserveAspectRatio="xMidYMid slice"/></pattern>
+            <pattern id="flag-ar" patternUnits="userSpaceOnUse" width="40" height="28"><image href="https://flagcdn.com/w80/ar.png" width="40" height="28" preserveAspectRatio="xMidYMid slice"/></pattern>
+            <pattern id="flag-za" patternUnits="userSpaceOnUse" width="40" height="28"><image href="https://flagcdn.com/w80/za.png" width="40" height="28" preserveAspectRatio="xMidYMid slice"/></pattern>
+            <pattern id="flag-au" patternUnits="userSpaceOnUse" width="40" height="28"><image href="https://flagcdn.com/w80/au.png" width="40" height="28" preserveAspectRatio="xMidYMid slice"/></pattern>
+            <pattern id="flag-gb" patternUnits="userSpaceOnUse" width="40" height="28"><image href="https://flagcdn.com/w80/gb.png" width="40" height="28" preserveAspectRatio="xMidYMid slice"/></pattern>
+          </defs>
 
-            <circle class="sea" cx="500" cy="500" r="495" />
+          <circle class="sea" cx="400" cy="400" r="372" />
 
-            <!-- GRUPO QUE GIRA -->
-            <g id="landGroup">
-              <path class="c" data-id="CAN" data-name="Canadá" data-flag="flag-ca" d="M360,240 Q430,180 520,210 Q560,260 530,330 Q470,370 400,340 Q350,300 360,240 Z" />
-              <path class="c" data-id="USA" data-name="Estados Unidos" data-flag="flag-us" d="M340,360 Q420,330 490,370 Q470,430 400,450 Q340,420 340,360 Z" />
-              <path class="c" data-id="MEX" data-name="México" data-flag="flag-mx" d="M360,460 Q410,450 430,500 Q400,540 360,520 Q350,490 360,460 Z" />
-              <path class="c" data-id="BRA" data-name="Brasil" data-flag="flag-br" d="M470,600 Q540,570 580,650 Q550,730 480,740 Q430,690 470,600 Z" />
-              <path class="c" data-id="ARG" data-name="Argentina" data-flag="flag-ar" d="M460,760 Q510,750 520,830 Q490,870 460,850 Q450,800 460,760 Z" />
-              <path class="c" data-id="RUS" data-name="Rússia" data-flag="flag-ru" d="M560,200 Q680,160 780,250 Q750,340 650,330 Q580,280 560,200 Z" />
-              <path class="c" data-id="DEU" data-name="Alemanha" data-flag="flag-de" d="M510,340 Q540,330 550,360 Q530,370 510,340 Z" />
-              <path class="c" data-id="FRA" data-name="França" data-flag="flag-fr" d="M480,360 Q515,350 525,385 Q500,395 480,360 Z" />
-              <path class="c" data-id="GBR" data-name="Reino Unido" data-flag="flag-gb" d="M460,300 Q485,290 490,325 Q470,330 460,300 Z" />
-              <path class="c" data-id="CHN" data-name="China" data-flag="flag-cn" d="M690,370 Q770,350 800,430 Q760,480 700,460 Q680,410 690,370 Z" />
-              <path class="c" data-id="IND" data-name="Índia" data-flag="flag-in" d="M650,500 Q700,490 715,560 Q680,590 650,560 Q640,525 650,500 Z" />
-              <path class="c" data-id="JPN" data-name="Japão" data-flag="flag-jp" d="M820,380 Q845,370 850,410 Q830,415 820,380 Z" />
-              <path class="c" data-id="AUS" data-name="Austrália" data-flag="flag-au" d="M770,670 Q840,650 870,730 Q830,780 780,760 Q760,710 770,670 Z" />
-              <path class="c" data-id="ZAF" data-name="África do Sul" data-flag="flag-za" d="M520,720 Q560,710 575,770 Q545,800 520,780 Q510,750 520,720 Z" />
-            </g>
+          <!-- CAMADA FIXA: Grade Verde (Não gira) -->
+          <g id="gridLayer" clip-path="url(#mapclip)">
+            <circle class="grid-circle" cx="400" cy="400" r="120" />
+            <circle class="grid-circle" cx="400" cy="400" r="240" />
+            <circle class="grid-circle" cx="400" cy="400" r="360" />
+            <!-- Eixos de 12 ângulos -->
+            <line class="grid-line" x1="400" y1="28" x2="400" y2="772" />
+            <line class="grid-line" x1="28" y1="400" x2="772" y2="400" />
+            <line class="grid-line" x1="137" y1="137" x2="663" y2="663" />
+            <line class="grid-line" x1="663" y1="137" x2="137" y2="663" />
+            <line class="grid-line" x1="160" y1="300" x2="640" y2="500" />
+            <line class="grid-line" x1="300" y1="160" x2="500" y2="640" />
+            <line class="grid-line" x1="640" y1="300" x2="160" y2="500" />
+            <line class="grid-line" x1="500" y1="160" x2="300" y2="640" />
+            <!-- Anel Externo -->
+            <circle class="ring" cx="400" cy="400" r="370" />
+          </g>
 
-            <!-- Polo Norte -->
-            <circle cx="500" cy="500" r="8" fill="#c4a1f0" />
-            <circle cx="500" cy="500" r="3.5" fill="#0b0710" />
-            <text x="500" y="26" text-anchor="middle" fill="#a996c0" font-size="13" font-family="IBM Plex Mono">N</text>
-            <text x="500" y="982" text-anchor="middle" fill="#a996c0" font-size="12" font-family="IBM Plex Mono">S</text>
-          </svg>
+          <!-- GRUPO QUE GIRA: Países -->
+          <g id="landGroup" clip-path="url(#mapclip)">
+            <!-- Os países reais serão injetados aqui via D3 -->
+          </g>
 
-          <div class="map-controls">
-            <button id="btnRotate" title="Girar disco">⟳</button>
-            <button id="btnReset" title="Resetar">↺</button>
-          </div>
+          <!-- CAMADA FIXA: Polo Norte -->
+          <circle class="pole" cx="400" cy="400" r="5" />
+          <text x="400" y="22" text-anchor="middle" fill="#a996c0" font-size="12" font-family="IBM Plex Mono">N</text>
+          <text x="400" y="785" text-anchor="middle" fill="#a996c0" font-size="12" font-family="IBM Plex Mono">S</text>
+        </svg>
+
+        <div class="zoomctl" id="zoomctl">
+          <button id="btnRotate" title="Girar disco">⟳</button>
+          <button id="btnReset" title="Resetar">↺</button>
         </div>
-        <p class="map-note">
-          Centro = Polo Norte · Borda = Polo Sul<br>
-          Ative “Girar disco” e arraste o mouse
-        </p>
+      </div>
+      <p style="text-align:center; margin-top:12px; font-size:13px; color:var(--muted);">
+        Centro = Polo Norte · Borda = Polo Sul<br>
+        Ative “Girar disco” e arraste o mouse
+      </p>
+
+      <!-- LINHA DO TEMPO -->
+      <section class="timeline">
+        <h3>Linha do tempo</h3>
+        <div class="era-buttons" id="eraButtons">
+          <button type="button" data-era="cyrus" aria-pressed="true">Ciro II</button>
+          <button type="button" data-era="alexander" aria-pressed="false">Alexandre</button>
+          <button type="button" data-era="caesar" aria-pressed="false">Júlio César</button>
+          <button type="button" data-era="christ" aria-pressed="false">Cristo</button>
+          <button type="button" data-era="napoleon" aria-pressed="false">Napoleão</button>
+          <button type="button" data-era="hitler" aria-pressed="false">Hitler</button>
+          <button type="button" data-era="current" aria-pressed="false">Atual</button>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:baseline; margin: 8px 0 2px;">
+          <label for="yearSlider">Ano selecionado</label>
+          <output id="yearOutput" style="color:var(--accent); font-family:var(--f-mono); font-weight:600;">550 a.C.</output>
+        </div>
+        <input id="yearSlider" type="range" min="-550" max="-530" value="-550" step="1" style="width:100%; accent-color:var(--accent);">
+        <p id="eraDescription" style="font-size:12.5px; color:var(--muted); margin-top:6px;">Império Aquemênida durante o reinado de Ciro II.</p>
+      </section>
+    </section>
+
+    <!-- PAINEL -->
+    <section class="panel">
+      <div class="search">
+        <label style="font-size:12px; font-family:var(--f-mono); color:var(--muted); text-transform:uppercase;">Buscar país</label>
+        <input type="text" id="searchInput" placeholder="Brasil, Japão, Egito..." autocomplete="off" />
       </div>
 
-      <div class="panel">
-        <div class="search">
-          <label>Buscar país</label>
-          <input type="text" id="searchInput" placeholder="Nome do país..." />
+      <div class="layerbox">
+        <div class="layerhead"><strong>Camadas</strong><span>ligar / desligar</span></div>
+        <div class="layergrid">
+          <label class="layeritem"><input type="checkbox" id="layerFlags" /> <span>Bandeiras</span></label>
+          <label class="layeritem"><input type="checkbox" id="layerPop" /> <span>População</span></label>
+          <label class="layeritem"><input type="checkbox" id="layerRotate" /> <span>Girar disco</span></label>
+          <label class="layeritem"><input type="checkbox" id="layerGrid" checked /> <span>Grade 12</span></label>
         </div>
-
-        <div class="layerbox">
-          <div class="layerhead">
-            <span>Camadas</span>
-            <span>ligar / desligar</span>
-          </div>
-          <div class="layergrid">
-            <label class="layeritem">
-              <input type="checkbox" id="layerFlags" />
-              <span>Bandeiras</span>
-            </label>
-            <label class="layeritem">
-              <input type="checkbox" id="layerPop" />
-              <span>População</span>
-            </label>
-            <label class="layeritem">
-              <input type="checkbox" id="layerRotate" />
-              <span>Girar disco</span>
-            </label>
-          </div>
-        </div>
-
-        <div id="countryInfo">
-          <p style="color:var(--muted)">Selecione um país no mapa.</p>
-        </div>
-
-        <p class="note">
-          As bandeiras preenchem o formato do país (como no exemplo que você mostrou).
-        </p>
       </div>
-    </div>
-  </div>
 
-  <script>
-    const countries = {
-      CAN: { name: "Canadá", pop: "38 milhões", year: "2022", source: "Statistics Canada" },
-      USA: { name: "Estados Unidos", pop: "331 milhões", year: "2020", source: "US Census" },
-      MEX: { name: "México", pop: "126 milhões", year: "2020", source: "INEGI" },
-      BRA: { name: "Brasil", pop: "203 milhões", year: "2022", source: "IBGE" },
-      ARG: { name: "Argentina", pop: "46 milhões", year: "2022", source: "INDEC" },
-      RUS: { name: "Rússia", pop: "146 milhões", year: "2021", source: "Rosstat" },
-      DEU: { name: "Alemanha", pop: "83 milhões", year: "2021", source: "Destatis" },
-      FRA: { name: "França", pop: "68 milhões", year: "2021", source: "INSEE" },
-      GBR: { name: "Reino Unido", pop: "67 milhões", year: "2021", source: "ONS" },
-      CHN: { name: "China", pop: "1,41 bilhão", year: "2021", source: "NBS" },
-      IND: { name: "Índia", pop: "1,39 bilhão", year: "2021", source: "Census India" },
-      JPN: { name: "Japão", pop: "125 milhões", year: "2021", source: "Statistics Bureau" },
-      AUS: { name: "Austrália", pop: "26 milhões", year: "2022", source: "ABS" },
-      ZAF: { name: "África do Sul", pop: "60 milhões", year: "2022", source: "Stats SA" }
+      <div id="countryInfo" style="margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line);">
+        <p style="color:var(--muted);">Selecione um país no mapa.</p>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- Bibliotecas D3 e TopoJSON -->
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  // --- DADOS BÁSICOS ---
+  const COUNTRIES = {
+    BRA: { name: "Brasil", pop: "203M", flag: "flag-br" },
+    USA: { name: "EUA", pop: "331M", flag: "flag-us" },
+    RUS: { name: "Rússia", pop: "146M", flag: "flag-ru" },
+    CHN: { name: "China", pop: "1.4B", flag: "flag-cn" },
+    ARG: { name: "Argentina", pop: "46M", flag: "flag-ar" },
+    ZAF: { name: "África do Sul", pop: "60M", flag: "flag-za" },
+    AUS: { name: "Austrália", pop: "26M", flag: "flag-au" },
+    GBR: { name: "Reino Unido", pop: "67M", flag: "flag-gb" }
+  };
+
+  // --- CONFIGURAÇÃO DO MAPA (D3) ---
+  const SIZE = 800, CX = 400, CY = 400, R = 372;
+  const proj = d3.geoAzimuthalEquidistant().rotate([0, -90]).scale(R / Math.PI).translate([CX, CY]).clipAngle(180);
+  const path = d3.geoPath(proj);
+  let mapPaths = new Map();
+
+  // --- CRIAÇÃO DOS PAÍSES ---
+  async function initMap() {
+    // Carrega os dados do mundo (Datamaps)
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/datamaps/0.5.9/datamaps.world.min.js';
+    script.onload = () => {
+      const topo = window.Datamap.prototype.worldTopo;
+      const obj = topo.objects.world;
+      const features = topojson.feature(topo, obj).features.filter(f => f.id !== 'ATA');
+      
+      const landGroup = d3.select("#landGroup");
+      
+      landGroup.selectAll("path")
+        .data(features)
+        .join("path")
+        .attr("class", "c")
+        .attr("d", path)
+        .attr("data-id", d => d.id)
+        .each(function(d) {
+          mapPaths.set(d.id, this);
+        })
+        .on("click", function(event, d) {
+          // Seleciona país
+          d3.selectAll(".c").classed("sel", false);
+          d3.select(this).classed("sel", true);
+          showInfo(d.id);
+        });
+        
+      // Inicia linha do tempo
+      setEra("cyrus");
     };
+    document.head.appendChild(script);
+  }
 
-    let rotation = 0;
-    let isRotating = false;
-    let rotateEnabled = false;
-    let startX = 0;
-    let startRotation = 0;
+  // --- ROTAÇÃO (Catraca) ---
+  let rotation = 0, isRotating = false, rotateEnabled = false, startX = 0, startRotation = 0;
+  const landGroup = document.getElementById("landGroup");
+  const mapWrap = document.getElementById("mapwrap");
 
-    const landGroup = document.getElementById("landGroup");
-    const mapWrap = document.getElementById("mapWrap");
-    const mapSvg = document.getElementById("mapSvg");
-    const countryInfo = document.getElementById("countryInfo");
+  function applyRotation() {
+    // Gira apenas o grupo da terra, o centro é 400,400
+    landGroup.setAttribute("transform", `rotate(${rotation} 400 400)`);
+  }
 
-    function applyRotation() {
-      landGroup.setAttribute("transform", `rotate(${rotation} 500 500)`);
-    }
+  document.getElementById("layerRotate").addEventListener("change", (e) => {
+    rotateEnabled = e.target.checked;
+    document.getElementById("btnRotate").style.background = rotateEnabled ? "var(--accent)" : "var(--panel)";
+  });
 
-    // ===== ROTAÇÃO =====
-    const btnRotate = document.getElementById("btnRotate");
-    const layerRotate = document.getElementById("layerRotate");
+  document.getElementById("btnRotate").addEventListener("click", () => {
+    const cb = document.getElementById("layerRotate");
+    cb.checked = !cb.checked;
+    cb.dispatchEvent(new Event("change"));
+  });
 
-    layerRotate.addEventListener("change", () => {
-      rotateEnabled = layerRotate.checked;
-      btnRotate.classList.toggle("active", rotateEnabled);
-    });
+  document.getElementById("btnReset").addEventListener("click", () => {
+    rotation = 0; applyRotation();
+  });
 
-    btnRotate.addEventListener("click", () => {
-      layerRotate.checked = !layerRotate.checked;
-      layerRotate.dispatchEvent(new Event("change"));
-    });
+  mapWrap.addEventListener("pointerdown", (e) => {
+    if (!rotateEnabled) return;
+    isRotating = true;
+    mapWrap.style.cursor = "grabbing";
+    startX = e.clientX;
+    startRotation = rotation;
+    mapWrap.setPointerCapture(e.pointerId);
+  });
 
-    document.getElementById("btnReset").addEventListener("click", () => {
-      rotation = 0;
-      applyRotation();
-    });
+  mapWrap.addEventListener("pointermove", (e) => {
+    if (!isRotating || !rotateEnabled) return;
+    const delta = (e.clientX - startX) * 0.5;
+    rotation = startRotation + delta;
+    applyRotation();
+  });
 
-    mapWrap.addEventListener("pointerdown", (e) => {
-      if (!rotateEnabled) return;
-      isRotating = true;
-      mapWrap.classList.add("grabbing");
-      startX = e.clientX;
-      startRotation = rotation;
-      mapWrap.setPointerCapture(e.pointerId);
-    });
+  mapWrap.addEventListener("pointerup", () => {
+    isRotating = false;
+    mapWrap.style.cursor = "grab";
+  });
 
-    mapWrap.addEventListener("pointermove", (e) => {
-      if (!isRotating || !rotateEnabled) return;
-      const delta = (e.clientX - startX) * 0.55;
-      rotation = startRotation + delta;
-      applyRotation();
-    });
-
-    mapWrap.addEventListener("pointerup", () => {
-      isRotating = false;
-      mapWrap.classList.remove("grabbing");
-    });
-
-    mapWrap.addEventListener("pointercancel", () => {
-      isRotating = false;
-      mapWrap.classList.remove("grabbing");
-    });
-
-    // ===== BANDEIRAS (preenchimento) =====
-    const layerFlags = document.getElementById("layerFlags");
-
-    layerFlags.addEventListener("change", () => {
-      const on = layerFlags.checked;
-      mapSvg.classList.toggle("flags-on", on);
-
-      document.querySelectorAll(".c").forEach(el => {
-        if (on) {
-          const flagId = el.dataset.flag;
-          if (flagId) {
-            el.style.fill = `url(#${flagId})`;
-          }
-        } else {
-          el.style.fill = "";
-        }
-      });
-    });
-
-    // ===== SELEÇÃO =====
-    document.querySelectorAll(".c").forEach(el => {
-      el.addEventListener("click", (e) => {
-        if (isRotating) return;
-        document.querySelectorAll(".c").forEach(c => c.classList.remove("sel"));
-        el.classList.add("sel");
-        const id = el.dataset.id;
-        const data = countries[id];
-        if (data) {
-          countryInfo.innerHTML = `
-            <h2>${data.name}</h2>
-            <div class="info-row"><span>População</span><span>${data.pop}</span></div>
-            <div class="info-row"><span>Ano</span><span>${data.year}</span></div>
-            <div class="info-row"><span>Fonte</span><span>${data.source}</span></div>
-          `;
-        }
-      });
-    });
-
-    // ===== BUSCA =====
-    document.getElementById("searchInput").addEventListener("input", (e) => {
-      const term = e.target.value.toLowerCase().trim();
-      if (!term) return;
-      const found = Object.entries(countries).find(([_, d]) => d.name.toLowerCase().includes(term));
-      if (found) {
-        const [id] = found;
-        document.querySelectorAll(".c").forEach(c => c.classList.remove("sel"));
-        const el = document.querySelector(`.c[data-id="${id}"]`);
-        if (el) {
-          el.classList.add("sel");
-          el.dispatchEvent(new Event("click"));
-        }
+  // --- BANDEIRAS ---
+  document.getElementById("layerFlags").addEventListener("change", (e) => {
+    const on = e.target.checked;
+    mapPaths.forEach((el, id) => {
+      const data = COUNTRIES[id];
+      if (on && data && data.flag) {
+        el.style.fill = `url(#${data.flag})`;
+      } else {
+        el.style.fill = ""; // Volta para a cor padrão do CSS
       }
     });
-  </script>
+  });
+
+  // --- GRADE VISUAL ---
+  document.getElementById("layerGrid").addEventListener("change", (e) => {
+    document.getElementById("gridLayer").style.display = e.target.checked ? "" : "none";
+  });
+
+  // --- BUSCA ---
+  document.getElementById("searchInput").addEventListener("input", (e) => {
+    const term = e.target.value.toLowerCase();
+    if(!term) return;
+    for (const [id, data] of Object.entries(COUNTRIES)) {
+      if (data.name.toLowerCase().includes(term)) {
+        d3.selectAll(".c").classed("sel", false);
+        const el = mapPaths.get(id);
+        if (el) {
+          d3.select(el).classed("sel", true);
+          showInfo(id);
+        }
+        break;
+      }
+    }
+  });
+
+  // --- PAINEL DE INFORMAÇÕES ---
+  function showInfo(id) {
+    const data = COUNTRIES[id];
+    const box = document.getElementById("countryInfo");
+    if (data) {
+      box.innerHTML = `
+        <h2 style="font-family:var(--f-display); font-size:24px; margin-bottom:8px;">${data.name}</h2>
+        <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--line); font-size:14px;"><span>População</span><span style="color:var(--accent); font-family:var(--f-mono);">${data.pop}</span></div>
+      `;
+    } else {
+      box.innerHTML = `<h2 style="font-family:var(--f-display); font-size:24px; margin-bottom:8px;">${id}</h2><p style="color:var(--muted); font-size:13px;">Dados detalhados em breve.</p>`;
+    }
+  }
+
+  // --- LINHA DO TEMPO (Lógica simplificada) ---
+  const ERAS = {
+    cyrus: { min: -550, max: -530, value: -550, desc: "Império Aquemênida.", t: ["IRN","IRQ","TUR","SYR","LBN","ISR","JOR","AFG","PAK","ARM","AZE","GEO","TKM","UZB","TJK","KGZ","KAZ"] },
+    alexander: { min: -336, max: -323, value: -330, desc: "Expansão de Alexandre.", t: ["GRC","MKD","ALB","BGR","TUR","CYP","EGY","LBY","ISR","PSE","LBN","SYR","JOR","IRQ","IRN","AFG","PAK","ARM","AZE","GEO","TKM","UZB","TJK"] },
+    caesar: { min: -100, max: -44, value: -50, desc: "República Romana.", t: ["ITA","FRA","ESP","PRT","GRC","ALB","HRV","BIH","MNE","SVN","AUT","CHE","BEL","NLD","LUX","DEU","GBR","TUR","CYP","MLT","TUN","DZA","MAR","EGY","LBY","ISR","PSE","LBN","SYR","JOR","IRQ"] },
+    christ: { min: -4, max: 33, value: 1, desc: "Império Romano.", t: ["ITA","FRA","ESP","PRT","GRC","ALB","HRV","BIH","MNE","SVN","AUT","CHE","BEL","NLD","LUX","DEU","GBR","TUR","CYP","MLT","TUN","DZA","MAR","EGY","LBY","ISR","PSE","LBN","SYR","JOR","IRQ","SAU"] },
+    napoleon: { min: 1804, max: 1815, value: 1812, desc: "Império Francês.", t: ["FRA","ESP","PRT","BEL","NLD","LUX","DEU","ITA","CHE","AUT","CZE","SVK","POL","SVN","HRV","BIH","MNE","ALB","DNK","NOR","SWE","HUN","ROU","BGR","GRC"] },
+    hitler: { min: 1933, max: 1945, value: 1942, desc: "Europa ocupada.", t: ["DEU","AUT","POL","CZE","SVK","FRA","BEL","NLD","LUX","DNK","NOR","EST","LVA","LTU","BLR","UKR","MDA","ROU","HUN","SRB","GRC","ALB","HRV","BIH","MNE","SVN"] },
+    current: { min: 2026, max: 2026, value: 2026, desc: "Mapa político atual.", t: [] }
+  };
+
+  function setEra(id) {
+    const e = ERAS[id];
+    document.querySelectorAll("#eraButtons button").forEach(b => b.setAttribute("aria-pressed", b.dataset.era === id ? "true" : "false"));
+    const slider = document.getElementById("yearSlider");
+    slider.min = e.min; slider.max = e.max; slider.value = e.value;
+    slider.disabled = e.min === e.max;
+    updateTimeline(id);
+  }
+
+  function updateTimeline(id) {
+    const y = Number(document.getElementById("yearSlider").value);
+    document.getElementById("yearOutput").textContent = y < 0 ? Math.abs(y) + " a.C." : y + " d.C.";
+    document.getElementById("eraDescription").textContent = ERAS[id].desc;
+    
+    const territories = ERAS[id].t;
+    mapPaths.forEach((el, cid) => {
+      if (cid === "ATA") return;
+      el.classList.toggle("historical", id !== "current" && territories.includes(cid));
+    });
+  }
+
+  document.getElementById("eraButtons").addEventListener("click", (ev) => {
+    const b = ev.target.closest("button[data-era]"); if (b) setEra(b.dataset.era);
+  });
+  document.getElementById("yearSlider").addEventListener("input", () => updateTimeline(document.querySelector('#eraButtons button[aria-pressed="true"]').dataset.era));
+
+  // Inicialização
+  initMap();
+})();
+</script>
 </body>
 </html>
