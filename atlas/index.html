@@ -74,4 +74,377 @@
       user-select: none;
       touch-action: none;
     }
-    .mapwrap.grabbing { cursor: grabbing;
+    .mapwrap.grabbing { cursor: grabbing; }
+
+    #mapSvg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    #landGroup {
+      transform-origin: 50% 50%;
+    }
+
+    .sea { fill: var(--sea); }
+    .c {
+      fill: var(--land);
+      stroke: #2a1d3a;
+      stroke-width: 0.6;
+      cursor: pointer;
+      transition: fill 0.15s;
+    }
+    .c:hover { fill: #5a3f7a; }
+    .c.sel { stroke: var(--sel); stroke-width: 2.2; }
+
+    .map-controls {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      z-index: 10;
+    }
+    .map-controls button {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--ink);
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .map-controls button:hover { border-color: var(--accent); }
+    .map-controls button.active {
+      background: var(--accent);
+      color: var(--on-accent);
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 18px;
+    }
+
+    .layerbox {
+      margin-top: 16px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--soft);
+    }
+    .layerhead {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      font-family: var(--f-mono);
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .layergrid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+    .layeritem {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 9px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .layeritem input { accent-color: var(--accent); }
+
+    .search input {
+      width: 100%;
+      padding: 11px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: var(--bg);
+      color: var(--ink);
+      font: inherit;
+      margin-top: 6px;
+    }
+
+    #countryInfo {
+      margin-top: 18px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+    }
+    #countryInfo h2 {
+      font-family: var(--f-display);
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--line);
+      font-size: 14px;
+    }
+    .info-row span:last-child { color: var(--accent); font-family: var(--f-mono); }
+
+    .note {
+      margin-top: 16px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>MAPA LUCIFERIANO</h1>
+    <p class="lede">
+      Um único mapa multicamadas. Gire o disco terrestre independentemente.
+      Ative ou desative camadas como em um editor gráfico.
+    </p>
+
+    <div class="layout">
+      <div class="mapcol">
+        <div class="mapwrap" id="mapWrap">
+          <svg id="mapSvg" viewBox="0 0 1000 1000">
+            <circle class="sea" cx="500" cy="500" r="490" />
+
+            <!-- GRUPO QUE GIRA -->
+            <g id="landGroup">
+              <path class="c" data-id="BRA" data-name="Brasil" d="M620,680 Q640,720 610,760 Q580,780 550,750 Q530,720 560,690 Z" />
+              <path class="c" data-id="USA" data-name="Estados Unidos" d="M280,380 Q320,360 360,390 Q340,430 300,420 Q270,400 280,380 Z" />
+              <path class="c" data-id="RUS" data-name="Rússia" d="M620,280 Q720,260 780,320 Q740,360 680,340 Q640,310 620,280 Z" />
+              <path class="c" data-id="CHN" data-name="China" d="M700,420 Q740,400 770,440 Q750,470 710,460 Q690,440 700,420 Z" />
+              <path class="c" data-id="IND" data-name="Índia" d="M680,500 Q700,530 680,560 Q660,540 680,500 Z" />
+              <path class="c" data-id="AUS" data-name="Austrália" d="M780,720 Q820,700 840,740 Q810,760 780,720 Z" />
+              <path class="c" data-id="ZAF" data-name="África do Sul" d="M520,780 Q540,800 520,820 Q500,800 520,780 Z" />
+              <path class="c" data-id="DEU" data-name="Alemanha" d="M480,340 Q500,330 510,350 Q495,360 480,340 Z" />
+              <path class="c" data-id="FRA" data-name="França" d="M450,360 Q470,350 475,375 Q460,380 450,360 Z" />
+              <path class="c" data-id="JPN" data-name="Japão" d="M820,400 Q835,390 840,410 Q825,415 820,400 Z" />
+            </g>
+
+            <g id="flagsLayer" style="display:none;"></g>
+            <g id="popLayer" style="display:none;"></g>
+
+            <circle cx="500" cy="500" r="6" fill="#c2a0ef" />
+            <text x="500" y="30" text-anchor="middle" fill="#b7a5cb" font-size="12" font-family="IBM Plex Mono">N</text>
+          </svg>
+
+          <div class="map-controls">
+            <button id="btnRotate" title="Ativar rotação do disco">⟳</button>
+            <button id="btnReset" title="Resetar rotação">↺</button>
+          </div>
+        </div>
+        <p style="text-align:center; margin-top:10px; font-size:13px; color:var(--muted);">
+          Ative "Girar disco" e arraste o mapa para girar apenas a terra
+        </p>
+      </div>
+
+      <div class="panel">
+        <div>
+          <label style="font-size:12px; font-family:var(--f-mono); color:var(--muted); text-transform:uppercase; letter-spacing:0.06em;">Buscar país</label>
+          <div class="search">
+            <input type="text" id="searchInput" placeholder="Digite o nome do país..." />
+          </div>
+        </div>
+
+        <div class="layerbox">
+          <div class="layerhead">
+            <strong>Camadas</strong>
+            <span>ligar / desligar</span>
+          </div>
+          <div class="layergrid">
+            <label class="layeritem">
+              <input type="checkbox" id="layerFlags" />
+              <span>Bandeiras</span>
+            </label>
+            <label class="layeritem">
+              <input type="checkbox" id="layerPop" />
+              <span>População</span>
+            </label>
+            <label class="layeritem">
+              <input type="checkbox" id="layerRotate" />
+              <span>Girar disco</span>
+            </label>
+          </div>
+        </div>
+
+        <div id="countryInfo">
+          <p style="color:var(--muted);">Selecione um país no mapa ou busque pelo nome.</p>
+        </div>
+
+        <p class="note">
+          Versão com rotação independente do disco terrestre, camada de bandeiras e população.
+          As subdivisões (estados) serão adicionadas país por país.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const countries = {
+      BRA: { name: "Brasil", pop: "203 milhões", year: "2022", source: "IBGE", flag: "https://flagcdn.com/w40/br.png", cx: 580, cy: 720 },
+      USA: { name: "Estados Unidos", pop: "331 milhões", year: "2020", source: "US Census", flag: "https://flagcdn.com/w40/us.png", cx: 320, cy: 400 },
+      RUS: { name: "Rússia", pop: "146 milhões", year: "2021", source: "Rosstat", flag: "https://flagcdn.com/w40/ru.png", cx: 700, cy: 310 },
+      CHN: { name: "China", pop: "1,41 bilhão", year: "2021", source: "NBS China", flag: "https://flagcdn.com/w40/cn.png", cx: 735, cy: 430 },
+      IND: { name: "Índia", pop: "1,39 bilhão", year: "2021", source: "Census India", flag: "https://flagcdn.com/w40/in.png", cx: 690, cy: 530 },
+      AUS: { name: "Austrália", pop: "26 milhões", year: "2022", source: "ABS", flag: "https://flagcdn.com/w40/au.png", cx: 810, cy: 730 },
+      ZAF: { name: "África do Sul", pop: "60 milhões", year: "2022", source: "Stats SA", flag: "https://flagcdn.com/w40/za.png", cx: 520, cy: 800 },
+      DEU: { name: "Alemanha", pop: "83 milhões", year: "2021", source: "Destatis", flag: "https://flagcdn.com/w40/de.png", cx: 495, cy: 345 },
+      FRA: { name: "França", pop: "68 milhões", year: "2021", source: "INSEE", flag: "https://flagcdn.com/w40/fr.png", cx: 462, cy: 365 },
+      JPN: { name: "Japão", pop: "125 milhões", year: "2021", source: "Statistics Bureau", flag: "https://flagcdn.com/w40/jp.png", cx: 830, cy: 405 }
+    };
+
+    let rotation = 0;
+    let isRotating = false;
+    let rotateEnabled = false;
+    let startX = 0;
+    let startRotation = 0;
+    let selectedId = null;
+
+    const landGroup = document.getElementById("landGroup");
+    const mapWrap = document.getElementById("mapWrap");
+    const flagsLayer = document.getElementById("flagsLayer");
+    const popLayer = document.getElementById("popLayer");
+    const countryInfo = document.getElementById("countryInfo");
+
+    function applyRotation() {
+      landGroup.setAttribute("transform", `rotate(${rotation} 500 500)`);
+    }
+
+    // Ativar/desativar rotação
+    document.getElementById("layerRotate").addEventListener("change", (e) => {
+      rotateEnabled = e.target.checked;
+      document.getElementById("btnRotate").classList.toggle("active", rotateEnabled);
+    });
+
+    document.getElementById("btnRotate").addEventListener("click", () => {
+      const cb = document.getElementById("layerRotate");
+      cb.checked = !cb.checked;
+      cb.dispatchEvent(new Event("change"));
+    });
+
+    document.getElementById("btnReset").addEventListener("click", () => {
+      rotation = 0;
+      applyRotation();
+    });
+
+    // Arrastar para girar
+    mapWrap.addEventListener("pointerdown", (e) => {
+      if (!rotateEnabled) return;
+      isRotating = true;
+      mapWrap.classList.add("grabbing");
+      startX = e.clientX;
+      startRotation = rotation;
+      mapWrap.setPointerCapture(e.pointerId);
+    });
+
+    mapWrap.addEventListener("pointermove", (e) => {
+      if (!isRotating || !rotateEnabled) return;
+      const delta = (e.clientX - startX) * 0.45;
+      rotation = startRotation + delta;
+      applyRotation();
+    });
+
+    mapWrap.addEventListener("pointerup", () => {
+      isRotating = false;
+      mapWrap.classList.remove("grabbing");
+    });
+
+    // Bandeiras
+    function renderFlags() {
+      flagsLayer.innerHTML = "";
+      Object.entries(countries).forEach(([id, data]) => {
+        const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        g.setAttribute("transform", `translate(${data.cx - 9}, ${data.cy - 6})`);
+        const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
+        img.setAttribute("href", data.flag);
+        img.setAttribute("width", "18");
+        img.setAttribute("height", "12");
+        g.appendChild(img);
+        flagsLayer.appendChild(g);
+      });
+    }
+
+    // População
+    function renderPop() {
+      popLayer.innerHTML = "";
+      Object.entries(countries).forEach(([id, data]) => {
+        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        text.setAttribute("x", data.cx);
+        text.setAttribute("y", data.cy + 18);
+        text.setAttribute("text-anchor", "middle");
+        text.setAttribute("fill", "#fff");
+        text.setAttribute("font-size", "10");
+        text.setAttribute("font-family", "IBM Plex Mono");
+        text.textContent = data.pop.split(" ")[0];
+        popLayer.appendChild(text);
+      });
+    }
+
+    document.getElementById("layerFlags").addEventListener("change", (e) => {
+      flagsLayer.style.display = e.target.checked ? "block" : "none";
+      if (e.target.checked) renderFlags();
+    });
+
+    document.getElementById("layerPop").addEventListener("change", (e) => {
+      popLayer.style.display = e.target.checked ? "block" : "none";
+      if (e.target.checked) renderPop();
+    });
+
+    // Seleção de país
+    document.querySelectorAll(".c").forEach(el => {
+      el.addEventListener("click", () => {
+        document.querySelectorAll(".c").forEach(c => c.classList.remove("sel"));
+        el.classList.add("sel");
+        selectedId = el.dataset.id;
+        showCountryInfo(selectedId);
+      });
+    });
+
+    function showCountryInfo(id) {
+      const data = countries[id];
+      if (!data) return;
+      countryInfo.innerHTML = `
+        <h2>${data.name}</h2>
+        <div class="info-row"><span>População</span><span>${data.pop}</span></div>
+        <div class="info-row"><span>Ano</span><span>${data.year}</span></div>
+        <div class="info-row"><span>Fonte</span><span>${data.source}</span></div>
+      `;
+    }
+
+    // Busca
+    document.getElementById("searchInput").addEventListener("input", (e) => {
+      const term = e.target.value.toLowerCase().trim();
+      if (!term) return;
+      const found = Object.entries(countries).find(([id, data]) => 
+        data.name.toLowerCase().includes(term)
+      );
+      if (found) {
+        const [id] = found;
+        document.querySelectorAll(".c").forEach(c => c.classList.remove("sel"));
+        const el = document.querySelector(`.c[data-id="${id}"]`);
+        if (el) {
+          el.classList.add("sel");
+          showCountryInfo(id);
+        }
+      }
+    });
+
+    // Inicializa
+    renderFlags();
+    renderPop();
+  </script>
+</body>
+</html>
