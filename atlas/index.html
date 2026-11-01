@@ -1,1048 +1,363 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
-/* Camadas: painel expansível inspirado em editores gráficos */
-.layerbox{margin:12px 0 0;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
-.layerhead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
-.layerhead strong{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase}
-.layerhead span{font-size:11px;color:var(--muted)}
-.layergrid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-.layeritem{display:flex;align-items:center;gap:8px;padding:7px 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);font-size:12px;min-width:0}
-.layeritem input{accent-color:var(--accent);margin:0;flex:0 0 auto}
-.layeritem .swatch{width:10px;height:10px;border-radius:3px;background:var(--swatch,var(--accent));flex:0 0 auto}
-.layeritem small{margin-left:auto;color:var(--muted);font-size:10px;white-space:nowrap}
-.layeritem.pending{opacity:.62}
-.layerdetails{margin-top:8px;border-top:1px solid var(--line);padding-top:8px}
-.layerdetails summary{cursor:pointer;color:var(--muted);font-size:12px}
-.layerdetails p{font-size:11px;color:var(--muted);margin:7px 0 0}
-.sky-stars{pointer-events:none}.sky-grid{fill:none;stroke:var(--accent);stroke-opacity:.25;stroke-width:.8;stroke-dasharray:3 4;vector-effect:non-scaling-stroke;pointer-events:none}
-.sky-constellation{fill:none;stroke:#24a6c6;stroke-width:1.8;stroke-opacity:.9;vector-effect:non-scaling-stroke;pointer-events:none}
-.sky-star{fill:#d4a83d;stroke:var(--panel);stroke-width:1.2;vector-effect:non-scaling-stroke;pointer-events:none}
-.sky-star.crux{fill:#24a6c6}.sky-label{font-family:var(--f-mono);font-size:10px;fill:var(--ink);paint-order:stroke;stroke:var(--sea);stroke-width:3px;stroke-linejoin:round;pointer-events:none}
-.maplayer-hidden{display:none!important}
-.geo-rays line{stroke:#9fc7ff;stroke-opacity:.34;stroke-width:1;vector-effect:non-scaling-stroke}
-.geo-rays line.major{stroke:#d7e8ff;stroke-opacity:.72;stroke-width:1.5}
-.geo-cross line{stroke:#f4f1df;stroke-width:1.8;stroke-opacity:.95;vector-effect:non-scaling-stroke}
-.geo-square polygon{fill:none;stroke:#e7b85c;stroke-width:2;stroke-opacity:.78;vector-effect:non-scaling-stroke}
-.geo-star polygon{fill:none;stroke:#8cff48;stroke-width:2;stroke-opacity:.78;vector-effect:non-scaling-stroke}
-.geo-vertex{fill:#101a2b;stroke:#e7f4ff;stroke-width:1.6;vector-effect:non-scaling-stroke}
-.geo-number{font:600 12px var(--f-mono);fill:#fff2c9;paint-order:stroke;stroke:#101a2b;stroke-width:3px;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>MAPA LUCIFERIANO — Atlas Multicamadas</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Young+Serif&display=swap">
+  <style>
+    :root {
+      --bg: #0f0a14;
+      --panel: #1a1224;
+      --soft: #2a1d3a;
+      --ink: #f1e8fc;
+      --muted: #b7a5cb;
+      --line: #49345e;
+      --sea: #1a1228;
+      --land: #3d2d52;
+      --accent: #c2a0ef;
+      --on-accent: #1a1224;
+      --sel: #f0b5ff;
+      --f-display: "Young Serif", Georgia, serif;
+      --f-body: "Hanken Grotesk", system-ui, sans-serif;
+      --f-mono: "IBM Plex Mono", ui-monospace, monospace;
+    }
 
-.atlas-borders-off .c{display:none!important}
-.atlas-historical-off .c.historical{fill:var(--land)!important}
-@media(max-width:560px){.layergrid{grid-template-columns:1fr 1fr}.layeritem{font-size:11px;padding:6px}}
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--f-body);
+      font-size: 15px;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
 
-</style></head><body>
-<title>Atlas Polar</title>
-<meta name="claude:viewport-fit-sides" content="cover">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Young+Serif&display=swap">
-<style>
-/* Layout: mapa circular fixo à esquerda (visto do Polo Norte), painel do país à direita. */
-:root {
-  --bg: #f7f3fc;
-  --panel: #ffffff;
-  --soft: #eee5fa;
-  --ink: #26183b;
-  --muted: #756487;
-  --line: #d9cce9;
-  --sea: #e8def6;
-  --land: #c9b8df;
-  --n1: #b9a0dc;
-  --n2: #9670c8;
-  --n3: #7043a5;
-  --ice: #fcfaff;
-  --edge: #f7f3fc;
-  --sel: #e0a0ff;
-  --accent: #7043a5;
-  --on-accent: #ffffff;
-  --danger: #b3261e;
-  --f-display: "Young Serif", Georgia, "Times New Roman", serif;
-  --f-body: "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #171020; --panel: #21172e; --soft: #30213f; --ink: #f1e8fc; --muted: #b7a5cb;
-    --line: #49345e; --sea: #211630; --land: #514064; --n1: #6e5290; --n2: #9871c4; --n3: #c2a0ef;
-    --ice: #d9c9ee; --edge: #171020; --sel: #f0b5ff; --accent: #c2a0ef; --on-accent: #21172e;
-    --danger: #ff8f86; color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #171020; --panel: #21172e; --soft: #30213f; --ink: #f1e8fc; --muted: #b7a5cb;
-  --line: #49345e; --sea: #211630; --land: #514064; --n1: #6e5290; --n2: #9871c4; --n3: #c2a0ef;
-  --ice: #d9c9ee; --edge: #171020; --sel: #f0b5ff; --accent: #c2a0ef; --on-accent: #21172e;
-  --danger: #ff8f86; color-scheme: dark;
-}
+    .wrap {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px 16px 40px;
+    }
 
-* { box-sizing: border-box; }
-body {
-  background: var(--bg); color: var(--ink);
-  font-family: var(--f-body); font-size: 15px; line-height: 1.5;
-}
-.wrap {
-  max-width: 1280px; margin: 0 auto;
-  padding-block: 20px 40px;
-  padding-left: max(16px, env(safe-area-inset-left, 0px));
-  padding-right: max(16px, env(safe-area-inset-right, 0px));
-}
-.top { display: flex; flex-wrap: wrap; gap: 8px 32px; align-items: end; justify-content: space-between; margin-bottom: 20px; }
-.top > div { min-width: 0; flex: 1 1 420px; }
-h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw, 40px); line-height: 1.1; margin: 0 0 6px; text-wrap: balance; }
-.lede { margin: 0; color: var(--muted); max-width: 62ch; }
-.stats { margin: 0; font-family: var(--f-mono); font-size: 13px; color: var(--muted); }
+    h1 {
+      font-family: var(--f-display);
+      font-weight: 400;
+      font-size: clamp(26px, 4vw, 36px);
+      margin-bottom: 6px;
+    }
 
-.layout { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 28px; align-items: start; }
-.mapcol { position: sticky; top: 16px; min-width: 0; }
-.mapwrap { position: relative; width: min(100%, calc(100vh - 100px)); margin: 0 auto; }
-#map { display: block; width: 100%; height: auto; touch-action: auto !important; user-select: none; -webkit-user-select: none; }
-.sea { fill: var(--sea); }
-.grat { fill: none; stroke: var(--ink); stroke-opacity: .13; stroke-width: .6; vector-effect: non-scaling-stroke; pointer-events: none; }
-.rim { fill: none; stroke: var(--line); stroke-width: 1.5; pointer-events: none; }
-.c { fill: var(--land); stroke: var(--edge); stroke-width: .7; vector-effect: non-scaling-stroke; cursor: pointer; }
-.c.ring { fill: var(--ice); stroke: var(--line); }
-.c[data-b="1"] { fill: var(--n1); }
-.c[data-b="2"] { fill: var(--n2); }
-.c[data-b="3"] { fill: var(--n3); }
-.c.nopick { cursor: default; }
-.c:hover { stroke: var(--ink); stroke-width: 1.4; }
-.c.sel { stroke: var(--sel); stroke-width: 2.6; }
-.lbl { font-family: var(--f-mono); font-size: 9.5px; fill: var(--muted); paint-order: stroke; stroke: var(--sea); stroke-width: 3px; stroke-linejoin: round; pointer-events: none; }
-.ringtxt { font-family: var(--f-mono); font-size: 9px; letter-spacing: .38em; fill: var(--muted); pointer-events: none; }
-.pole { fill: var(--ink); pointer-events: none; }
-.tip { position: absolute; z-index: 5; pointer-events: none; background: var(--ink); color: var(--bg); font-size: 13px; padding: 4px 9px; border-radius: 6px; white-space: nowrap; }
-.zoomctl { position: absolute; right: 4px; top: 4px; display: flex; flex-direction: column; gap: 4px; }
-.zoomctl button { width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font: 600 17px/1 var(--f-body); cursor: pointer; }
-.zoomctl button:hover { border-color: var(--accent); }
-.mapnote { margin: 8px 0 0; text-align: center; font-size: 13px; color: var(--muted); }
-.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; justify-content: center; margin: 10px 0 0; padding: 0; list-style: none; font-size: 12.5px; color: var(--muted); }
-.legend li { display: flex; align-items: center; gap: 6px; }
-.legend i { width: 14px; height: 14px; border-radius: 3px; border: 1px solid var(--line); display: block; }
+    .lede { color: var(--muted); margin-bottom: 20px; max-width: 70ch; }
 
-.panel { min-width: 0; }
-.search { position: relative; }
-.search label { display: block; font-size: 12px; font-family: var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
-.search input { width: 100%; font: inherit; padding: 11px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); }
-input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.res { margin: 6px 0 0; padding: 4px; list-style: none; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
-.res button { width: 100%; display: flex; justify-content: space-between; gap: 12px; text-align: left; padding: 8px 10px; border: 0; border-radius: 7px; background: transparent; color: var(--ink); font: inherit; cursor: pointer; }
-.res button:hover, .res button:focus-visible { background: var(--soft); }
-.res .none { padding: 8px 10px; color: var(--muted); margin: 0; }
-.n { font-family: var(--f-mono); font-size: 12px; color: var(--muted); }
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(300px, 1fr);
+      gap: 24px;
+      align-items: start;
+    }
 
-#view { margin-top: 22px; }
-h2 { font-family: var(--f-display); font-weight: 400; font-size: 26px; line-height: 1.15; margin: 0 0 6px; text-wrap: balance; }
-h3 { margin: 0; font-size: 15px; }
-.hint { color: var(--muted); margin: 0 0 18px; max-width: 56ch; }
-.eyebrow { font-family: var(--f-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 22px 0 10px; }
-.chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
-.chip { display: inline-flex; gap: 8px; align-items: baseline; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font: inherit; font-size: 14px; cursor: pointer; }
-.chip:hover { border-color: var(--accent); }
-.empty { color: var(--muted); margin: 0; }
-.back { border: 0; background: none; padding: 0; margin-bottom: 14px; color: var(--accent); font: inherit; font-weight: 600; cursor: pointer; }
-.ccount { margin: 0 0 14px; font-family: var(--f-mono); font-size: 13px; color: var(--muted); }
-.cats { display: flex; flex-direction: column; }
-.cat { padding: 16px 0; border-top: 1px solid var(--line); }
-.cat:last-child { border-bottom: 1px solid var(--line); }
-.cat-name { font-family: var(--f-display); font-weight: 400; font-size: 19px; margin: 0 0 6px; }
-.cat-text { margin: 0 0 10px; white-space: pre-wrap; overflow-wrap: anywhere; max-width: 66ch; }
-.cat-meta { margin: 0; display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; font-family: var(--f-mono); font-size: 12px; color: var(--muted); }
-.linkbtn { border: 0; background: none; padding: 0; font: inherit; color: var(--accent); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
-.linkbtn.danger { color: var(--danger); }
-.add, .editform { margin-top: 22px; padding: 16px; border-radius: 12px; background: var(--soft); display: flex; flex-direction: column; gap: 10px; }
-.editform { margin-top: 0; background: var(--soft); }
-.add label, .editform label { font-size: 13px; font-weight: 600; }
-.add input, .add textarea, .editform input, .editform textarea { width: 100%; font: inherit; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); resize: vertical; }
-.sug { display: flex; flex-wrap: wrap; gap: 6px; }
-.sug button { padding: 3px 10px; border-radius: 999px; border: 1px dashed var(--muted); background: transparent; color: var(--muted); font: inherit; font-size: 13px; cursor: pointer; }
-.sug button:hover { color: var(--ink); border-color: var(--ink); }
-.btn { align-self: flex-start; padding: 9px 18px; border-radius: 9px; border: 0; background: var(--accent); color: var(--on-accent); font: inherit; font-weight: 600; cursor: pointer; }
-.btn:disabled { opacity: .55; cursor: default; }
-.btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
-.row { display: flex; flex-wrap: wrap; gap: 8px; }
-.err { margin: 0; color: var(--danger); font-size: 13.5px; }
-.note { margin-top: 22px; padding: 12px 14px; border-radius: 10px; background: var(--soft); color: var(--muted); font-size: 14px; }
+    @media (max-width: 980px) {
+      .layout { grid-template-columns: 1fr; }
+    }
 
+    /* ===== MAPA ===== */
+    .mapcol { position: sticky; top: 12px; }
+    .mapwrap {
+      position: relative;
+      width: 100%;
+      max-width: 640px;
+      margin: 0 auto;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      overflow: hidden;
+      background: var(--sea);
+      border: 1px solid var(--line);
+      cursor: grab;
+      user-select: none;
+      touch-action: none;
+    }
+    .mapwrap.grabbing { cursor: grabbing; }
 
-/* Linha do tempo histórica */
-.timeline { margin: 16px 0 4px; padding: 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); }
-.timeline h3 { font-family: var(--f-display); font-size: 18px; font-weight: 400; margin: 0 0 4px; }
-.timeline p { margin: 0; color: var(--muted); font-size: 12.5px; }
-.era-buttons { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
-.era-buttons button { border: 1px solid var(--line); border-radius: 999px; padding: 6px 10px; background: var(--soft); color: var(--ink); font: inherit; font-size: 12px; cursor: pointer; }
-.era-buttons button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
-.timeline .yearline { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin: 8px 0 2px; }
-.timeline output { color: var(--accent); font-family: var(--f-mono); font-weight: 600; }
-.timeline input[type="range"] { width: 100%; accent-color: var(--accent); margin: 8px 0; }
-.timeline .historical-note { margin-top: 8px; font-size: 11.5px; }
-.c.historical { fill: var(--hist, #8b5fc7) !important; stroke: var(--edge); }
-:root { --hist: #8b5fc7; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --hist: #c2a0ef; } }
-:root[data-theme="dark"] { --hist: #c2a0ef; }
+    #mapSvg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
 
-@media (max-width: 979px) {
-  .layout { grid-template-columns: minmax(0, 1fr); gap: 18px; }
-  .mapcol { position: static; }
-  .mapwrap { width: 100%; }
-}
-@media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
-</style>
+    /* Grupo que gira (apenas a terra) */
+    #landGroup {
+      transform-origin: 50% 50%;
+      transition: transform 0.05s linear;
+    }
 
-<div class="wrap">
-  <header class="top">
-    <div>
-      <h1>Atlas Polar</h1>
-      <p class="lede">Um único mapa por camadas: território, céu, tempo e informação. Ligue e desligue referências como em um editor gráfico; cada camada pode crescer do macro ao micro.</p>
+    .sea { fill: var(--sea); }
+    .c {
+      fill: var(--land);
+      stroke: #2a1d3a;
+      stroke-width: 0.6;
+      cursor: pointer;
+      transition: fill 0.15s;
+    }
+    .c:hover { fill: #5a3f7a; }
+    .c.sel { stroke: var(--sel); stroke-width: 2.2; }
+
+    .flag-marker {
+      pointer-events: none;
+    }
+    .flag-marker image {
+      width: 18px;
+      height: 12px;
+      opacity: 0.9;
+    }
+
+    .pop-label {
+      font-family: var(--f-mono);
+      font-size: 9px;
+      fill: #fff;
+      paint-order: stroke;
+      stroke: #000;
+      stroke-width: 2.5px;
+      pointer-events: none;
+    }
+
+    /* Controles de zoom e rotação */
+    .map-controls {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      z-index: 10;
+    }
+    .map-controls button {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--ink);
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .map-controls button:hover { border-color: var(--accent); }
+    .map-controls button.active {
+      background: var(--accent);
+      color: var(--on-accent);
+    }
+
+    /* ===== PAINEL ===== */
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 18px;
+    }
+
+    .layerbox {
+      margin-top: 16px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--soft);
+    }
+    .layerhead {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      font-family: var(--f-mono);
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .layergrid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+    .layeritem {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 9px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .layeritem input { accent-color: var(--accent); }
+    .layeritem small {
+      margin-left: auto;
+      font-size: 10px;
+      color: var(--muted);
+    }
+
+    .search input {
+      width: 100%;
+      padding: 11px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: var(--bg);
+      color: var(--ink);
+      font: inherit;
+      margin-top: 6px;
+    }
+
+    #countryInfo {
+      margin-top: 18px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+    }
+    #countryInfo h2 {
+      font-family: var(--f-display);
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--line);
+      font-size: 14px;
+    }
+    .info-row span:last-child { color: var(--accent); font-family: var(--f-mono); }
+
+    .btn {
+      display: inline-block;
+      padding: 9px 18px;
+      border-radius: 9px;
+      border: none;
+      background: var(--accent);
+      color: var(--on-accent);
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 12px;
+    }
+    .btn.ghost {
+      background: transparent;
+      border: 1px solid var(--line);
+      color: var(--ink);
+    }
+
+    .note {
+      margin-top: 16px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>MAPA LUCIFERIANO</h1>
+    <p class="lede">
+      Um único mapa multicamadas. Gire o disco terrestre independentemente.
+      Ative ou desative camadas como em um editor gráfico. Expansão do macro ao micro.
+    </p>
+
+    <div class="layout">
+      <!-- COLUNA DO MAPA -->
+      <div class="mapcol">
+        <div class="mapwrap" id="mapWrap">
+          <svg id="mapSvg" viewBox="0 0 1000 1000">
+            <!-- Mar de fundo (fixo) -->
+            <circle class="sea" cx="500" cy="500" r="490" />
+
+            <!-- GRUPO QUE GIRA (apenas a terra) -->
+            <g id="landGroup">
+              <!-- Aqui entram os países. Exemplo simplificado de alguns países para demonstração.
+                   Na versão completa você pode substituir pelos paths reais do seu Atlas anterior. -->
+              <path class="c" data-id="BRA" data-name="Brasil" d="M620,680 Q640,720 610,760 Q580,780 550,750 Q530,720 560,690 Z" />
+              <path class="c" data-id="USA" data-name="Estados Unidos" d="M280,380 Q320,360 360,390 Q340,430 300,420 Q270,400 280,380 Z" />
+              <path class="c" data-id="RUS" data-name="Rússia" d="M620,280 Q720,260 780,320 Q740,360 680,340 Q640,310 620,280 Z" />
+              <path class="c" data-id="CHN" data-name="China" d="M700,420 Q740,400 770,440 Q750,470 710,460 Q690,440 700,420 Z" />
+              <path class="c" data-id="IND" data-name="Índia" d="M680,500 Q700,530 680,560 Q660,540 680,500 Z" />
+              <path class="c" data-id="AUS" data-name="Austrália" d="M780,720 Q820,700 840,740 Q810,760 780,720 Z" />
+              <path class="c" data-id="ZAF" data-name="África do Sul" d="M520,780 Q540,800 520,820 Q500,800 520,780 Z" />
+              <path class="c" data-id="DEU" data-name="Alemanha" d="M480,340 Q500,330 510,350 Q495,360 480,340 Z" />
+              <path class="c" data-id="FRA" data-name="França" d="M450,360 Q470,350 475,375 Q460,380 450,360 Z" />
+              <path class="c" data-id="JPN" data-name="Japão" d="M820,400 Q835,390 840,410 Q825,415 820,400 Z" />
+            </g>
+
+            <!-- Camada de bandeiras (não gira com a terra) -->
+            <g id="flagsLayer" style="display:none;"></g>
+
+            <!-- Camada de população (rótulos) -->
+            <g id="popLayer" style="display:none;"></g>
+
+            <!-- Elementos fixos (não giram) -->
+            <circle cx="500" cy="500" r="6" fill="#c2a0ef" />
+            <text x="500" y="30" text-anchor="middle" fill="#b7a5cb" font-size="12" font-family="IBM Plex Mono">N</text>
+          </svg>
+
+          <div class="map-controls">
+            <button id="btnRotate" title="Ativar rotação do disco">⟳</button>
+            <button id="btnZoomIn">+</button>
+            <button id="btnZoomOut">−</button>
+            <button id="btnReset">↺</button>
+          </div>
+        </div>
+        <p style="text-align:center; margin-top:10px; font-size:13px; color:var(--muted);">
+          Arraste o mapa para girar o disco terrestre (quando a rotação estiver ativa)
+        </p>
+      </div>
+
+      <!-- PAINEL LATERAL -->
+      <div class="panel">
+        <div>
+          <label style="font-size:12px; font-family:var(--f-mono); color:var(--muted); text-transform:uppercase; letter-spacing:0.06em;">Buscar país</label>
+          <div class="search">
+            <input type="text" id="searchInput" placeholder="Digite o nome do país..." />
+          </div>
+        </div>
+
+        <!-- CAMADAS -->
+        <div class="layerbox">
+          <div class="layerhead">
+            <strong>Camadas</strong>
+            <span>ligar / desligar</span>
+          </div>
+          <div class="layergrid">
+            <label class="layeritem">
+              <input type="checkbox" id="layerFlags" />
+              <span>Bandeiras</span>
+            </label>
+            <label class="layeritem">
+              <input type="checkbox" id="layerPop" />
+              <span>População</span>
+            </label>
+            <label class="layeritem">
+              <input type="checkbox" id="layerBorders" checked />
+              <span>Fronteiras</span>
+            </label>
+            <label class="layeritem">
+              <input type="checkbox" id="layerRotate" />
+              <span>Girar disco</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- INFO DO PAÍS -->
+        <div id="countryInfo">
+          <p style="color:var(--muted);">Selecione um país no mapa ou busque pelo nome.</p>
+        </div>
+
+        <p class="note">
+          Esta versão 0.7+ adiciona rotação independente do disco terrestre, camada de bandeiras nacionais e população.
+          As bandeiras estaduais e dados de subdivisões serão adicionados país por país, com fonte e data.
+        </p>
+      </div>
     </div>
-    <p class="stats" id="stats" aria-live="polite">Carregando…</p>
-  </header>
+  </div>
 
-  <main class="layout">
-    <section class="mapcol" aria-label="Mapa">
-      <div class="mapwrap" id="mapwrap">
-        <svg id="map" role="img" aria-label="Mapa-múndi visto do Polo Norte. Use a busca ao lado para escolher um país sem o mapa."></svg>
-        <div class="zoomctl" id="zoomctl" hidden>
-          <button type="button" id="zin" aria-label="Aproximar">+</button>
-          <button type="button" id="zout" aria-label="Afastar">−</button>
-          <button type="button" id="zreset" aria-label="Voltar à visão completa">⟲</button>
-        </div>
-        <div class="tip" id="tip" hidden></div>
-      </div>
-      <section class="layerbox" aria-label="Gerenciador de camadas">
-        <div class="layerhead"><strong>Camadas do Atlas</strong><span>ligar / desligar · ordem expansível</span></div>
-        <div class="layergrid" id="layerControls">
-          <label class="layeritem"><input type="checkbox" data-layer="borders" checked><i class="swatch" style="--swatch:#9670c8"></i>Países e fronteiras</label>
-          <label class="layeritem"><input type="checkbox" data-layer="graticule" checked><i class="swatch" style="--swatch:#8993a8"></i>Latitude / longitude</label>
-          <label class="layeritem"><input type="checkbox" data-layer="labels" checked><i class="swatch" style="--swatch:#756487"></i>Rótulos e polos</label>
-          <label class="layeritem"><input type="checkbox" data-layer="skygrid"><i class="swatch" style="--swatch:#9a7bd1"></i>Grade celeste</label>
-          <label class="layeritem"><input type="checkbox" data-layer="stars" checked><i class="swatch" style="--swatch:#d4a83d"></i>Estrelas / Polaris</label>
-          <label class="layeritem"><input type="checkbox" data-layer="constellations" checked><i class="swatch" style="--swatch:#24a6c6"></i>Constelações</label>
-          <label class="layeritem"><input type="checkbox" data-layer="rays"><i class="swatch" style="--swatch:#9fc7ff"></i>Raios do centro</label>
-          <label class="layeritem"><input type="checkbox" data-layer="square" checked><i class="swatch" style="--swatch:#e7b85c"></i>Quadrado · 3, 9, 15, 21</label>
-          <label class="layeritem"><input type="checkbox" data-layer="star" checked><i class="swatch" style="--swatch:#8cff48"></i>Estrela · 00, 4, 8, 12, 16, 20</label>
-          <label class="layeritem"><input type="checkbox" data-layer="cross" checked><i class="swatch" style="--swatch:#f4f1df"></i>Cruz central</label>
-          <label class="layeritem"><input type="checkbox" data-layer="historical" checked><i class="swatch" style="--swatch:#a36bd0"></i>Época histórica</label>
-          <label class="layeritem pending"><input type="checkbox" data-layer="economy"><i class="swatch" style="--swatch:#bc9855"></i>Economia <small>estrutura</small></label>
-          <label class="layeritem pending"><input type="checkbox" data-layer="institutions"><i class="swatch" style="--swatch:#568caa"></i>Instituições <small>estrutura</small></label>
-          <label class="layeritem pending"><input type="checkbox" data-layer="nature"><i class="swatch" style="--swatch:#5a9a75"></i>Natureza / recursos <small>estrutura</small></label>
-          <label class="layeritem pending"><input type="checkbox" data-layer="culture"><i class="swatch" style="--swatch:#ad7c9c"></i>Cultura / memória <small>estrutura</small></label>
-          <label class="layeritem pending"><input type="checkbox" data-layer="services"><i class="swatch" style="--swatch:#6489bd"></i>Serviços / transporte <small>estrutura</small></label>
-        </div>
-        <details class="layerdetails"><summary>Como as camadas se expandem</summary><p>Cada camada pode receber subcamadas, filtros, fontes e escalas próprias. As camadas marcadas como “estrutura” são espaços reservados: ainda não exibem dados reais. A informação futura deverá guardar fonte, data, escala, autoria e método de verificação.</p></details>
-      </section>
-      <p class="mapnote" id="mapnote">Carregando contornos dos países…</p>
-      <ul class="legend" aria-label="Legenda">
-        <li><i style="background:var(--land)"></i>Sem categorias</li>
-        <li><i style="background:var(--n1)"></i>1</li>
-        <li><i style="background:var(--n2)"></i>2 a 3</li>
-        <li><i style="background:var(--n3)"></i>4 ou mais</li>
-      </ul>
-      <section class="timeline" aria-label="Linha do tempo histórica">
-        <h3>Linha do tempo</h3>
-        <p>Escolha uma época e mova o controle para mudar o ano exibido.</p>
-        <div class="era-buttons" id="eraButtons">
-          <button type="button" data-era="cyrus" aria-pressed="true">Ciro II</button>
-          <button type="button" data-era="alexander" aria-pressed="false">Alexandre</button>
-          <button type="button" data-era="caesar" aria-pressed="false">Júlio César</button>
-          <button type="button" data-era="christ" aria-pressed="false">Cristo</button>
-          <button type="button" data-era="napoleon" aria-pressed="false">Napoleão</button>
-          <button type="button" data-era="hitler" aria-pressed="false">Hitler</button>
-          <button type="button" data-era="current" aria-pressed="false">Atual</button>
-        </div>
-        <div class="yearline"><label id="yearLabel" for="yearSlider">Ano selecionado</label><output id="yearOutput" for="yearSlider">550 a.C.</output></div>
-        <input id="yearSlider" type="range" min="-550" max="-530" value="-550" step="1" aria-label="Escolher ano da época selecionada">
-        <p id="eraDescription">Império Aquemênida durante o reinado de Ciro II.</p>
-        <p class="historical-note">Nota: territórios históricos são uma aproximação destacada sobre os contornos atuais; não representam fronteiras históricas exatas.</p>
-      </section>
-    </section>
-
-    <section class="panel" aria-label="Países e categorias">
-      <div class="search">
-        <label for="q">Buscar país</label>
-        <input id="q" type="search" placeholder="Brasil, Japão, Egito…" autocomplete="off">
-        <ul class="res" id="res" hidden></ul>
-      </div>
-      <div id="view"></div>
-    </section>
-  </main>
-  <section class="layerbox" style="max-width:1280px;margin:0 auto 28px" aria-label="Arquitetura de expansão">
-    <div class="layerhead"><strong>Estrutura expansível · macro → micro</strong><span>modelo de camadas</span></div>
-    <p style="margin:0;color:var(--muted);font-size:13px">Cada camada pode conter grupos, subcamadas, filtros e registros sem alterar a base do mapa. Exemplo: <b>Economia → moeda → reservas → composição → origem → data → documento</b>. Ou <b>Território → país → estado → município → bairro → rua → ponto</b>. O mesmo registro pode aparecer em mais de uma camada, mantendo uma única fonte e um histórico de versões.</p>
-  </section>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
-<script>
-(function () {
-  "use strict";
-
-  /* ---------- países: código ISO de 3 letras -> código de 2 letras (para o nome em português) ---------- */
-  var A3 = "AFG:AF,ALA:AX,ALB:AL,DZA:DZ,ASM:AS,AND:AD,AGO:AO,AIA:AI,ATA:AQ,ATG:AG,ARG:AR,ARM:AM,ABW:AW,AUS:AU,AUT:AT,AZE:AZ,BHS:BS,BHR:BH,BGD:BD,BRB:BB,BLR:BY,BEL:BE,BLZ:BZ,BEN:BJ,BMU:BM,BTN:BT,BOL:BO,BES:BQ,BIH:BA,BWA:BW,BVT:BV,BRA:BR,IOT:IO,BRN:BN,BGR:BG,BFA:BF,BDI:BI,CPV:CV,KHM:KH,CMR:CM,CAN:CA,CYM:KY,CAF:CF,TCD:TD,CHL:CL,CHN:CN,CXR:CX,CCK:CC,COL:CO,COM:KM,COG:CG,COD:CD,COK:CK,CRI:CR,CIV:CI,HRV:HR,CUB:CU,CUW:CW,CYP:CY,CZE:CZ,DNK:DK,DJI:DJ,DMA:DM,DOM:DO,ECU:EC,EGY:EG,SLV:SV,GNQ:GQ,ERI:ER,EST:EE,SWZ:SZ,ETH:ET,FLK:FK,FRO:FO,FJI:FJ,FIN:FI,FRA:FR,GUF:GF,PYF:PF,ATF:TF,GAB:GA,GMB:GM,GEO:GE,DEU:DE,GHA:GH,GIB:GI,GRC:GR,GRL:GL,GRD:GD,GLP:GP,GUM:GU,GTM:GT,GGY:GG,GIN:GN,GNB:GW,GUY:GY,HTI:HT,HMD:HM,VAT:VA,HND:HN,HKG:HK,HUN:HU,ISL:IS,IND:IN,IDN:ID,IRN:IR,IRQ:IQ,IRL:IE,IMN:IM,ISR:IL,ITA:IT,JAM:JM,JPN:JP,JEY:JE,JOR:JO,KAZ:KZ,KEN:KE,KIR:KI,PRK:KP,KOR:KR,KWT:KW,KGZ:KG,LAO:LA,LVA:LV,LBN:LB,LSO:LS,LBR:LR,LBY:LY,LIE:LI,LTU:LT,LUX:LU,MAC:MO,MDG:MG,MWI:MW,MYS:MY,MDV:MV,MLI:ML,MLT:MT,MHL:MH,MTQ:MQ,MRT:MR,MUS:MU,MYT:YT,MEX:MX,FSM:FM,MDA:MD,MCO:MC,MNG:MN,MNE:ME,MSR:MS,MAR:MA,MOZ:MZ,MMR:MM,NAM:NA,NRU:NR,NPL:NP,NLD:NL,NCL:NC,NZL:NZ,NIC:NI,NER:NE,NGA:NG,NIU:NU,NFK:NF,MKD:MK,MNP:MP,NOR:NO,OMN:OM,PAK:PK,PLW:PW,PSE:PS,PAN:PA,PNG:PG,PRY:PY,PER:PE,PHL:PH,PCN:PN,POL:PL,PRT:PT,PRI:PR,QAT:QA,REU:RE,ROU:RO,RUS:RU,RWA:RW,BLM:BL,SHN:SH,KNA:KN,LCA:LC,MAF:MF,SPM:PM,VCT:VC,WSM:WS,SMR:SM,STP:ST,SAU:SA,SEN:SN,SRB:RS,SYC:SC,SLE:SL,SGP:SG,SXM:SX,SVK:SK,SVN:SI,SLB:SB,SOM:SO,ZAF:ZA,SGS:GS,SSD:SS,ESP:ES,LKA:LK,SDN:SD,SUR:SR,SJM:SJ,SWE:SE,CHE:CH,SYR:SY,TWN:TW,TJK:TJ,TZA:TZ,THA:TH,TLS:TL,TGO:TG,TKL:TK,TON:TO,TTO:TT,TUN:TN,TUR:TR,TKM:TM,TCA:TC,TUV:TV,UGA:UG,UKR:UA,ARE:AE,GBR:GB,USA:US,UMI:UM,URY:UY,UZB:UZ,VUT:VU,VEN:VE,VNM:VN,VGB:VG,VIR:VI,WLF:WF,ESH:EH,YEM:YE,ZMB:ZM,ZWE:ZW,XKX:XK";
-  var A2 = {};
-  A3.split(",").forEach(function (p) { var s = p.split(":"); A2[s[0]] = s[1]; });
-  var ALIAS = { SDS: "SSD", KOS: "XKX" };   /* códigos antigos usados pelos dados do mapa */
-  var dn = null;
-  try { dn = new Intl.DisplayNames(["pt-BR"], { type: "region" }); } catch (e) { dn = null; }
-  var apiNames = {};                           /* id -> nome em inglês vindo do mapa, só como reserva */
-
-  function canon(id) { return ALIAS[id] || id; }
-  function norm(s) { return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase(); }
-  function countryName(id) {
-    id = canon(id);
-    var a = A2[id];
-    if (a && dn) { try { var n = dn.of(a); if (n && n !== a) return n; } catch (e) {} }
-    return apiNames[id] || id;
-  }
-  var COUNTRIES = Object.keys(A2).map(function (id) {
-    var name = countryName(id);
-    return { id: id, name: name, key: norm(name) };
-  }).sort(function (a, b) { return a.name.localeCompare(b.name, "pt-BR"); });
-
-  /* ---------- utilidades ---------- */
-  function $(s) { return document.querySelector(s); }
-  function h(tag, props) {
-    var el = document.createElement(tag);
-    if (props) Object.keys(props).forEach(function (k) {
-      var v = props[k];
-      if (v == null || v === false) return;
-      if (k === "class") el.className = v;
-      else if (k.slice(0, 2) === "on") el.addEventListener(k.slice(2), v);
-      else el.setAttribute(k, v === true ? "" : v);
-    });
-    for (var i = 2; i < arguments.length; i++) {
-      var kids = [].concat(arguments[i]);
-      for (var j = 0; j < kids.length; j++) {
-        var kid = kids[j];
-        if (kid == null || kid === false) continue;
-        el.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
-      }
-    }
-    return el;
-  }
-  function fmtDate(ms) {
-    try { return new Date(ms).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" }); }
-    catch (e) { return ""; }
-  }
-  function plural(n, one, many) { return n + " " + (n === 1 ? one : many); }
-  var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  var narrow = window.matchMedia ? window.matchMedia("(max-width: 979px)") : { matches: false };
-
-  /* ---------- estado ---------- */
-  var db = null, user = null, meId = null, canWrite = null, isAdmin = false, dataReady = false;
-  var cats = [];            /* {id, pais, nome, texto, autor, criadoEm, atualizadoEm} */
-  var sel = null;           /* código do país escolhido */
-  var dbError = "";
-  var cv = null;            /* referências do painel do país aberto */
-  var editId = null;
-  var SUG = ["Biomas", "Clima", "Relevo", "Fauna e flora", "Economia", "Cultura", "Culinária", "Idiomas", "História", "Governo"];
-
-  function countsByCountry() {
-    var m = new Map();
-    cats.forEach(function (c) { m.set(c.pais, (m.get(c.pais) || 0) + 1); });
-    return m;
-  }
-  function bucket(n) { return n >= 4 ? 3 : n >= 2 ? 2 : n >= 1 ? 1 : 0; }
-
-  /* ---------- mapa: projeção azimutal polar, alinhada à referência visual ---------- */
-  var SIZE = 800, CX = 400, CY = 400, R = 372;
-  var map = { ready: false, paths: new Map(), path: null, proj: null, zoom: null, world: null, svg: null };
-
-  /* Contorno aproximado da Antártida [longitude, latitude], percorrido de oeste para leste. */
-  var COAST = [[-175,-78.2],[-165,-78.4],[-158,-78.3],[-155,-77.6],[-150,-77],[-143,-76.8],[-135,-75.2],[-127,-74.2],[-118,-74.2],[-108,-74.8],[-100,-74.8],[-92,-73.2],[-86,-72.8],[-80,-73.2],[-75,-72],[-71,-70],[-68,-67.5],[-65,-65.8],[-62,-64.4],[-58,-63.3],[-58.5,-64.6],[-60.5,-66.4],[-62,-68.6],[-61.5,-71],[-62,-73.5],[-60,-75.4],[-52,-76.6],[-46,-77.6],[-40,-77.9],[-34,-77.2],[-31,-76],[-26,-75.4],[-21,-73.5],[-15,-72],[-9,-70.8],[-1,-70],[8,-70.3],[17,-70],[27,-69.8],[36,-69],[46,-67.9],[56,-67.3],[63,-67.6],[69,-69.2],[73,-69.5],[78,-68.6],[86,-66.7],[94,-66.2],[100,-65.6],[106,-66.5],[114,-66.4],[122,-66.4],[130,-66.2],[137,-66.7],[143,-67.4],[148,-68.2],[154,-69.4],[160,-70.4],[166,-71.5],[170,-72.5],[168,-74.2],[165,-75.6],[166.5,-77.6],[172,-78.4]];
-
-  function buildMapShell() {
-    if (typeof d3 === "undefined") return false;
-    var svg = d3.select("#map").attr("viewBox", "0 0 " + SIZE + " " + SIZE);
-    map.svg = svg;
-    var proj = d3.geoAzimuthalEquidistant().rotate([0, -90, 0]).scale(R / Math.PI).translate([CX, CY]).clipAngle(180);
-    var path = d3.geoPath(proj);
-    map.proj = proj; map.path = path;
-
-    svg.append("defs").append("clipPath").attr("id", "mapclip").append("circle").attr("cx", CX).attr("cy", CY).attr("r", R);
-    var root = svg.append("g").attr("clip-path", "url(#mapclip)");
-    root.append("circle").attr("class", "sea").attr("cx", CX).attr("cy", CY).attr("r", R);
-    var world = root.append("g");
-    map.world = world;
-
-    world.append("path").attr("class", "grat").attr("d", path(d3.geoGraticule().step([30, 30])()));
-
-    /* Antártida: o polo sul vira a borda inteira do círculo, então ela é o anel entre a costa e a borda. */
-    var coast = COAST.map(function (p) { return proj(p); });
-    var inner = d3.line().curve(d3.curveCatmullRomClosed.alpha(0.5))(coast);
-    var outer = "M" + (CX - R) + "," + CY + "a" + R + "," + R + " 0 1,0 " + (2 * R) + ",0a" + R + "," + R + " 0 1,0 " + (-2 * R) + ",0Z";
-    var ring = world.append("path").attr("class", "c ring").attr("fill-rule", "evenodd").attr("d", outer + inner);
-    map.paths.set("ATA", ring.node());
-    ring.attr("data-id", "ATA");
-
-    var tr = R * 0.968;
-    world.append("path").attr("id", "ringpath").attr("fill", "none")
-      .attr("d", "M" + (CX - tr) + "," + CY + "a" + tr + "," + tr + " 0 1,1 " + (2 * tr) + ",0a" + tr + "," + tr + " 0 1,1 " + (-2 * tr) + ",0");
-    var rt = "ANTÁRTIDA  ·  ".repeat(18);
-    world.append("text").attr("class", "ringtxt").append("textPath").attr("href", "#ringpath").text(rt);
-
-    /* paralelos nomeados, ao longo do meridiano -160 */
-    [[60, "60° N"], [30, "30° N"], [0, "Equador"], [-30, "30° S"], [-60, "60° S"]].forEach(function (p) {
-      var xy = proj([-160, p[0]]);
-      world.append("text").attr("class", "lbl").attr("x", xy[0] + 4).attr("y", xy[1] - 3).text(p[1]);
-    });
-    world.append("circle").attr("class", "pole").attr("cx", CX).attr("cy", CY).attr("r", 3);
-    world.append("text").attr("class", "lbl").attr("x", CX + 7).attr("y", CY + 3).text("Polo Norte");
-
-    /* zoom: arraste com o mouse, Ctrl + rolagem e os botões; toque deixa a página rolar */
-    map.zoom = d3.zoom().scaleExtent([1, 10]).translateExtent([[0, 0], [SIZE, SIZE]])
-      .filter(function (ev) {
-        if (ev.type.indexOf("touch") === 0) return false;
-        if (ev.type === "wheel") return ev.ctrlKey || ev.metaKey;
-        return !ev.button && !ev.ctrlKey;
-      })
-      .on("zoom", function (ev) { world.attr("transform", ev.transform); });
-    svg.call(map.zoom).on("dblclick.zoom", null);
-    $("#zoomctl").hidden = false;
-    $("#zin").onclick = function () { zoomBy(1.6); };
-    $("#zout").onclick = function () { zoomBy(1 / 1.6); };
-    $("#zreset").onclick = resetZoom;
-
-    bindPick(ring.node(), "ATA");
-    map.ready = true;
-    return true;
-  }
-  function zoomBy(k) { if (map.zoom) map.svg.transition().duration(reduceMotion ? 0 : 200).call(map.zoom.scaleBy, k); }
-  function resetZoom() { if (map.zoom) map.svg.transition().duration(reduceMotion ? 0 : 250).call(map.zoom.transform, d3.zoomIdentity); }
-  function zoomToCountry(id) {
-    if (!map.zoom) return;
-    var el = map.paths.get(id);
-    if (!el || id === "ATA" || !el.__data__) return resetZoom();
-    var b = map.path.bounds(el.__data__);
-    var dx = b[1][0] - b[0][0], dy = b[1][1] - b[0][1];
-    var k = Math.max(1, Math.min(8, 0.45 / Math.max(dx / SIZE, dy / SIZE, 1e-6)));
-    if (!isFinite(k) || k < 1.4) return resetZoom();
-    var cx = (b[0][0] + b[1][0]) / 2, cy = (b[0][1] + b[1][1]) / 2;
-    var t = d3.zoomIdentity.translate(SIZE / 2, SIZE / 2).scale(k).translate(-cx, -cy);
-    map.svg.transition().duration(reduceMotion ? 0 : 450).call(map.zoom.transform, t);
-  }
-
-  var tip = $("#tip"), mapwrap = $("#mapwrap");
-  function bindPick(node, id) {
-    node.addEventListener("mouseenter", function () { showTip(id); });
-    node.addEventListener("mousemove", moveTip);
-    node.addEventListener("mouseleave", function () { tip.hidden = true; });
-    node.addEventListener("click", function () { tip.hidden = true; choose(id, false, true); });
-  }
-  function showTip(id) {
-    var n = countsByCountry().get(id) || 0;
-    tip.textContent = countryName(id) + (n ? " · " + plural(n, "categoria", "categorias") : "");
-    tip.hidden = false;
-  }
-  function moveTip(ev) {
-    var r = mapwrap.getBoundingClientRect();
-    var x = ev.clientX - r.left + 14, y = ev.clientY - r.top + 14;
-    var w = tip.offsetWidth;
-    if (x + w > r.width) x = ev.clientX - r.left - w - 10;
-    tip.style.left = Math.max(0, x) + "px";
-    tip.style.top = y + "px";
-  }
-
-  /* Se um polígono vier com a orientação invertida, o D3 o preencheria como "o mundo inteiro menos o país". */
-  function fixWinding(f) {
-    var g = f.geometry;
-    if (!g) return;
-    var polys = g.type === "Polygon" ? [g.coordinates] : g.type === "MultiPolygon" ? g.coordinates : [];
-    polys.forEach(function (rings) {
-      try {
-        if (d3.geoArea({ type: "Polygon", coordinates: rings }) > 2 * Math.PI) rings.forEach(function (r) { r.reverse(); });
-      } catch (e) {}
-    });
-  }
-
-  /* ---------- camadas celestes e geométricas sobre o MESMO disco azimutal ----------
-     Referência de desenho: polo celeste norte no centro; RA=0h para cima.
-     A sobreposição é uma camada de referência, não uma projeção física da esfera celeste na Terra. */
-  var skyLayer = null;
-  function skyPoint(raHours, decDeg) {
-    var rho = R * (90 - decDeg) / 180;
-    var a = raHours * Math.PI / 12;
-    return [CX + rho * Math.sin(a), CY - rho * Math.cos(a)];
-  }
-  function buildSkyLayer() {
-    if (!map.world || skyLayer) return;
-    skyLayer = map.world.append("g").attr("class", "atlas-sky-layer");
-    var grid = skyLayer.append("g").attr("class", "sky-grid").attr("data-layer-group", "skygrid");
-    [60,30,0,-30,-60].forEach(function(dec){
-      var rr=R*(90-dec)/180;
-      grid.append("circle").attr("cx",CX).attr("cy",CY).attr("r",rr);
-    });
-    for(var ra=0;ra<24;ra+=2){
-      var a=ra*Math.PI/12;
-      grid.append("line").attr("x1",CX).attr("y1",CY).attr("x2",CX+R*Math.sin(a)).attr("y2",CY-R*Math.cos(a));
-    }
-    var stars = skyLayer.append("g").attr("class", "sky-stars").attr("data-layer-group", "stars");
-    var constellations = skyLayer.append("g").attr("data-layer-group", "constellations");
-    // Geometria em camadas independentes; 00 no topo, sentido horário.
-    var geo = skyLayer.append("g").attr("class", "atlas-geometry");
-    function clockPoint(hour, radius) {
-      var a = (hour % 24) * Math.PI / 12;
-      return [CX + radius * Math.sin(a), CY - radius * Math.cos(a)];
-    }
-    var rays = geo.append("g").attr("class", "geo-rays").attr("data-layer-group", "rays");
-    for (var hr=0; hr<24; hr++) {
-      var ep=clockPoint(hr,R);
-      rays.append("line").attr("class", hr%4===0?"major":"").attr("x1",CX).attr("y1",CY).attr("x2",ep[0]).attr("y2",ep[1]);
-    }
-    var squareHours=[3,9,15,21];
-    var square=geo.append("g").attr("class","geo-square").attr("data-layer-group","square");
-    square.append("polygon").attr("points",squareHours.map(function(h){return clockPoint(h,R*.94).join(",");}).join(" "));
-    var starHours=[0,4,8,12,16,20];
-    var star=geo.append("g").attr("class","geo-star").attr("data-layer-group","star");
-    [starHours.filter(function(_,i){return i%2===0;}),starHours.filter(function(_,i){return i%2===1;})].forEach(function(seq){
-      star.append("polygon").attr("points",seq.map(function(h){return clockPoint(h,R*.94).join(",");}).join(" "));
-    });
-    // Cruz central: dois eixos ortogonais que atravessam o centro do disco.
-    var cross=geo.append("g").attr("class","geo-cross").attr("data-layer-group","cross");
-    cross.append("line").attr("x1",CX-R).attr("y1",CY).attr("x2",CX+R).attr("y2",CY);
-    cross.append("line").attr("x1",CX).attr("y1",CY-R).attr("x2",CX).attr("y2",CY+R);
-    // Marcas e números ficam associados às formas correspondentes.
-    function addMarks(group, hours) {
-      hours.forEach(function(h){
-        var p=clockPoint(h,R*.94), label=h===0?"24 (00)":String(h);
-        group.append("circle").attr("class","geo-vertex").attr("cx",p[0]).attr("cy",p[1]).attr("r",4.2);
-        var lp=clockPoint(h,R*1.055);
-        group.append("text").attr("class","geo-number").attr("x",lp[0]).attr("y",lp[1]+4).attr("text-anchor","middle").text(label);
-      });
-    }
-    addMarks(square,squareHours);
-    addMarks(star,starHours);
-    var data = [
-      {name:"Polaris",ra:2.53,dec:89.26,cls:"",r:4.8,dx:8,dy:-8},
-      {name:"Gacrux",ra:12.52,dec:-57.11,cls:"crux",r:3.6,dx:8,dy:-8},
-      {name:"Mimosa",ra:12.79,dec:-59.69,cls:"crux",r:3.4,dx:8,dy:-8},
-      {name:"Acrux",ra:12.44,dec:-63.10,cls:"crux",r:3.8,dx:8,dy:13},
-      {name:"Imai",ra:12.90,dec:-60.20,cls:"crux",r:3.2,dx:8,dy:13}
-    ];
-    var pts={};
-    data.forEach(function(s){
-      var p=skyPoint(s.ra,s.dec); pts[s.name]=p;
-      stars.append("circle").attr("class","sky-star "+s.cls).attr("cx",p[0]).attr("cy",p[1]).attr("r",s.r);
-      stars.append("text").attr("class","sky-label").attr("x",p[0]+s.dx).attr("y",p[1]+s.dy).text(s.name);
-    });
-    function line(names){
-      constellations.append("polyline").attr("class","sky-constellation")
-        .attr("points",names.map(function(n){return pts[n].join(",");}).join(" "));
-    }
-    line(["Gacrux","Mimosa","Acrux"]); line(["Mimosa","Imai"]);
-    // A pequena marca de Polaris é desenhada quase no centro, sem fingir que coincide exatamente com o polo.
-    applyLayerState();
-  }
-  function applyLayerState(){
-    var checks=document.querySelectorAll("#layerControls input[data-layer]");
-    checks.forEach(function(ch){
-      var key=ch.getAttribute("data-layer"), on=ch.checked;
-      if(key==="borders" || key==="historical") { /* aplicados em conjunto abaixo */ }
-      else if(key==="graticule") document.querySelectorAll(".grat").forEach(function(el){el.style.display=on?"":"none";});
-      else if(key==="labels") document.querySelectorAll(".lbl,.ringtxt").forEach(function(el){el.style.display=on?"":"none";});
-      else if(key==="skygrid" && skyLayer) skyLayer.select('[data-layer-group="skygrid"]').style("display",on?null:"none");
-      else if(key==="stars" && skyLayer) skyLayer.select('[data-layer-group="stars"]').style("display",on?null:"none");
-      else if(key==="constellations" && skyLayer) skyLayer.select('[data-layer-group="constellations"]').style("display",on?null:"none");
-      else if(["rays","square","star","cross"].indexOf(key)>=0 && skyLayer) skyLayer.select('[data-layer-group="'+key+'"]').style("display",on?null:"none");
-      else if(["economy","institutions","nature","culture","services"].indexOf(key)>=0){
-        ch.closest(".layeritem").title="Camada preparada para receber dados; ainda não há registros conectados.";
-      }
-    });
-    var borderInput=document.querySelector('#layerControls input[data-layer="borders"]');
-    var histInput=document.querySelector('#layerControls input[data-layer="historical"]');
-    if(map.world){
-      map.world.classed("atlas-borders-off", !!borderInput && !borderInput.checked);
-      map.world.classed("atlas-historical-off", !!histInput && !histInput.checked);
-    }
-  }
-  var layerControls = document.getElementById("layerControls");
-  if(layerControls) layerControls.addEventListener("change",applyLayerState);
-
-  function addCountries(features) {
-    features.forEach(fixWinding);
-    var g = map.world.insert("g", "path.ring");
-    g.selectAll("path").data(features).join("path")
-      .attr("class", "c")
-      .attr("d", map.path)
-      .each(function (d) {
-        var id = canon(String(d.id == null ? "" : d.id));
-        var pname = d.properties && d.properties.name;
-        if (pname && !apiNames[id]) apiNames[id] = pname;
-        if (A2[id] && id !== "ATA") {
-          map.paths.set(id, this);
-          this.setAttribute("data-id", id);
-          bindPick(this, id);
-        } else {
-          this.classList.add("nopick");
-          this.addEventListener("mouseenter", function () { tip.textContent = pname || "Sem nome"; tip.hidden = false; });
-          this.addEventListener("mousemove", moveTip);
-          this.addEventListener("mouseleave", function () { tip.hidden = true; });
-        }
-      });
-    map.hasCountries = true;
-    buildSkyLayer();
-    paintBuckets(); paintSel();
-    applyLayerState();
-  }
-  function paintBuckets() {
-    var m = countsByCountry();
-    map.paths.forEach(function (el, id) { el.setAttribute("data-b", String(bucket(m.get(id) || 0))); });
-  }
-  function paintSel() {
-    document.querySelectorAll(".c.sel").forEach(function (e) { e.classList.remove("sel"); });
-    var el = sel && map.paths.get(sel);
-    if (el) { el.classList.add("sel"); if (el.parentNode && sel !== "ATA") el.parentNode.appendChild(el); }
-  }
-
-  /* ---------- linha do tempo histórica (territórios aproximados) ---------- */
-  var selectedEra = "cyrus";
-  var ERAS = {
-    cyrus: { name: "Ciro II", min: -550, max: -530, value: -550, desc: "Império Aquemênida durante o reinado de Ciro II.", territories: ["IRN","IRQ","TUR","SYR","LBN","ISR","JOR","AFG","PAK","ARM","AZE","GEO","TKM","UZB","TJK","KGZ","KAZ"] },
-    alexander: { name: "Alexandre, o Grande", min: -336, max: -323, value: -330, desc: "Expansão do império de Alexandre até o vale do Indo.", territories: ["GRC","MKD","ALB","BGR","TUR","CYP","EGY","LBY","ISR","PSE","LBN","SYR","JOR","IRQ","IRN","AFG","PAK","ARM","AZE","GEO","TKM","UZB","TJK"] },
-    caesar: { name: "Júlio César", min: -100, max: -44, value: -50, desc: "República Romana e territórios conquistados durante a vida de Júlio César.", territories: ["ITA","FRA","ESP","PRT","GRC","ALB","HRV","BIH","MNE","SVN","AUT","CHE","BEL","NLD","LUX","DEU","GBR","TUR","CYP","MLT","TUN","DZA","MAR","EGY","LBY","ISR","PSE","LBN","SYR","JOR","IRQ"] },
-    christ: { name: "Cristo", min: -4, max: 33, value: 1, desc: "Império Romano aproximadamente no início da era cristã.", territories: ["ITA","FRA","ESP","PRT","GRC","ALB","HRV","BIH","MNE","SVN","AUT","CHE","BEL","NLD","LUX","DEU","GBR","TUR","CYP","MLT","TUN","DZA","MAR","EGY","LBY","ISR","PSE","LBN","SYR","JOR","IRQ","SAU"] },
-    napoleon: { name: "Napoleão", min: 1804, max: 1815, value: 1812, desc: "Apogeu aproximado do Império Francês e de seus estados aliados.", territories: ["FRA","ESP","PRT","BEL","NLD","LUX","DEU","ITA","CHE","AUT","CZE","SVK","POL","SVN","HRV","BIH","MNE","ALB","DNK","NOR","SWE","HUN","ROU","BGR","GRC"] },
-    hitler: { name: "Hitler", min: 1933, max: 1945, value: 1942, desc: "Europa sob domínio ou ocupação nazista, em aproximação para o período de 1942.", territories: ["DEU","AUT","POL","CZE","SVK","FRA","BEL","NLD","LUX","DNK","NOR","EST","LVA","LTU","BLR","UKR","MDA","ROU","HUN","SRB","GRC","ALB","HRV","BIH","MNE","SVN"] },
-    current: { name: "Atual", min: 2026, max: 2026, value: 2026, desc: "Mapa político atual. A cor volta a indicar a quantidade de categorias cadastradas.", territories: [] }
-  };
-  function yearText(y) { return y < 0 ? Math.abs(y) + " a.C." : y === 0 ? "1 a.C./1 d.C." : y + " d.C."; }
-  function setEra(id) {
-    selectedEra = id;
-    var e = ERAS[id], slider = $("#yearSlider");
-    document.querySelectorAll("#eraButtons button").forEach(function (b) { b.setAttribute("aria-pressed", b.getAttribute("data-era") === id ? "true" : "false"); });
-    slider.min = e.min; slider.max = e.max; slider.value = e.value;
-    slider.disabled = e.min === e.max;
-    updateTimeline();
-  }
-  function territoriesForYear(id, y) {
-    var list = ERAS[id].territories.slice();
-    function remove(ids) { ids.forEach(function (x) { list = list.filter(function (v) { return v !== x; }); }); }
-    function add(ids) { ids.forEach(function (x) { if (list.indexOf(x) < 0) list.push(x); }); }
-    if (id === "cyrus" && y > -539) add(["EGY"]);
-    if (id === "alexander") {
-      if (y < -332) remove(["EGY"]);
-      if (y < -330) remove(["PAK"]);
-      if (y < -334) remove(["AFG"]);
-    }
-    if (id === "caesar" && y < -58) remove(["GBR"]);
-    if (id === "napoleon") {
-      if (y < 1808) remove(["ESP","PRT"]);
-      if (y < 1810) remove(["RUS"].concat(["SWE","NOR"])) ;
-      if (y >= 1813) remove(["ESP","PRT","DEU","AUT","POL","HUN","CZE","SVK","NLD","BEL","DNK","NOR","SWE","ITA","HRV","SVN","BIH","MNE","ALB","GRC","ROU","BGR"]);
-    }
-    if (id === "hitler") {
-      if (y < 1938) remove(["AUT","CZE","POL","FRA","BEL","NLD","LUX","DNK","NOR","EST","LVA","LTU","BLR","UKR","MDA","ROU","HUN","SRB","GRC","ALB","HRV","BIH","MNE","SVN"]);
-      else if (y < 1940) remove(["FRA","BEL","NLD","LUX","DNK","NOR","EST","LVA","LTU","BLR","UKR","MDA","ROU","HUN","SRB","GRC","ALB","HRV","BIH","MNE","SVN"]);
-      else if (y < 1941) remove(["EST","LVA","LTU","BLR","UKR","MDA","ROU","HUN","SRB","GRC","ALB","HRV","BIH","MNE","SVN"]);
-      else if (y >= 1944) remove(["FRA","BEL","NLD","LUX","DNK","NOR","EST","LVA","LTU","BLR","UKR","MDA","ROU","HUN","SRB","GRC","ALB","HRV","BIH","MNE","SVN"]);
-    }
-    return list;
-  }
-  function updateTimeline() {
-    var e = ERAS[selectedEra], y = Number($("#yearSlider").value);
-    $("#yearOutput").textContent = yearText(y);
-    $("#eraDescription").textContent = e.desc;
-    var territories = territoriesForYear(selectedEra, y);
-    map.paths.forEach(function (el, id) {
-      if (id === "ATA") return;
-      el.classList.toggle("historical", selectedEra !== "current" && territories.indexOf(id) >= 0);
-      el.removeAttribute("data-b");
-    });
-    if (selectedEra === "current") paintBuckets();
-  }
-  $("#eraButtons").addEventListener("click", function (ev) {
-    var b = ev.target.closest("button[data-era]"); if (b) setEra(b.getAttribute("data-era"));
-  });
-  $("#yearSlider").addEventListener("input", updateTimeline);
-
-  /* dados do mundo: script de biblioteca pública (Datamaps), que traz os países como TopoJSON */
-  function loadScript(url) {
-    return new Promise(function (res, rej) {
-      var s = document.createElement("script");
-      s.src = url; s.onload = res; s.onerror = function () { rej(new Error(url)); };
-      document.head.appendChild(s);
-    });
-  }
-  function worldTopo() {
-    var t = window.Datamap && window.Datamap.prototype && window.Datamap.prototype.worldTopo;
-    return t && t.objects ? t : null;
-  }
-  async function loadWorld() {
-    if (worldTopo()) return worldTopo();
-    var urls = [
-      "https://cdnjs.cloudflare.com/ajax/libs/datamaps/0.5.9/datamaps.world.min.js",
-      "https://cdn.jsdelivr.net/npm/datamaps@0.5.9/dist/datamaps.world.min.js"
-    ];
-    for (var i = 0; i < urls.length; i++) {
-      try { await loadScript(urls[i]); } catch (e) { continue; }
-      if (worldTopo()) return worldTopo();
-    }
-    return null;
-  }
-  async function initMap() {
-    var note = $("#mapnote");
-    if (!buildMapShell() || typeof topojson === "undefined") {
-      note.textContent = "O mapa não carregou. Use a busca para escolher um país.";
-      return;
-    }
-    var topo = await loadWorld();
-    if (!topo) { note.textContent = "Os contornos dos países não carregaram. A Antártida aparece, e você ainda pode escolher países pela busca."; return; }
-    try {
-      var obj = topo.objects.world || topo.objects[Object.keys(topo.objects)[0]];
-      var feats = topojson.feature(topo, obj).features.filter(function (f) { return f.id !== "ATA"; });
-      addCountries(feats);
-      setEra(selectedEra);
-      note.textContent = "Clique em um país. Arraste para mover, Ctrl + rolagem ou os botões para aproximar.";
-    } catch (e) {
-      note.textContent = "Os contornos dos países não puderam ser desenhados. Use a busca para escolher um país.";
-    }
-  }
-
-  /* ---------- busca ---------- */
-  var q = $("#q"), res = $("#res");
-  function renderResults() {
-    var t = norm(q.value.trim());
-    if (!t) { res.replaceChildren(); res.hidden = true; return; }
-    var starts = [], inside = [];
-    COUNTRIES.forEach(function (c) {
-      if (c.key.indexOf(t) === 0) starts.push(c); else if (c.key.indexOf(t) > 0) inside.push(c);
-    });
-    var found = starts.concat(inside).slice(0, 8);
-    var m = countsByCountry();
-    res.hidden = false;
-    if (!found.length) { res.replaceChildren(h("li", null, h("p", { class: "none" }, "Nenhum país encontrado."))); return; }
-    res.replaceChildren.apply(res, found.map(function (c) {
-      var n = m.get(c.id) || 0;
-      return h("li", null, h("button", { type: "button", onclick: function () { q.value = ""; renderResults(); choose(c.id, true, false); } },
-        h("span", null, c.name), n ? h("span", { class: "n" }, plural(n, "categoria", "categorias")) : null));
-    }));
-  }
-  q.addEventListener("input", renderResults);
-  q.addEventListener("keydown", function (e) {
-    var first = res.querySelector("button");
-    if (e.key === "Enter" && first) { e.preventDefault(); first.click(); }
-    else if (e.key === "ArrowDown" && first) { e.preventDefault(); first.focus(); }
-    else if (e.key === "Escape") { q.value = ""; renderResults(); }
-  });
-  res.addEventListener("keydown", function (e) {
-    var btns = [].slice.call(res.querySelectorAll("button")), i = btns.indexOf(document.activeElement);
-    if (e.key === "ArrowDown" && btns[i + 1]) { e.preventDefault(); btns[i + 1].focus(); }
-    else if (e.key === "ArrowUp") { e.preventDefault(); (btns[i - 1] || q).focus(); }
-  });
-
-  /* ---------- painel ---------- */
-  var view = $("#view");
-  function choose(id, doZoom, fromMap) {
-    sel = id; editId = null;
-    renderView(); paintSel();
-    if (!id) resetZoom();
-    if (id && doZoom) zoomToCountry(id);
-    if (id && fromMap && narrow.matches) view.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
-  }
-  function renderView() {
-    cv = null;
-    view.replaceChildren(sel ? countryView() : overview());
-    if (sel) renderList(); else renderChips();
-  }
-  function overview() {
-    var parts = [
-      h("h2", null, "Escolha um país"),
-      h("p", { class: "hint" }, "Clique no mapa ou use a busca. Em cada país você pode criar categorias de assunto, como Biomas ou Cultura, e escrever um texto para cada uma."),
-      h("div", { id: "chips" })
-    ];
-    if (dataReady && !db) parts.push(h("p", { class: "note" }, "O conteúdo compartilhado só aparece quando a página é aberta pelo link publicado no Claude."));
-    else if (dbError) parts.push(h("p", { class: "note" }, dbError));
-    return h("div", null, parts);
-  }
-  function renderChips() {
-    var box = $("#chips");
-    if (!box) return;
-    var m = countsByCountry();
-    var items = Array.from(m.entries()).sort(function (a, b) {
-      return (b[1] - a[1]) || countryName(a[0]).localeCompare(countryName(b[0]), "pt-BR");
-    });
-    if (!items.length) { box.replaceChildren(h("p", { class: "empty" }, db ? "Ainda não há categorias. Escolha um país e crie a primeira." : "")); return; }
-    box.replaceChildren(
-      h("p", { class: "eyebrow" }, "Países com conteúdo"),
-      h("ul", { class: "chips" }, items.map(function (it) {
-        return h("li", null, h("button", { class: "chip", type: "button", onclick: function () { choose(it[0], true, false); } },
-          countryName(it[0]), h("span", { class: "n" }, String(it[1]))));
-      }))
-    );
-  }
-  function updateStats() {
-    var m = countsByCountry();
-    if (!dataReady) return;
-    $("#stats").textContent = cats.length
-      ? plural(cats.length, "categoria", "categorias") + " em " + plural(m.size, "país", "países")
-      : (db ? "Nenhuma categoria ainda" : "Conteúdo indisponível");
-  }
-
-  function canManage(c) {
-    if (!db || canWrite === false) return false;
-    return !!(meId && c.autor === meId) || isAdmin;
-  }
-  function writeError(e) {
-    var code = e && e.code;
-    if (code === "invalid_argument") return "Você não tem permissão para salvar aqui. Peça ao dono da página acesso de colaborador.";
-    if (code === "quota_exceeded") return "O limite de dados desta página foi atingido.";
-    if (code === "revoked") return "Seu acesso a esta página mudou. Recarregue para continuar.";
-    return "Não foi possível salvar agora. Tente de novo.";
-  }
-
-  function countryView() {
-    var id = sel;
-    cv = { id: id, nodes: new Map(), token: 0 };
-    cv.count = h("p", { class: "ccount" });
-    cv.list = h("div", { class: "cats" });
-    var parts = [
-      h("button", { class: "back", type: "button", onclick: function () { choose(null); } }, "← Todos os países"),
-      h("h2", null, countryName(id)),
-      cv.count,
-      cv.list
-    ];
-    if (map.hasCountries && !map.paths.has(id)) parts.splice(3, 0, h("p", { class: "ccount" }, "Este território é pequeno demais para aparecer no mapa."));
-    if (!dataReady) { /* ainda carregando */ }
-    else if (!db) parts.push(h("p", { class: "note" }, "O conteúdo compartilhado só aparece quando a página é aberta pelo link publicado no Claude."));
-    else if (canWrite === false) parts.push(h("p", { class: "note" }, "Você pode ler o que já foi escrito. Para adicionar categorias, peça ao dono da página acesso de colaborador."));
-    else parts.push(addForm());
-    return h("div", null, parts);
-  }
-
-  function addForm() {
-    var nome = h("input", { id: "f-nome", type: "text", maxlength: "40", placeholder: "Ex.: Biomas", autocomplete: "off" });
-    var texto = h("textarea", { id: "f-texto", rows: "4", maxlength: "1200", placeholder: "Escreva o que você sabe sobre essa categoria neste país." });
-    var err = h("p", { class: "err", role: "alert", hidden: true });
-    var btn = h("button", { class: "btn", type: "submit" }, "Adicionar categoria");
-    cv.sug = h("div", { class: "sug" });
-    cv.nome = nome;
-    var busy = false;
-    var form = h("form", {
-      class: "add", novalidate: true,
-      onsubmit: async function (ev) {
-        ev.preventDefault();
-        if (busy) return;
-        var n = nome.value.trim(), t = texto.value.trim(), pais = sel;
-        if (!n || !t) { err.textContent = "Preencha a categoria e o texto."; err.hidden = false; return; }
-        busy = true; btn.disabled = true; err.hidden = true;
-        try {
-          var now = Date.now();
-          await db.collection("categorias").add({ pais: pais, nome: n, texto: t, autor: meId, criadoEm: now, atualizadoEm: now });
-          nome.value = ""; texto.value = "";
-        } catch (e) { err.textContent = writeError(e); err.hidden = false; }
-        busy = false; btn.disabled = false;
-      }
-    },
-      h("h3", null, "Nova categoria"),
-      h("label", { for: "f-nome" }, "Categoria"), nome, cv.sug,
-      h("label", { for: "f-texto" }, "Texto"), texto,
-      err, btn);
-    return form;
-  }
-  function updateSuggestions() {
-    if (!cv || !cv.sug) return;
-    var used = new Set(cats.filter(function (c) { return c.pais === cv.id; }).map(function (c) { return norm(c.nome); }));
-    cv.sug.replaceChildren.apply(cv.sug, SUG.filter(function (s) { return !used.has(norm(s)); }).slice(0, 6).map(function (s) {
-      return h("button", { type: "button", onclick: function () { cv.nome.value = s; var t = $("#f-texto"); if (t) t.focus(); } }, "+ " + s);
-    }));
-  }
-
-  function cardEl(c, author) {
-    var el = h("article", { class: "cat" });
-    var meta = h("p", { class: "cat-meta" }, h("span", null, author + " · " + fmtDate(c.atualizadoEm || c.criadoEm) + (c.atualizadoEm - c.criadoEm > 60000 ? " · editado" : "")));
-    if (canManage(c)) {
-      var actions = h("span", { class: "row" });
-      var showActions = function () {
-        actions.replaceChildren(
-          h("button", { class: "linkbtn", type: "button", onclick: function () { editId = c.id; startEdit(el, c); } }, "Editar"),
-          h("button", { class: "linkbtn danger", type: "button", onclick: askRemove }, "Remover"));
-      };
-      var askRemove = function () {
-        actions.replaceChildren(
-          h("button", { class: "linkbtn danger", type: "button", onclick: async function () {
-            try { await db.doc("categorias/" + c.id).delete(); } catch (e) { actions.replaceChildren(h("span", { class: "err" }, writeError(e))); }
-          } }, "Confirmar remoção"),
-          h("button", { class: "linkbtn", type: "button", onclick: showActions }, "Cancelar"));
-      };
-      showActions();
-      meta.append(actions);
-    }
-    el.append(h("h3", { class: "cat-name" }, c.nome), h("p", { class: "cat-text" }, c.texto), meta);
-    return el;
-  }
-  function startEdit(el, c) {
-    var nome = h("input", { id: "e-nome", type: "text", maxlength: "40", value: c.nome });
-    var texto = h("textarea", { id: "e-texto", rows: "5", maxlength: "1200" });
-    texto.value = c.texto;
-    var err = h("p", { class: "err", role: "alert", hidden: true });
-    var done = function () { editId = null; if (cv) cv.nodes.delete(c.id); renderList(); };
-    var save = h("button", { class: "btn", type: "submit" }, "Salvar");
-    el.replaceChildren(h("form", {
-      class: "editform", novalidate: true,
-      onsubmit: async function (ev) {
-        ev.preventDefault();
-        var n = nome.value.trim(), t = texto.value.trim();
-        if (!n || !t) { err.textContent = "Preencha a categoria e o texto."; err.hidden = false; return; }
-        save.disabled = true;
-        try { await db.doc("categorias/" + c.id).update({ nome: n, texto: t, atualizadoEm: Date.now() }); done(); }
-        catch (e) { err.textContent = writeError(e); err.hidden = false; save.disabled = false; }
-      }
-    },
-      h("label", { for: "e-nome" }, "Categoria"), nome,
-      h("label", { for: "e-texto" }, "Texto"), texto,
-      err,
-      h("div", { class: "row" }, save, h("button", { class: "btn ghost", type: "button", onclick: done }, "Cancelar"))));
-    nome.focus();
-  }
-
-  async function renderList() {
-    if (!cv) return;
-    var mine = cats.filter(function (c) { return c.pais === cv.id; }).sort(function (a, b) { return a.criadoEm - b.criadoEm; });
-    cv.count.textContent = mine.length ? plural(mine.length, "categoria", "categorias") : "Nenhuma categoria ainda";
-    var tok = ++cv.token, thisCv = cv, profiles = {};
-    if (user && mine.length) {
-      try { profiles = await user.profiles(Array.from(new Set(mine.map(function (c) { return c.autor; }).filter(Boolean)))); } catch (e) {}
-    }
-    if (cv !== thisCv || tok !== thisCv.token) return;
-    var els = [];
-    if (!mine.length) {
-      els.push(thisCv.emptyEl || (thisCv.emptyEl = h("p", { class: "empty" },
-        db ? "Ninguém escreveu sobre " + countryName(thisCv.id) + " ainda. Comece por uma categoria, como Biomas, Clima ou Cultura." : "")));
-    }
-    var seen = new Set();
-    mine.forEach(function (c) {
-      seen.add(c.id);
-      var author = (c.autor && profiles[c.autor] && profiles[c.autor].name) || "Alguém";
-      var sig = [c.nome, c.texto, c.atualizadoEm, author, canManage(c)].join("\u0001");
-      var n = thisCv.nodes.get(c.id);
-      if (editId === c.id && n) { els.push(n.el); return; }
-      if (!n || n.sig !== sig) { n = { el: cardEl(c, author), sig: sig }; thisCv.nodes.set(c.id, n); }
-      els.push(n.el);
-    });
-    Array.from(thisCv.nodes.keys()).forEach(function (id) { if (!seen.has(id)) thisCv.nodes.delete(id); });
-    els.forEach(function (el, i) {
-      var cur = thisCv.list.children[i];
-      if (cur !== el) thisCv.list.insertBefore(el, cur || null);
-    });
-    while (thisCv.list.children.length > els.length) thisCv.list.lastChild.remove();
-    updateSuggestions();
-  }
-
-  function onCats(docs) {
-    cats = docs.map(function (d) {
-      var x = d.data() || {};
-      return {
-        id: d.id,
-        pais: typeof x.pais === "string" ? x.pais : "",
-        nome: String(x.nome || "").slice(0, 40),
-        texto: String(x.texto || "").slice(0, 1200),
-        autor: typeof x.autor === "string" ? x.autor : null,
-        criadoEm: Number(x.criadoEm) || 0,
-        atualizadoEm: Number(x.atualizadoEm) || Number(x.criadoEm) || 0
-      };
-    }).filter(function (c) { return /^[A-Z]{3}$/.test(c.pais) && c.nome && c.texto; });
-    updateStats(); paintBuckets();
-    if (sel) renderList(); else renderChips();
-  }
-
-  async function use(name) {
-    try { return window.claude && window.claude.use ? await window.claude.use(name) : null; } catch (e) { return null; }
-  }
-  /* Banco local para a versão baixada: os dados ficam neste navegador, neste dispositivo. */
-  function makeLocalDb() {
-    var KEY = "atlas-polar-categorias-v1";
-    var listeners = [];
-    function readAll() {
-      try { return JSON.parse(localStorage.getItem(KEY) || "[]"); }
-      catch (e) { return []; }
-    }
-    function writeAll(items) {
-      localStorage.setItem(KEY, JSON.stringify(items));
-    }
-    function snapshot() {
-      return { docs: readAll().map(function (item) {
-        return { id: item.id, data: function () {
-          var copy = Object.assign({}, item); delete copy.id; return copy;
-        } };
-      }) };
-    }
-    function notify() {
-      var snap = snapshot();
-      listeners.slice().forEach(function (fn) { fn(snap); });
-    }
-    function newId() {
-      return "local-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 9);
-    }
-    return {
-      collection: function (name) {
-        if (name !== "categorias") throw new Error("Coleção desconhecida");
-        return {
-          add: async function (data) {
-            var items = readAll();
-            items.push(Object.assign({ id: newId() }, data));
-            writeAll(items); notify();
-          },
-          onSnapshot: function (callback, onError) {
-            listeners.push(callback);
-            try { callback(snapshot()); } catch (e) { if (onError) onError(e); }
-            return function () { listeners = listeners.filter(function (fn) { return fn !== callback; }); };
-          }
-        };
-      },
-      doc: function (path) {
-        var id = path.split("/").pop();
-        return {
-          delete: async function () {
-            writeAll(readAll().filter(function (item) { return item.id !== id; })); notify();
-          },
-          update: async function (changes) {
-            var items = readAll();
-            var found = false;
-            items = items.map(function (item) {
-              if (item.id !== id) return item;
-              found = true; return Object.assign({}, item, changes);
-            });
-            if (!found) throw new Error("Categoria não encontrada");
-            writeAll(items); notify();
-          }
-        };
-      }
-    };
-  }
-
-  async function initData() {
-    user = await use("user");
-    db = await use("db");
-    if (!db) {
-      try {
-        /* No arquivo local, usa armazenamento do navegador em vez da integração do Claude. */
-        localStorage.setItem("atlas-polar-categorias-v1", localStorage.getItem("atlas-polar-categorias-v1") || "[]");
-        db = makeLocalDb();
-        meId = "usuario-local";
-        canWrite = true;
-        isAdmin = true;
-      } catch (e) {
-        dbError = "O navegador bloqueou o armazenamento local. Abra o arquivo em uma janela normal do navegador e tente novamente.";
-      }
-    }
-    if (user) {
-      try { meId = await user.id(); } catch (e) {}
-      try { canWrite = await user.can("data.write"); } catch (e) {}
-      try { isAdmin = await user.canEdit(); } catch (e) {}
-    }
-    dataReady = true;
-    if (!db) { updateStats(); renderView(); return; }
-    renderView();
-    db.collection("categorias").onSnapshot(
-      function (snap) { onCats(snap.docs); },
-      function (e) {
-        dbError = e && e.code === "revoked" ? "Seu acesso a esta página mudou. Recarregue para continuar." : "Não foi possível carregar as categorias agora.";
-        updateStats(); if (!sel) renderView();
-      });
-  }
-
-  renderView();
-  initMap();
-  initData();
-})();
-</script>
-
-</body></html>
+  <script>
+    // ===== DADOS BÁSICOS (exemplo - expandível) =====
+    const countries = {
+      BRA: { name: "Brasil", pop: "203 milhões", year: "2022", source: "IBGE", flag: "https://flagcdn.com/w40/br.png", cx: 580, cy: 720 },
+      USA: { name: "Estados Unidos", pop: "331 milhões", year: "2020", source: "US Census", flag: "https://flagcdn.com/w40/us.png", cx: 320, cy: 400 },
+      RUS: { name: "Rússia", pop: "146 milhões", year: "2021",
