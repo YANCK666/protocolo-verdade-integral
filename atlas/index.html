@@ -134,10 +134,21 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 
             <!-- Estrela de 6 pontas (Hexagrama) passando por 0, 4, 8, 12, 16, 20 -->
             <g id="gridStar6">
-              <!-- Triângulo 1: 0, 8, 16 -->
-              <polygon points="400,40 550.2,636.5 249.8,636.5" fill="none" class="grid-line" style="opacity: 0.6;" />
-              <!-- Triângulo 2: 4, 12, 20 -->
-              <polygon points="676.6,247.1 249.8,636.5 400,40" fill="none" class="grid-line" style="opacity: 0.6;" />
+              <!-- Triângulo 1: 00, 08, 16 -->
+<polygon
+  points="400,40 711.8,580 88.2,580"
+  fill="none"
+  class="grid-line"
+  style="opacity:0.6;"
+/>
+
+<!-- Triângulo 2: 04, 12, 20 -->
+<polygon
+  points="711.8,220 400,760 88.2,220"
+  fill="none"
+  class="grid-line"
+  style="opacity:0.6;"
+/>
             </g>
 
             <circle class="ring" cx="400" cy="400" r="370" />
@@ -155,15 +166,11 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
           <text x="400" y="795" text-anchor="middle" fill="var(--muted)" font-size="12" font-family="var(--f-mono)">S</text>
         </svg>
 
-        <div class="zoomctl" id="zoomctl" style="position:absolute; right:4px; top:4px; display:flex; flex-direction:column; gap:4px;">
-          <button id="btnRotate" title="Ativar rotação" style="width:36px; height:36px; border-radius:8px; border:1px solid var(--line); background:var(--panel); color:var(--ink); font:600 18px/1 var(--f-body); cursor:pointer;">⟳</button>
-          <button id="btnReset" title="Resetar" style="width:36px; height:36px; border-radius:8px; border:1px solid var(--line); background:var(--panel); color:var(--ink); font:600 18px/1 var(--f-body); cursor:pointer;">↺</button>
-        </div>
       </div>
-      
+
       <p style="text-align:center; margin-top:12px; font-size:13px; color:var(--muted);">
         Centro = Polo Norte · Borda = Polo Sul<br>
-        Clique em <b>⟳</b> e arraste o mapa para girar o disco
+        Use a roda do mouse para ampliar o território. Ative a rotação nas camadas para girar o disco.
       </p>
 
       <!-- CAMADAS -->
@@ -181,7 +188,18 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
           <label class="layeritem pending"><input type="checkbox" data-layer="nature"><i class="swatch" style="--swatch:#5a9a75"></i>Natureza / recursos <small>estrutura</small></label>
           <label class="layeritem pending"><input type="checkbox" data-layer="culture"><i class="swatch" style="--swatch:#ad7c9c"></i>Cultura / memória <small>estrutura</small></label>
           <label class="layeritem pending"><input type="checkbox" data-layer="services"><i class="swatch" style="--swatch:#6489bd"></i>Serviços / transporte <small>estrutura</small></label>
+          <label class="layeritem">
+  <input type="checkbox" data-layer="rotation">
+  <i class="swatch" style="--swatch:#c4a1f0"></i>
+  Rotação do território
+</label>
         </div>
+        <button type="button" id="btnReset"
+  style="margin-top:10px;padding:8px 12px;border:1px solid var(--line);
+  border-radius:8px;background:var(--soft);color:var(--ink);
+  font:inherit;font-size:12px;cursor:pointer;">
+  ↺ Restaurar posição e zoom
+</button>
       </section>
 
       <!-- LINHA DO TEMPO -->
@@ -323,68 +341,134 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     document.head.appendChild(script);
   }
 
-  // ROTAÇÃO
-  let rotation = 0, isRotating = false, rotateEnabled = false, startX = 0, startRotation = 0;
-  const landGroup = document.getElementById("landGroup");
-  const mapWrap = document.getElementById("mapwrap");
-  const btnRotate = document.getElementById("btnRotate");
+  // ROTAÇÃO E ZOOM DO TERRITÓRIO
+let rotation = 0;
+let zoom = 1;
 
-  function applyRotation() {
-    landGroup.setAttribute("transform", `rotate(${rotation} 400 400)`);
+let isRotating = false;
+let rotateEnabled = false;
+
+let startX = 0;
+let startRotation = 0;
+
+const landGroup = document.getElementById("landGroup");
+const mapWrap = document.getElementById("mapwrap");
+
+const rotationCheckbox = document.querySelector(
+  '[data-layer="rotation"]'
+);
+
+const btnReset = document.getElementById("btnReset");
+
+const MIN_ZOOM = 1;
+const MAX_ZOOM = 4;
+
+function applyTransform() {
+  landGroup.setAttribute(
+    "transform",
+    `translate(400 400) rotate(${rotation}) scale(${zoom}) translate(-400 -400)`
+  );
+}
+
+// ATIVAR OU DESATIVAR ROTAÇÃO
+rotationCheckbox.addEventListener("change", () => {
+  rotateEnabled = rotationCheckbox.checked;
+  mapWrap.style.cursor = rotateEnabled ? "grab" : "default";
+
+  if (!rotateEnabled) {
+    isRotating = false;
+  }
+});
+
+// ARRASTAR PARA GIRAR
+let pointerStartX = 0;
+let pointerStartY = 0;
+let dragStarted = false;
+let startRotation = 0;
+
+mapWrap.addEventListener("pointerdown", (e) => {
+  if (!rotateEnabled || e.button !== 0) return;
+
+  isRotating = true;
+  dragStarted = false;
+
+  pointerStartX = e.clientX;
+  pointerStartY = e.clientY;
+  startRotation = rotation;
+});
+
+mapWrap.addEventListener("pointermove", (e) => {
+  if (!isRotating || !rotateEnabled) return;
+
+  const dx = e.clientX - pointerStartX;
+  const dy = e.clientY - pointerStartY;
+
+  if (!dragStarted && Math.hypot(dx, dy) > 4) {
+    dragStarted = true;
+    mapWrap.setPointerCapture(e.pointerId);
   }
 
-  btnRotate.addEventListener("click", () => {
-    rotateEnabled = !rotateEnabled;
-    btnRotate.style.background = rotateEnabled ? "var(--accent)" : "var(--panel)";
-    btnRotate.style.color = rotateEnabled ? "var(--bg)" : "var(--ink)";
-  });
+  if (!dragStarted) return;
 
-  document.getElementById("btnReset").addEventListener("click", () => {
-    rotation = 0; applyRotation();
-  });
+  rotation = startRotation + dx * 0.5;
+  applyTransform();
+});
 
-  mapWrap.addEventListener("pointerdown", (e) => {
-    if (!rotateEnabled) return;
-    isRotating = true;
-    mapWrap.style.cursor = "grabbing";
-    startX = e.clientX;
-    startRotation = rotation;
-    mapWrap.setPointerCapture(e.pointerId);
-  });
+function stopRotation() {
+  isRotating = false;
+  dragStarted = false;
+}
 
-  mapWrap.addEventListener("pointermove", (e) => {
-    if (!isRotating || !rotateEnabled) return;
-    const delta = (e.clientX - startX) * 0.5;
-    rotation = startRotation + delta;
-    applyRotation();
-  });
+mapWrap.addEventListener("pointerup", stopRotation);
+mapWrap.addEventListener("pointercancel", stopRotation);
+mapWrap.addEventListener("lostpointercapture", stopRotation);
 
-  mapWrap.addEventListener("pointerup", () => {
-    isRotating = false;
-    mapWrap.style.cursor = "grab";
-  });
+// ZOOM SOMENTE NO DISCO TERRESTRE
+mapWrap.addEventListener("wheel", (e) => {
+  e.preventDefault();
 
+  const factor = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+
+  zoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom * factor));
+
+  applyTransform();
+}, { passive: false });
+
+// RESTAURAR POSIÇÃO E ZOOM
+btnReset.addEventListener("click", () => {
+  rotation = 0;
+  zoom = 1;
+  applyTransform();
+
+  rotationCheckbox.checked = false;
+  rotateEnabled = false;
+  mapWrap.style.cursor = "default";
+});
   // CONTROLE DE CAMADAS
-  document.getElementById("layerControls").addEventListener("change", (e) => {
-    const key = e.target.dataset.layer;
-    const on = e.target.checked;
-    
-    if (key === "borders") {
-      document.getElementById("landGroup").style.display = on ? "" : "none";
-    } else if (key === "graticule") {
-      document.getElementById("gridCircles").style.display = on ? "" : "none";
-    } else if (key === "grid") {
-      document.getElementById("gridCross").style.display = on ? "" : "none";
-    } else if (key === "star6") {
-      document.getElementById("gridStar6").style.display = on ? "" : "none";
-    } else if (key === "flags") {
-      mapPaths.forEach((el, id) => {
-        const f = COUNTRIES[id]?.flag;
-        if (on && f) el.style.fill = `url(#${f})`;
-        else el.style.fill = "";
-      });
-    }
-  });
+document.getElementById("layerControls").addEventListener("change", (e) => {
+  const key = e.target.dataset.layer;
+  const on = e.target.checked;
+
+  if (key === "borders") {
+    document.getElementById("landGroup").style.display = on ? "" : "none";
+
+  } else if (key === "graticule") {
+    document.getElementById("gridCircles").style.display = on ? "" : "none";
+
+  } else if (key === "grid") {
+    document.getElementById("gridCross").style.display = on ? "" : "none";
+
+  } else if (key === "star6") {
+    document.getElementById("gridStar6").style.display = on ? "" : "none";
+
+  } else if (key === "flags") {
+    mapPaths.forEach((el, id) => {
+      const f = COUNTRIES[id]?.flag;
+      if (on && f) el.style.fill = `url(#${f})`;
+      else el.style.fill = "";
+    });
+  }
+});
 
   // BUSCA
   document.getElementById("q").addEventListener("input", (e) => {
