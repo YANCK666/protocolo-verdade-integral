@@ -469,4 +469,26 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   }
 
   function updateTimeline(id) {
-    const y = Number(document.getElementById
+    const y = Number(document.getElementById("yearSlider").value);
+    document.getElementById("yearOutput").textContent = y < 0 ? Math.abs(y) + " a.C." : y + " d.C.";
+    document.getElementById("eraDescription").textContent = ERAS[id].desc;
+    
+    const territories = ERAS[id].t;
+    mapPaths.forEach((el, cid) => {
+      if (cid === "ATA") return;
+      el.classList.toggle("historical", id !== "current" && territories.includes(cid));
+    });
+  }
+
+  document.getElementById("eraButtons").addEventListener("click", (ev) => {
+    const b = ev.target.closest("button[data-era]"); if (b) setEra(b.dataset.era);
+  });
+  document.getElementById("yearSlider").addEventListener("input", () => updateTimeline(document.querySelector('#eraButtons button[aria-pressed="true"]').dataset.era));
+
+  // INICIALIZAÇÃO
+  drawClock();
+  initMap();
+})();
+</script>
+</body>
+</html>
