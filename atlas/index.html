@@ -6,7 +6,6 @@
 <title>Atlas Polar — MAPA LUCIFERIANO</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Young+Serif&display=swap">
 <style>
-/* O CSS permanece exatamente o mesmo que você já tem */
 :root {
   --bg: #0b0710; --panel: #15101c; --soft: #221a2e; --ink: #f0e9fb; --muted: #a996c0;
   --line: #3a2d4c; --sea: #110c18; --land: #2e2340; --accent: #c4a1f0; --sel: #e9b8ff;
@@ -18,28 +17,40 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5; }
 .wrap { max-width: 1280px; margin: 0 auto; padding: 20px 16px 40px; }
+
+/* TOPO */
 .top { display: flex; flex-wrap: wrap; gap: 8px 32px; align-items: end; justify-content: space-between; margin-bottom: 20px; }
 .top > div { min-width: 0; flex: 1 1 420px; }
 h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw, 40px); margin-bottom: 6px; }
 .lede { color: var(--muted); margin-bottom: 20px; max-width: 62ch; }
 .stats { font-family: var(--f-mono); font-size: 13px; color: var(--muted); }
+
+/* LAYOUT PRINCIPAL */
 .layout { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 28px; align-items: start; }
 .mapcol { position: sticky; top: 16px; min-width: 0; }
 .mapwrap { position: relative; width: min(100%, calc(100vh - 100px)); margin: 0 auto; user-select: none; touch-action: none; }
 #map { display: block; width: 100%; height: auto; }
+
+/* MAPA */
 .sea { fill: var(--sea); }
 .c { fill: var(--land); stroke: var(--bg); stroke-width: .7; cursor: pointer; transition: opacity .2s; }
 .c:hover { stroke: var(--ink); stroke-width: 1.4; }
 .c.sel { stroke: var(--sel); stroke-width: 2.6; }
 .c.historical { fill: var(--hist) !important; }
 .c.ring { fill: #e8def6 !important; stroke: var(--line); stroke-width: 1; }
+
+/* GRADE GEOMÉTRICA */
 .grid-line { stroke: var(--green); stroke-width: 1.2; opacity: 0.4; pointer-events: none; }
 .grid-circle { fill: none; stroke: var(--green); stroke-width: 1; opacity: 0.3; pointer-events: none; }
 .ring { fill: none; stroke: var(--line); stroke-width: 2; pointer-events: none; }
 .pole { fill: var(--accent); pointer-events: none; filter: drop-shadow(0 0 6px var(--accent)); }
+
+/* PAINEL LATERAL */
 .panel { min-width: 0; }
 .search label { display: block; font-size: 12px; font-family: var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
 .search input { width: 100%; font: inherit; padding: 11px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); }
+
+/* CAMADAS */
 .layerbox { margin: 12px 0 0; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
 .layerhead { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; }
 .layerhead strong { font-family: var(--f-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
@@ -50,6 +61,8 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 .layeritem .swatch { width: 10px; height: 10px; border-radius: 3px; background: var(--swatch, var(--accent)); flex: 0 0 auto; }
 .layeritem small { margin-left: auto; color: var(--muted); font-size: 10px; white-space: nowrap; }
 .layeritem.pending { opacity: .62; }
+
+/* LINHA DO TEMPO */
 .timeline { margin: 16px 0 4px; padding: 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); }
 .timeline h3 { font-family: var(--f-display); font-size: 18px; font-weight: 400; margin: 0 0 4px; }
 .timeline p { margin: 0; color: var(--muted); font-size: 12.5px; }
@@ -59,7 +72,10 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 .yearline { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin: 8px 0 2px; }
 .yearline output { color: var(--accent); font-family: var(--f-mono); font-weight: 600; }
 .timeline input[type="range"] { width: 100%; accent-color: var(--accent); margin: 8px 0; }
+
+/* RODAPÉ (ARQUITETURA) */
 .footer-box { max-width: 1280px; margin: 0 auto 28px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+
 @media (max-width: 979px) {
   .layout { grid-template-columns: minmax(0, 1fr); gap: 18px; }
   .mapcol { position: static; }
@@ -78,22 +94,21 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   </header>
 
   <main class="layout">
+    <!-- MAPA -->
     <section class="mapcol">
       <div class="mapwrap" id="mapwrap">
         <svg id="map" viewBox="0 0 800 800">
           <defs>
             <clipPath id="mapclip"><circle cx="400" cy="400" r="372"/></clipPath>
-            <pattern id="flag-br" patternUnits="userSpaceOnUse" width="40" height="28"><image href="https://flagcdn.com/w80/br.png" width="40" height="28" preserveAspectRatio="xMidYMid slice"/></pattern>
-            <pattern id="flag-us" patternUnits="userSpaceOnUse" width="40" height="28"><image href="https://flagcdn.com/w80/us.png" width="40" height="28" preserveAspectRatio="xMidYMid slice"/></pattern>
-            <pattern id="flag-ru" patternUnits="userSpaceOnUse" width="40" height="28"><image href="https://flagcdn.com/w80/ru.png" width="40" height="28" preserveAspectRatio="xMidYMid slice"/></pattern>
-            <pattern id="flag-cn" patternUnits="userSpaceOnUse" width="40" height="28"><image href="https://flagcdn.com/w80/cn.png" width="40" height="28" preserveAspectRatio="xMidYMid slice"/></pattern>
-            <pattern id="flag-ar" patternUnits="userSpaceOnUse" width="40" height="28"><image href="https://flagcdn.com/w80/ar.png" width="40" height="28" preserveAspectRatio="xMidYMid slice"/></pattern>
-            <pattern id="flag-za" patternUnits="userSpaceOnUse" width="40" height="28"><image href="https://flagcdn.com/w80/za.png" width="40" height="28" preserveAspectRatio="xMidYMid slice"/></pattern>
-            <pattern id="flag-au" patternUnits="userSpaceOnUse" width="40" height="28"><image href="https://flagcdn.com/w80/au.png" width="40" height="28" preserveAspectRatio="xMidYMid slice"/></pattern>
-            <pattern id="flag-gb" patternUnits="userSpaceOnUse" width="40" height="28"><image href="https://flagcdn.com/w80/gb.png" width="40" height="28" preserveAspectRatio="xMidYMid slice"/></pattern>
+            <!-- Padrões de Bandeira serão injetados aqui via JS -->
           </defs>
+
           <circle class="sea" cx="400" cy="400" r="372" />
+
+          <!-- GRUPO QUE GIRA -->
           <g id="landGroup" clip-path="url(#mapclip)"></g>
+
+          <!-- GRADE FIXA -->
           <g id="gridLayer">
             <g id="gridCircles">
               <circle class="grid-circle" cx="400" cy="400" r="120" />
@@ -110,19 +125,26 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
             </g>
             <circle class="ring" cx="400" cy="400" r="370" />
           </g>
+
+          <!-- RELÓGIO 24H -->
           <g id="clockLayer">
             <circle cx="400" cy="400" r="385" fill="none" stroke="var(--line)" stroke-width="1.5" />
             <g id="clockTicks"></g>
           </g>
+
+          <!-- POLO NORTE -->
           <circle class="pole" cx="400" cy="400" r="5" />
           <text x="400" y="12" text-anchor="middle" fill="var(--accent)" font-size="12" font-family="var(--f-mono)" font-weight="bold">N</text>
           <text x="400" y="795" text-anchor="middle" fill="var(--muted)" font-size="12" font-family="var(--f-mono)">S</text>
         </svg>
       </div>
+
       <p style="text-align:center; margin-top:12px; font-size:13px; color:var(--muted);">
         Centro = Polo Norte · Borda = Polo Sul<br>
         Use a roda do mouse para ampliar. Ative a rotação para girar.
       </p>
+
+      <!-- CAMADAS -->
       <section class="layerbox">
         <div class="layerhead"><strong>Camadas do Atlas</strong><span>ligar / desligar</span></div>
         <div class="layergrid" id="layerControls">
@@ -141,6 +163,8 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
         </div>
         <button type="button" id="btnReset" style="margin-top:10px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--soft);color:var(--ink);font:inherit;font-size:12px;cursor:pointer;">↺ Restaurar posição e zoom</button>
       </section>
+
+      <!-- LINHA DO TEMPO -->
       <section class="timeline">
         <h3>Linha do tempo</h3>
         <p>Escolha uma época e mova o controle para mudar o ano exibido.</p>
@@ -158,6 +182,8 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
         <p id="eraDescription" style="margin-top:8px; font-size:11.5px;">Império Aquemênida durante o reinado de Ciro II.</p>
       </section>
     </section>
+
+    <!-- PAINEL LATERAL -->
     <section class="panel">
       <div class="search">
         <label for="q">Buscar país</label>
@@ -171,6 +197,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       <div id="countryInfo" style="margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); display:none;"></div>
     </section>
   </main>
+  
   <section class="footer-box">
     <div class="layerhead"><strong>Estrutura expansível · macro → micro</strong><span>modelo de camadas</span></div>
     <p style="margin:0;color:var(--muted);font-size:13px">Cada camada pode conter grupos, subcamadas, filtros e registros sem alterar a base do mapa.</p>
@@ -183,6 +210,17 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 (function () {
   "use strict";
 
+  // ==========================================
+  // 1. CONFIGURAÇÃO DE PAÍSES (DICIONÁRIO)
+  // ==========================================
+  // O world-atlas usa IDs numéricos de 3 dígitos.
+  // Este mapa converte para ISO2 (2 letras) para bandeiras e tradução.
+  const ID_TO_ISO2 = {
+    "076": "BR", "840": "US", "643": "RU", "156": "CN",
+    "032": "AR", "710": "ZA", "036": "AU", "826": "GB"
+  };
+
+  // Dados dos países (população, etc.)
   const COUNTRIES = {
     BRA: { name: "Brasil", pop: "203M", flag: "flag-br" },
     USA: { name: "EUA", pop: "331M", flag: "flag-us" },
@@ -194,6 +232,22 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     GBR: { name: "Reino Unido", pop: "67M", flag: "flag-gb" }
   };
 
+  // Tradutor nativo para Português
+  const tradutorPaises = new Intl.DisplayNames(['pt-BR'], { type: 'region' });
+
+  function getNomePaisPT(idNumerico) {
+    const iso2 = ID_TO_ISO2[idNumerico];
+    if (!iso2) return null;
+    try {
+      return tradutorPaises.of(iso2);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // ==========================================
+  // 2. CONFIGURAÇÃO DO MAPA
+  // ==========================================
   const SIZE = 800, CX = 400, CY = 400, R = 372;
   const proj = d3.geoAzimuthalEquidistant().rotate([0, -90]).scale(R / Math.PI).translate([CX, CY]).clipAngle(180);
   const path = d3.geoPath(proj);
@@ -203,7 +257,11 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   const mapWrap = document.getElementById("mapwrap");
   const rotationCheckbox = document.querySelector('[data-layer="rotation"]');
   const btnReset = document.getElementById("btnReset");
+  const defs = document.querySelector("#map defs");
 
+  // ==========================================
+  // 3. FUNÇÕES DO MAPA (RELÓGIO E PAÍSES)
+  // ==========================================
   function drawClock() {
     const ticksGroup = document.getElementById("clockTicks");
     for (let i = 0; i < 24; i++) {
@@ -211,9 +269,9 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       const textR = 393; 
       const tx = CX + textR * Math.sin(angle);
       const ty = CY - textR * Math.cos(angle);
+      
       const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
       text.setAttribute("x", tx); text.setAttribute("y", ty);
-      text.setAttribute("class", "clock-text");
       text.setAttribute("fill", "var(--muted)");
       text.setAttribute("font-size", "10px");
       text.setAttribute("font-family", "var(--f-mono)");
@@ -221,10 +279,12 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       text.setAttribute("dominant-baseline", "middle");
       text.textContent = i.toString().padStart(2, '0');
       ticksGroup.appendChild(text);
+
       const isMajor = i % 6 === 0;
       const r1 = 372; const r2 = isMajor ? 382 : 377;
       const x1 = CX + r1 * Math.sin(angle); const y1 = CY - r1 * Math.cos(angle);
       const x2 = CX + r2 * Math.sin(angle); const y2 = CY - r2 * Math.cos(angle);
+
       const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
       line.setAttribute("x1", x1); line.setAttribute("y1", y1);
       line.setAttribute("x2", x2); line.setAttribute("y2", y2);
@@ -236,45 +296,41 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 
   async function initMap() {
     try {
-      // Fonte de dados mais estável: world-atlas (Natural Earth)
       const topo = await d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json");
       const features = topojson.feature(topo, topo.objects.countries).features;
-      
       const g = d3.select("#landGroup");
       
-      // Países (a Antártida já vem no world-atlas, mas o ID pode variar; usamos o código ISO se disponível)
-      // O world-atlas usa IDs numéricos. Vamos usar uma lógica simples: todos os países são desenhados.
-      // A Antártida é o feature com id "010" (ISO numérico).
+      // Desenha a Antártida (Borda da Pizza)
       const antarctica = features.find(f => f.id === "010");
       if (antarctica) {
         g.append("path").datum(antarctica).attr("class", "c ring").attr("d", path);
       }
 
+      // Desenha os Países
       const countries = features.filter(f => f.id !== "010");
       g.selectAll("path.country")
         .data(countries)
         .join("path")
         .attr("class", "c country")
         .attr("d", path)
-        .attr("data-id", d => d.id) // O ID será numérico, mas para o clique/busca usaremos outra lógica se necessário
+        .attr("data-id", d => d.id)
+        .each(function(d) { mapPaths.set(d.id, this); })
         .on("click", function(event, d) {
           d3.selectAll(".c").classed("sel", false);
           d3.select(this).classed("sel", true);
-          // Como o ID é numérico, a função showInfo pode precisar de um mapeamento. 
-          // Para simplificar, vamos apenas mostrar o ID.
           showInfo(d.id);
         });
-      
-      // A busca por nome precisaria de um dicionário de IDs numéricos para nomes.
-      // Por enquanto, o mapa será desenhado. A busca e as bandeiras podem ser ajustadas depois.
+        
       document.getElementById("stats").textContent = "Mapa carregado";
     } catch (error) {
       console.error("Erro ao carregar o mapa:", error);
-      document.getElementById("stats").textContent = "Erro ao carregar o mapa. Verifique o console.";
+      document.getElementById("stats").textContent = "Erro ao carregar.";
     }
   }
 
-  // ROTAÇÃO E ZOOM
+  // ==========================================
+  // 4. ROTAÇÃO E ZOOM
+  // ==========================================
   let rotation = 0;
   let zoom = 1;
   let isRotating = false;
@@ -283,6 +339,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   let pointerStartY = 0;
   let dragStarted = false;
   let currentStartRotation = 0;
+
   const MIN_ZOOM = 1;
   const MAX_ZOOM = 4;
 
@@ -312,11 +369,13 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     if (!isRotating || !rotateEnabled) return;
     const dx = e.clientX - pointerStartX;
     const dy = e.clientY - pointerStartY;
+
     if (!dragStarted && Math.hypot(dx, dy) > 4) {
       dragStarted = true;
       mapWrap.setPointerCapture(e.pointerId);
     }
     if (!dragStarted) return;
+
     rotation = currentStartRotation + dx * 0.5;
     applyTransform();
   });
@@ -325,6 +384,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     isRotating = false;
     dragStarted = false;
   }
+
   mapWrap.addEventListener("pointerup", stopRotation);
   mapWrap.addEventListener("pointercancel", stopRotation);
   mapWrap.addEventListener("lostpointercapture", stopRotation);
@@ -345,10 +405,34 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     mapWrap.style.cursor = "default";
   });
 
-  // CONTROLE DE CAMADAS
+  // ==========================================
+  // 5. BANDEIRAS E CAMADAS
+  // ==========================================
+  function createFlagPattern(iso2) {
+    const patternId = `flag-${iso2}`;
+    if (document.getElementById(patternId)) return patternId;
+
+    const pattern = document.createElementNS("http://www.w3.org/2000/svg", "pattern");
+    pattern.setAttribute("id", patternId);
+    pattern.setAttribute("patternUnits", "userSpaceOnUse");
+    pattern.setAttribute("width", "40");
+    pattern.setAttribute("height", "28");
+
+    const image = document.createElementNS("http://www.w3.org/2000/svg", "image");
+    image.setAttribute("href", `https://flagcdn.com/w80/${iso2.toLowerCase()}.png`);
+    image.setAttribute("width", "40");
+    image.setAttribute("height", "28");
+    image.setAttribute("preserveAspectRatio", "xMidYMid slice");
+
+    pattern.appendChild(image);
+    defs.appendChild(pattern);
+    return patternId;
+  }
+
   document.getElementById("layerControls").addEventListener("change", (e) => {
     const key = e.target.dataset.layer;
     const on = e.target.checked;
+
     if (key === "borders") {
       document.getElementById("landGroup").style.display = on ? "" : "none";
     } else if (key === "graticule") {
@@ -359,17 +443,36 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       document.getElementById("gridStar6").style.display = on ? "" : "none";
     } else if (key === "flags") {
       mapPaths.forEach((el, id) => {
-        const f = COUNTRIES[id]?.flag;
-        if (on && f) el.style.fill = `url(#${f})`;
-        else el.style.fill = "";
+        const iso2 = ID_TO_ISO2[id];
+        if (on && iso2) {
+          const patternId = createFlagPattern(iso2);
+          el.style.fill = `url(#${patternId})`;
+        } else {
+          el.style.fill = "";
+        }
       });
     }
   });
 
-  // BUSCA (simplificada por enquanto, pois os IDs numéricos não batem com os códigos de 3 letras)
+  // ==========================================
+  // 6. BUSCA E PAINEL DE INFORMAÇÕES
+  // ==========================================
   document.getElementById("q").addEventListener("input", (e) => {
-    // A busca por nome precisaria de um dicionário de IDs para nomes. 
-    // Deixaremos a funcionalidade de busca para a próxima etapa.
+    const term = e.target.value.toLowerCase();
+    if (!term) return;
+
+    for (const [id, iso2] of Object.entries(ID_TO_ISO2)) {
+      const nome = getNomePaisPT(id);
+      if (nome && nome.toLowerCase().includes(term)) {
+        d3.selectAll(".c").classed("sel", false);
+        const el = mapPaths.get(id);
+        if (el) {
+          d3.select(el).classed("sel", true);
+          showInfo(id);
+        }
+        break;
+      }
+    }
   });
 
   function showInfo(id) {
@@ -377,20 +480,19 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     const view = document.getElementById("view");
     box.style.display = "block";
     view.style.display = "none";
+    
+    const nomeTraduzido = getNomePaisPT(id) || `País (ID: ${id})`;
     const backBtn = `<button onclick="document.getElementById('countryInfo').style.display='none';document.getElementById('view').style.display='block';" style="border:0;background:none;color:var(--accent);cursor:pointer;margin-bottom:10px;">← Todos os países</button>`;
-    box.innerHTML = `${backBtn}<h2 style="font-family:var(--f-display); font-size:24px; margin-bottom:8px;">País (ID: ${id})</h2>`;
+    
+    box.innerHTML = `
+      ${backBtn}
+      <h2 style="font-family:var(--f-display); font-size:24px; margin-bottom:8px;">${nomeTraduzido}</h2>
+    `;
   }
 
-  // LINHA DO TEMPO (mantida, mas a lógica de territórios precisaria de mapeamento de IDs)
-  const ERAS = {
-    cyrus: { min: -550, max: -530, value: -550, desc: "Império Aquemênida durante o reinado de Ciro II.", t: [] },
-    current: { min: 2026, max: 2026, value: 2026, desc: "Mapa político atual.", t: [] }
-  };
-  function setEra(id) {
-    // Implementação simplificada
-  }
-  // ... (o resto do código da linha do tempo pode ser omitido nesta versão de teste)
-
+  // ==========================================
+  // 7. INICIALIZAÇÃO
+  // ==========================================
   drawClock();
   initMap();
 })();
