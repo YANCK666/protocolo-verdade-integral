@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Atlas Polar</title>
+<title>Atlas Polar — MAPA LUCIFERIANO</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Young+Serif&display=swap">
 <style>
 :root {
@@ -39,7 +39,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 .c.historical { fill: var(--hist) !important; }
 .c.ring { fill: #e8def6 !important; stroke: var(--line); stroke-width: 1; } /* Antártida Branca */
 
-/* GRADE GEOMÉTRICA (Linhas Verdes) */
+/* GRADE GEOMÉTRICA */
 .grid-line { stroke: var(--green); stroke-width: 1.2; opacity: 0.4; pointer-events: none; }
 .grid-circle { fill: none; stroke: var(--green); stroke-width: 1; opacity: 0.3; pointer-events: none; }
 .axis-line { stroke: var(--muted); stroke-width: 1; opacity: 0.2; pointer-events: none; }
@@ -121,17 +121,25 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 
           <!-- CAMADA FIXA: Grade Verde (Não gira) -->
           <g id="gridLayer">
-            <circle class="grid-circle" cx="400" cy="400" r="120" />
-            <circle class="grid-circle" cx="400" cy="400" r="240" />
-            <circle class="grid-circle" cx="400" cy="400" r="360" />
-            <line class="grid-line" x1="400" y1="40" x2="400" y2="760" />
-            <line class="grid-line" x1="40" y1="400" x2="760" y2="400" />
-            <line class="grid-line" x1="145" y1="145" x2="655" y2="655" />
-            <line class="grid-line" x1="655" y1="145" x2="145" y2="655" />
-            <line class="grid-line" x1="168" y1="306" x2="632" y2="494" />
-            <line class="grid-line" x1="306" y1="168" x2="494" y2="632" />
-            <line class="grid-line" x1="632" y1="306" x2="168" y2="494" />
-            <line class="grid-line" x1="494" y1="168" x2="306" y2="632" />
+            <g id="gridCircles">
+              <circle class="grid-circle" cx="400" cy="400" r="120" />
+              <circle class="grid-circle" cx="400" cy="400" r="240" />
+              <circle class="grid-circle" cx="400" cy="400" r="360" />
+            </g>
+            
+            <g id="gridCross">
+              <line class="grid-line" x1="400" y1="40" x2="400" y2="760" />
+              <line class="grid-line" x1="40" y1="400" x2="760" y2="400" />
+            </g>
+
+            <!-- Estrela de 6 pontas (Hexagrama) passando por 0, 4, 8, 12, 16, 20 -->
+            <g id="gridStar6">
+              <!-- Triângulo 1: 0, 8, 16 -->
+              <polygon points="400,40 550.2,636.5 249.8,636.5" fill="none" class="grid-line" style="opacity: 0.6;" />
+              <!-- Triângulo 2: 4, 12, 20 -->
+              <polygon points="676.6,247.1 249.8,636.5 400,40" fill="none" class="grid-line" style="opacity: 0.6;" />
+            </g>
+
             <circle class="ring" cx="400" cy="400" r="370" />
           </g>
 
@@ -148,14 +156,14 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
         </svg>
 
         <div class="zoomctl" id="zoomctl" style="position:absolute; right:4px; top:4px; display:flex; flex-direction:column; gap:4px;">
-          <button id="btnRotate" title="Girar disco" style="width:36px; height:36px; border-radius:8px; border:1px solid var(--line); background:var(--panel); color:var(--ink); font:600 18px/1 var(--f-body); cursor:pointer;">⟳</button>
+          <button id="btnRotate" title="Ativar rotação" style="width:36px; height:36px; border-radius:8px; border:1px solid var(--line); background:var(--panel); color:var(--ink); font:600 18px/1 var(--f-body); cursor:pointer;">⟳</button>
           <button id="btnReset" title="Resetar" style="width:36px; height:36px; border-radius:8px; border:1px solid var(--line); background:var(--panel); color:var(--ink); font:600 18px/1 var(--f-body); cursor:pointer;">↺</button>
         </div>
       </div>
       
       <p style="text-align:center; margin-top:12px; font-size:13px; color:var(--muted);">
         Centro = Polo Norte · Borda = Polo Sul<br>
-        Ative “Girar disco” e arraste o mouse
+        Clique em <b>⟳</b> e arraste o mapa para girar o disco
       </p>
 
       <!-- CAMADAS -->
@@ -164,14 +172,9 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
         <div class="layergrid" id="layerControls">
           <label class="layeritem"><input type="checkbox" data-layer="borders" checked><i class="swatch" style="--swatch:#9670c8"></i>Países e fronteiras</label>
           <label class="layeritem"><input type="checkbox" data-layer="graticule" checked><i class="swatch" style="--swatch:#8993a8"></i>Latitude / longitude</label>
-          <label class="layeritem"><input type="checkbox" data-layer="labels" checked><i class="swatch" style="--swatch:#756487"></i>Rótulos e polos</label>
-          <label class="layeritem"><input type="checkbox" data-layer="skygrid"><i class="swatch" style="--swatch:#9a7bd1"></i>Grade celeste</label>
-          <label class="layeritem"><input type="checkbox" data-layer="stars" checked><i class="swatch" style="--swatch:#d4a83d"></i>Estrelas / Polaris</label>
-          <label class="layeritem"><input type="checkbox" data-layer="constellations" checked><i class="swatch" style="--swatch:#24a6c6"></i>Constelações</label>
-          <label class="layeritem"><input type="checkbox" data-layer="rays"><i class="swatch" style="--swatch:#9fc7ff"></i>Raios do centro</label>
-          <label class="layeritem"><input type="checkbox" data-layer="square" checked><i class="swatch" style="--swatch:#e7b85c"></i>Quadrado · 3, 9, 15, 21</label>
-          <label class="layeritem"><input type="checkbox" data-layer="star" checked><i class="swatch" style="--swatch:#8cff48"></i>Estrela · 00, 4, 8, 12, 16, 20</label>
-          <label class="layeritem"><input type="checkbox" data-layer="cross" checked><i class="swatch" style="--swatch:#f4f1df"></i>Cruz central</label>
+          <label class="layeritem"><input type="checkbox" data-layer="flags" checked><i class="swatch" style="--swatch:#d4a83d"></i>Bandeiras</label>
+          <label class="layeritem"><input type="checkbox" data-layer="grid" checked><i class="swatch" style="--swatch:#4ade80"></i>Grade 12</label>
+          <label class="layeritem"><input type="checkbox" data-layer="star6" checked><i class="swatch" style="--swatch:#8cff48"></i>Estrela 6 pontas</label>
           <label class="layeritem"><input type="checkbox" data-layer="historical" checked><i class="swatch" style="--swatch:#a36bd0"></i>Época histórica</label>
           <label class="layeritem pending"><input type="checkbox" data-layer="economy"><i class="swatch" style="--swatch:#bc9855"></i>Economia <small>estrutura</small></label>
           <label class="layeritem pending"><input type="checkbox" data-layer="institutions"><i class="swatch" style="--swatch:#568caa"></i>Instituições <small>estrutura</small></label>
@@ -218,7 +221,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     </section>
   </main>
   
-  <!-- RODAPÉ DE ARQUITETURA -->
   <section class="footer-box">
     <div class="layerhead"><strong>Estrutura expansível · macro → micro</strong><span>modelo de camadas</span></div>
     <p style="margin:0;color:var(--muted);font-size:13px">Cada camada pode conter grupos, subcamadas, filtros e registros sem alterar a base do mapa. Exemplo: <b>Economia → moeda → reservas → composição → origem → data → documento</b>. Ou <b>Território → país → estado → município → bairro → rua → ponto</b>. O mesmo registro pode aparecer em mais de uma camada, mantendo uma única fonte e um histórico de versões.</p>
@@ -257,8 +259,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       const ty = CY - textR * Math.cos(angle);
       
       const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-      text.setAttribute("x", tx);
-      text.setAttribute("y", ty);
+      text.setAttribute("x", tx); text.setAttribute("y", ty);
       text.setAttribute("class", "clock-text");
       text.setAttribute("fill", "var(--muted)");
       text.setAttribute("font-size", "10px");
@@ -269,12 +270,9 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       ticksGroup.appendChild(text);
 
       const isMajor = i % 6 === 0;
-      const r1 = 372; 
-      const r2 = isMajor ? 382 : 377;
-      const x1 = CX + r1 * Math.sin(angle);
-      const y1 = CY - r1 * Math.cos(angle);
-      const x2 = CX + r2 * Math.sin(angle);
-      const y2 = CY - r2 * Math.cos(angle);
+      const r1 = 372; const r2 = isMajor ? 382 : 377;
+      const x1 = CX + r1 * Math.sin(angle); const y1 = CY - r1 * Math.cos(angle);
+      const x2 = CX + r2 * Math.sin(angle); const y2 = CY - r2 * Math.cos(angle);
 
       const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
       line.setAttribute("x1", x1); line.setAttribute("y1", y1);
@@ -329,15 +327,16 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   let rotation = 0, isRotating = false, rotateEnabled = false, startX = 0, startRotation = 0;
   const landGroup = document.getElementById("landGroup");
   const mapWrap = document.getElementById("mapwrap");
+  const btnRotate = document.getElementById("btnRotate");
 
   function applyRotation() {
     landGroup.setAttribute("transform", `rotate(${rotation} 400 400)`);
   }
 
-  document.getElementById("btnRotate").addEventListener("click", () => {
+  btnRotate.addEventListener("click", () => {
     rotateEnabled = !rotateEnabled;
-    document.getElementById("btnRotate").style.background = rotateEnabled ? "var(--accent)" : "var(--panel)";
-    document.getElementById("btnRotate").style.color = rotateEnabled ? "var(--bg)" : "var(--ink)";
+    btnRotate.style.background = rotateEnabled ? "var(--accent)" : "var(--panel)";
+    btnRotate.style.color = rotateEnabled ? "var(--bg)" : "var(--ink)";
   });
 
   document.getElementById("btnReset").addEventListener("click", () => {
@@ -373,28 +372,18 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     if (key === "borders") {
       document.getElementById("landGroup").style.display = on ? "" : "none";
     } else if (key === "graticule") {
-      document.querySelectorAll(".grat").forEach(el => el.style.display = on ? "" : "none");
-    } else if (key === "square") {
-      document.querySelectorAll(".grid-line").forEach((el, i) => { if(i >= 4 && i < 8) el.style.display = on ? "" : "none"; });
+      document.getElementById("gridCircles").style.display = on ? "" : "none";
+    } else if (key === "grid") {
+      document.getElementById("gridCross").style.display = on ? "" : "none";
+    } else if (key === "star6") {
+      document.getElementById("gridStar6").style.display = on ? "" : "none";
+    } else if (key === "flags") {
+      mapPaths.forEach((el, id) => {
+        const f = COUNTRIES[id]?.flag;
+        if (on && f) el.style.fill = `url(#${f})`;
+        else el.style.fill = "";
+      });
     }
-  });
-
-  // BANDEIRAS
-  const flagsMap = {
-    BRA: "flag-br", USA: "flag-us", RUS: "flag-ru", CHN: "flag-cn",
-    ARG: "flag-ar", ZAF: "flag-za", AUS: "flag-au", GBR: "flag-gb"
-  };
-  document.querySelector('input[data-layer="borders"]').addEventListener("change", (e) => {
-    // Se for bandeiras, lógica à parte
-  });
-  // Adicionando Bandeiras no checkbox "Rótulos" só para testar
-  document.querySelector('input[data-layer="labels"]').addEventListener("change", (e) => {
-    const on = e.target.checked;
-    mapPaths.forEach((el, id) => {
-      const f = flagsMap[id];
-      if (on && f) el.style.fill = `url(#${f})`;
-      else el.style.fill = "";
-    });
   });
 
   // BUSCA
