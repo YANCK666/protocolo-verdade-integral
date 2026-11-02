@@ -37,12 +37,11 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 .c:hover { stroke: var(--ink); stroke-width: 1.4; }
 .c.sel { stroke: var(--sel); stroke-width: 2.6; }
 .c.historical { fill: var(--hist) !important; }
-.c.ring { fill: #e8def6 !important; stroke: var(--line); stroke-width: 1; } /* Antártida Branca */
+.c.ring { fill: #e8def6 !important; stroke: var(--line); stroke-width: 1; }
 
 /* GRADE GEOMÉTRICA */
 .grid-line { stroke: var(--green); stroke-width: 1.2; opacity: 0.4; pointer-events: none; }
 .grid-circle { fill: none; stroke: var(--green); stroke-width: 1; opacity: 0.3; pointer-events: none; }
-.axis-line { stroke: var(--muted); stroke-width: 1; opacity: 0.2; pointer-events: none; }
 .ring { fill: none; stroke: var(--line); stroke-width: 2; pointer-events: none; }
 .pole { fill: var(--accent); pointer-events: none; filter: drop-shadow(0 0 6px var(--accent)); }
 
@@ -101,7 +100,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
         <svg id="map" viewBox="0 0 800 800">
           <defs>
             <clipPath id="mapclip"><circle cx="400" cy="400" r="372"/></clipPath>
-            <!-- Padrões de Bandeiras -->
             <pattern id="flag-br" patternUnits="userSpaceOnUse" width="40" height="28"><image href="https://flagcdn.com/w80/br.png" width="40" height="28" preserveAspectRatio="xMidYMid slice"/></pattern>
             <pattern id="flag-us" patternUnits="userSpaceOnUse" width="40" height="28"><image href="https://flagcdn.com/w80/us.png" width="40" height="28" preserveAspectRatio="xMidYMid slice"/></pattern>
             <pattern id="flag-ru" patternUnits="userSpaceOnUse" width="40" height="28"><image href="https://flagcdn.com/w80/ru.png" width="40" height="28" preserveAspectRatio="xMidYMid slice"/></pattern>
@@ -114,68 +112,48 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 
           <circle class="sea" cx="400" cy="400" r="372" />
 
-          <!-- GRUPO QUE GIRA: Países e Antártida -->
-          <g id="landGroup" clip-path="url(#mapclip)">
-            <!-- Injetado via D3 -->
-          </g>
+          <!-- GRUPO QUE GIRA -->
+          <g id="landGroup" clip-path="url(#mapclip)"></g>
 
-          <!-- CAMADA FIXA: Grade Verde (Não gira) -->
+          <!-- GRADE FIXA -->
           <g id="gridLayer">
             <g id="gridCircles">
               <circle class="grid-circle" cx="400" cy="400" r="120" />
               <circle class="grid-circle" cx="400" cy="400" r="240" />
               <circle class="grid-circle" cx="400" cy="400" r="360" />
             </g>
-            
             <g id="gridCross">
               <line class="grid-line" x1="400" y1="40" x2="400" y2="760" />
               <line class="grid-line" x1="40" y1="400" x2="760" y2="400" />
             </g>
-
-            <!-- Estrela de 6 pontas (Hexagrama) passando por 0, 4, 8, 12, 16, 20 -->
             <g id="gridStar6">
-              <!-- Triângulo 1: 00, 08, 16 -->
-<polygon
-  points="400,40 711.8,580 88.2,580"
-  fill="none"
-  class="grid-line"
-  style="opacity:0.6;"
-/>
-
-<!-- Triângulo 2: 04, 12, 20 -->
-<polygon
-  points="711.8,220 400,760 88.2,220"
-  fill="none"
-  class="grid-line"
-  style="opacity:0.6;"
-/>
+              <polygon points="400,40 711.8,580 88.2,580" fill="none" class="grid-line" style="opacity:0.6;" />
+              <polygon points="711.8,220 400,760 88.2,220" fill="none" class="grid-line" style="opacity:0.6;" />
             </g>
-
             <circle class="ring" cx="400" cy="400" r="370" />
           </g>
 
-          <!-- CAMADA FIXA: Relógio 24h -->
+          <!-- RELÓGIO 24H -->
           <g id="clockLayer">
             <circle cx="400" cy="400" r="385" fill="none" stroke="var(--line)" stroke-width="1.5" />
             <g id="clockTicks"></g>
           </g>
 
-          <!-- CAMADA FIXA: Polo Norte -->
+          <!-- POLO NORTE -->
           <circle class="pole" cx="400" cy="400" r="5" />
           <text x="400" y="12" text-anchor="middle" fill="var(--accent)" font-size="12" font-family="var(--f-mono)" font-weight="bold">N</text>
           <text x="400" y="795" text-anchor="middle" fill="var(--muted)" font-size="12" font-family="var(--f-mono)">S</text>
         </svg>
-
       </div>
 
       <p style="text-align:center; margin-top:12px; font-size:13px; color:var(--muted);">
         Centro = Polo Norte · Borda = Polo Sul<br>
-        Use a roda do mouse para ampliar o território. Ative a rotação nas camadas para girar o disco.
+        Use a roda do mouse para ampliar. Ative a rotação para girar.
       </p>
 
       <!-- CAMADAS -->
-      <section class="layerbox" aria-label="Gerenciador de camadas">
-        <div class="layerhead"><strong>Camadas do Atlas</strong><span>ligar / desligar · ordem expansível</span></div>
+      <section class="layerbox">
+        <div class="layerhead"><strong>Camadas do Atlas</strong><span>ligar / desligar</span></div>
         <div class="layergrid" id="layerControls">
           <label class="layeritem"><input type="checkbox" data-layer="borders" checked><i class="swatch" style="--swatch:#9670c8"></i>Países e fronteiras</label>
           <label class="layeritem"><input type="checkbox" data-layer="graticule" checked><i class="swatch" style="--swatch:#8993a8"></i>Latitude / longitude</label>
@@ -188,18 +166,9 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
           <label class="layeritem pending"><input type="checkbox" data-layer="nature"><i class="swatch" style="--swatch:#5a9a75"></i>Natureza / recursos <small>estrutura</small></label>
           <label class="layeritem pending"><input type="checkbox" data-layer="culture"><i class="swatch" style="--swatch:#ad7c9c"></i>Cultura / memória <small>estrutura</small></label>
           <label class="layeritem pending"><input type="checkbox" data-layer="services"><i class="swatch" style="--swatch:#6489bd"></i>Serviços / transporte <small>estrutura</small></label>
-          <label class="layeritem">
-  <input type="checkbox" data-layer="rotation">
-  <i class="swatch" style="--swatch:#c4a1f0"></i>
-  Rotação do território
-</label>
+          <label class="layeritem"><input type="checkbox" data-layer="rotation"><i class="swatch" style="--swatch:#c4a1f0"></i>Rotação do território</label>
         </div>
-        <button type="button" id="btnReset"
-  style="margin-top:10px;padding:8px 12px;border:1px solid var(--line);
-  border-radius:8px;background:var(--soft);color:var(--ink);
-  font:inherit;font-size:12px;cursor:pointer;">
-  ↺ Restaurar posição e zoom
-</button>
+        <button type="button" id="btnReset" style="margin-top:10px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--soft);color:var(--ink);font:inherit;font-size:12px;cursor:pointer;">↺ Restaurar posição e zoom</button>
       </section>
 
       <!-- LINHA DO TEMPO -->
@@ -227,21 +196,18 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
         <label for="q">Buscar país</label>
         <input id="q" type="search" placeholder="Brasil, Japão, Egito…" autocomplete="off">
       </div>
-      
       <div id="view" style="margin-top:22px;">
         <h2 style="font-family:var(--f-display); font-weight:400; font-size:26px; margin-bottom:6px;">Escolha um país</h2>
-        <p style="color:var(--muted); margin-bottom:18px; max-width:56ch;">Clique no mapa ou use a busca. Em cada país você pode criar categorias de assunto, como Biomas ou Cultura, e escrever um texto para cada uma.</p>
-        <p style="color:var(--muted);">Ainda não há categorias. Escolha um país e crie a primeira.</p>
+        <p style="color:var(--muted); margin-bottom:18px; max-width:56ch;">Clique no mapa ou use a busca. Em cada país você pode criar categorias de assunto, como Biomas ou Cultura.</p>
+        <p style="color:var(--muted);">Ainda não há categorias.</p>
       </div>
-      
-      <div id="countryInfo" style="margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); display:none;">
-      </div>
+      <div id="countryInfo" style="margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); display:none;"></div>
     </section>
   </main>
   
   <section class="footer-box">
     <div class="layerhead"><strong>Estrutura expansível · macro → micro</strong><span>modelo de camadas</span></div>
-    <p style="margin:0;color:var(--muted);font-size:13px">Cada camada pode conter grupos, subcamadas, filtros e registros sem alterar a base do mapa. Exemplo: <b>Economia → moeda → reservas → composição → origem → data → documento</b>. Ou <b>Território → país → estado → município → bairro → rua → ponto</b>. O mesmo registro pode aparecer em mais de uma camada, mantendo uma única fonte e um histórico de versões.</p>
+    <p style="margin:0;color:var(--muted);font-size:13px">Cada camada pode conter grupos, subcamadas, filtros e registros sem alterar a base do mapa.</p>
   </section>
 </div>
 
@@ -266,6 +232,12 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   const proj = d3.geoAzimuthalEquidistant().rotate([0, -90]).scale(R / Math.PI).translate([CX, CY]).clipAngle(180);
   const path = d3.geoPath(proj);
   let mapPaths = new Map();
+
+  // ELEMENTOS DO DOM (Declarados uma única vez)
+  const landGroup = document.getElementById("landGroup");
+  const mapWrap = document.getElementById("mapwrap");
+  const rotationCheckbox = document.querySelector('[data-layer="rotation"]');
+  const btnReset = document.getElementById("btnReset");
 
   // RELÓGIO 24H
   function drawClock() {
@@ -310,20 +282,17 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       const obj = topo.objects.world;
       const features = topojson.feature(topo, obj).features;
       
-      const landGroup = d3.select("#landGroup");
+      const g = d3.select("#landGroup");
       
-      // Desenha a Antártida (Borda da Pizza)
+      // Antártida (Borda da Pizza)
       const antarctica = features.find(f => f.id === 'ATA');
       if (antarctica) {
-        landGroup.append("path")
-          .datum(antarctica)
-          .attr("class", "c ring")
-          .attr("d", path);
+        g.append("path").datum(antarctica).attr("class", "c ring").attr("d", path);
       }
 
-      // Desenha os Países
+      // Países
       const countries = features.filter(f => f.id !== 'ATA');
-      landGroup.selectAll("path.country")
+      g.selectAll("path.country")
         .data(countries)
         .join("path")
         .attr("class", "c country")
@@ -341,134 +310,102 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     document.head.appendChild(script);
   }
 
-  // ROTAÇÃO E ZOOM DO TERRITÓRIO
-let rotation = 0;
-let zoom = 1;
+  // ROTAÇÃO E ZOOM
+  let rotation = 0;
+  let zoom = 1;
+  let isRotating = false;
+  let rotateEnabled = false;
+  let pointerStartX = 0;
+  let pointerStartY = 0;
+  let dragStarted = false;
+  let currentStartRotation = 0;
 
-let isRotating = false;
-let rotateEnabled = false;
+  const MIN_ZOOM = 1;
+  const MAX_ZOOM = 4;
 
-let startX = 0;
-let startRotation = 0;
+  function applyTransform() {
+    landGroup.setAttribute(
+      "transform",
+      `translate(400 400) rotate(${rotation}) scale(${zoom}) translate(-400 -400)`
+    );
+  }
 
-const landGroup = document.getElementById("landGroup");
-const mapWrap = document.getElementById("mapwrap");
+  rotationCheckbox.addEventListener("change", () => {
+    rotateEnabled = rotationCheckbox.checked;
+    mapWrap.style.cursor = rotateEnabled ? "grab" : "default";
+    if (!rotateEnabled) isRotating = false;
+  });
 
-const rotationCheckbox = document.querySelector(
-  '[data-layer="rotation"]'
-);
+  mapWrap.addEventListener("pointerdown", (e) => {
+    if (!rotateEnabled || e.button !== 0) return;
+    isRotating = true;
+    dragStarted = false;
+    pointerStartX = e.clientX;
+    pointerStartY = e.clientY;
+    currentStartRotation = rotation;
+  });
 
-const btnReset = document.getElementById("btnReset");
+  mapWrap.addEventListener("pointermove", (e) => {
+    if (!isRotating || !rotateEnabled) return;
+    const dx = e.clientX - pointerStartX;
+    const dy = e.clientY - pointerStartY;
 
-const MIN_ZOOM = 1;
-const MAX_ZOOM = 4;
+    if (!dragStarted && Math.hypot(dx, dy) > 4) {
+      dragStarted = true;
+      mapWrap.setPointerCapture(e.pointerId);
+    }
+    if (!dragStarted) return;
 
-function applyTransform() {
-  landGroup.setAttribute(
-    "transform",
-    `translate(400 400) rotate(${rotation}) scale(${zoom}) translate(-400 -400)`
-  );
-}
+    rotation = currentStartRotation + dx * 0.5;
+    applyTransform();
+  });
 
-// ATIVAR OU DESATIVAR ROTAÇÃO
-rotationCheckbox.addEventListener("change", () => {
-  rotateEnabled = rotationCheckbox.checked;
-  mapWrap.style.cursor = rotateEnabled ? "grab" : "default";
-
-  if (!rotateEnabled) {
+  function stopRotation() {
     isRotating = false;
-  }
-});
-
-// ARRASTAR PARA GIRAR
-let pointerStartX = 0;
-let pointerStartY = 0;
-let dragStarted = false;
-let startRotation = 0;
-
-mapWrap.addEventListener("pointerdown", (e) => {
-  if (!rotateEnabled || e.button !== 0) return;
-
-  isRotating = true;
-  dragStarted = false;
-
-  pointerStartX = e.clientX;
-  pointerStartY = e.clientY;
-  startRotation = rotation;
-});
-
-mapWrap.addEventListener("pointermove", (e) => {
-  if (!isRotating || !rotateEnabled) return;
-
-  const dx = e.clientX - pointerStartX;
-  const dy = e.clientY - pointerStartY;
-
-  if (!dragStarted && Math.hypot(dx, dy) > 4) {
-    dragStarted = true;
-    mapWrap.setPointerCapture(e.pointerId);
+    dragStarted = false;
   }
 
-  if (!dragStarted) return;
+  mapWrap.addEventListener("pointerup", stopRotation);
+  mapWrap.addEventListener("pointercancel", stopRotation);
+  mapWrap.addEventListener("lostpointercapture", stopRotation);
 
-  rotation = startRotation + dx * 0.5;
-  applyTransform();
-});
+  mapWrap.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    const factor = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+    zoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom * factor));
+    applyTransform();
+  }, { passive: false });
 
-function stopRotation() {
-  isRotating = false;
-  dragStarted = false;
-}
+  btnReset.addEventListener("click", () => {
+    rotation = 0;
+    zoom = 1;
+    applyTransform();
+    rotationCheckbox.checked = false;
+    rotateEnabled = false;
+    mapWrap.style.cursor = "default";
+  });
 
-mapWrap.addEventListener("pointerup", stopRotation);
-mapWrap.addEventListener("pointercancel", stopRotation);
-mapWrap.addEventListener("lostpointercapture", stopRotation);
-
-// ZOOM SOMENTE NO DISCO TERRESTRE
-mapWrap.addEventListener("wheel", (e) => {
-  e.preventDefault();
-
-  const factor = e.deltaY < 0 ? 1.12 : 1 / 1.12;
-
-  zoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom * factor));
-
-  applyTransform();
-}, { passive: false });
-
-// RESTAURAR POSIÇÃO E ZOOM
-btnReset.addEventListener("click", () => {
-  rotation = 0;
-  zoom = 1;
-  applyTransform();
-
-  rotationCheckbox.checked = false;
-  rotateEnabled = false;
-  mapWrap.style.cursor = "default";
-});
   // CONTROLE DE CAMADAS
-document.getElementById("layerControls").addEventListener("change", (e) => {
-  const key = e.target.dataset.layer;
-  const on = e.target.checked;
+  document.getElementById("layerControls").addEventListener("change", (e) => {
+    const key = e.target.dataset.layer;
+    const on = e.target.checked;
 
-  if (key === "borders") {
-    document.getElementById("landGroup").style.display = on ? "" : "none";
-
-  } else if (key === "graticule") {
-    document.getElementById("gridCircles").style.display = on ? "" : "none";
-
-  } else if (key === "grid") {
-    document.getElementById("gridCross").style.display = on ? "" : "none";
-
-  } else if (key === "star6") {
-    document.getElementById("gridStar6").style.display = on ? "" : "none";
-
-  } else if (key === "flags") {
-    mapPaths.forEach((el, id) => {
-      const f = COUNTRIES[id]?.flag;
-      if (on && f) el.style.fill = `url(#${f})`;
-      else el.style.fill = "";
-    });
-  }
-});
+    if (key === "borders") {
+      document.getElementById("landGroup").style.display = on ? "" : "none";
+    } else if (key === "graticule") {
+      document.getElementById("gridCircles").style.display = on ? "" : "none";
+    } else if (key === "grid") {
+      document.getElementById("gridCross").style.display = on ? "" : "none";
+    } else if (key === "star6") {
+      document.getElementById("gridStar6").style.display = on ? "" : "none";
+    } else if (key === "flags") {
+      mapPaths.forEach((el, id) => {
+        const f = COUNTRIES[id]?.flag;
+        if (on && f) el.style.fill = `url(#${f})`;
+        else el.style.fill = "";
+      });
+    }
+  });
 
   // BUSCA
   document.getElementById("q").addEventListener("input", (e) => {
@@ -494,15 +431,18 @@ document.getElementById("layerControls").addEventListener("change", (e) => {
     const view = document.getElementById("view");
     box.style.display = "block";
     view.style.display = "none";
+    
+    const backBtn = `<button onclick="document.getElementById('countryInfo').style.display='none';document.getElementById('view').style.display='block';" style="border:0;background:none;color:var(--accent);cursor:pointer;margin-bottom:10px;">← Todos os países</button>`;
+    
     if (data) {
       box.innerHTML = `
-        <button onclick="document.getElementById('countryInfo').style.display='none';document.getElementById('view').style.display='block';" style="border:0;background:none;color:var(--accent);cursor:pointer;margin-bottom:10px;">← Todos os países</button>
+        ${backBtn}
         <h2 style="font-family:var(--f-display); font-size:24px; margin-bottom:8px;">${data.name}</h2>
         <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--line); font-size:14px;"><span>População</span><span style="color:var(--accent); font-family:var(--f-mono);">${data.pop}</span></div>
       `;
     } else {
       box.innerHTML = `
-        <button onclick="document.getElementById('countryInfo').style.display='none';document.getElementById('view').style.display='block';" style="border:0;background:none;color:var(--accent);cursor:pointer;margin-bottom:10px;">← Todos os países</button>
+        ${backBtn}
         <h2 style="font-family:var(--f-display); font-size:24px; margin-bottom:8px;">${id}</h2>
       `;
     }
@@ -516,7 +456,7 @@ document.getElementById("layerControls").addEventListener("change", (e) => {
     christ: { min: -4, max: 33, value: 1, desc: "Império Romano aproximadamente no início da era cristã.", t: ["ITA","FRA","ESP","PRT","GRC","ALB","HRV","BIH","MNE","SVN","AUT","CHE","BEL","NLD","LUX","DEU","GBR","TUR","CYP","MLT","TUN","DZA","MAR","EGY","LBY","ISR","PSE","LBN","SYR","JOR","IRQ","SAU"] },
     napoleon: { min: 1804, max: 1815, value: 1812, desc: "Apogeu aproximado do Império Francês e de seus estados aliados.", t: ["FRA","ESP","PRT","BEL","NLD","LUX","DEU","ITA","CHE","AUT","CZE","SVK","POL","SVN","HRV","BIH","MNE","ALB","DNK","NOR","SWE","HUN","ROU","BGR","GRC"] },
     hitler: { min: 1933, max: 1945, value: 1942, desc: "Europa sob domínio ou ocupação nazista, em aproximação para o período de 1942.", t: ["DEU","AUT","POL","CZE","SVK","FRA","BEL","NLD","LUX","DNK","NOR","EST","LVA","LTU","BLR","UKR","MDA","ROU","HUN","SRB","GRC","ALB","HRV","BIH","MNE","SVN"] },
-    current: { min: 2026, max: 2026, value: 2026, desc: "Mapa político atual. A cor volta a indicar a quantidade de categorias cadastradas.", t: [] }
+    current: { min: 2026, max: 2026, value: 2026, desc: "Mapa político atual.", t: [] }
   };
 
   function setEra(id) {
@@ -529,26 +469,4 @@ document.getElementById("layerControls").addEventListener("change", (e) => {
   }
 
   function updateTimeline(id) {
-    const y = Number(document.getElementById("yearSlider").value);
-    document.getElementById("yearOutput").textContent = y < 0 ? Math.abs(y) + " a.C." : y + " d.C.";
-    document.getElementById("eraDescription").textContent = ERAS[id].desc;
-    
-    const territories = ERAS[id].t;
-    mapPaths.forEach((el, cid) => {
-      if (cid === "ATA") return;
-      el.classList.toggle("historical", id !== "current" && territories.includes(cid));
-    });
-  }
-
-  document.getElementById("eraButtons").addEventListener("click", (ev) => {
-    const b = ev.target.closest("button[data-era]"); if (b) setEra(b.dataset.era);
-  });
-  document.getElementById("yearSlider").addEventListener("input", () => updateTimeline(document.querySelector('#eraButtons button[aria-pressed="true"]').dataset.era));
-
-  // INICIALIZAÇÃO
-  drawClock();
-  initMap();
-})();
-</script>
-</body>
-</html>
+    const y = Number(document.getElementById
