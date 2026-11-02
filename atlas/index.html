@@ -104,10 +104,8 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 
           <circle class="sea" cx="400" cy="400" r="372" />
 
-          <!-- GRUPO QUE GIRA -->
           <g id="landGroup" clip-path="url(#mapclip)"></g>
 
-          <!-- GRADE FIXA -->
           <g id="gridLayer">
             <g id="gridCircles">
               <circle class="grid-circle" cx="400" cy="400" r="120" />
@@ -125,13 +123,11 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
             <circle class="ring" cx="400" cy="400" r="370" />
           </g>
 
-          <!-- RELÓGIO 24H -->
           <g id="clockLayer">
             <circle cx="400" cy="400" r="385" fill="none" stroke="var(--line)" stroke-width="1.5" />
             <g id="clockTicks"></g>
           </g>
 
-          <!-- POLO NORTE -->
           <circle class="pole" cx="400" cy="400" r="5" />
           <text x="400" y="12" text-anchor="middle" fill="var(--accent)" font-size="12" font-family="var(--f-mono)" font-weight="bold">N</text>
           <text x="400" y="795" text-anchor="middle" fill="var(--muted)" font-size="12" font-family="var(--f-mono)">S</text>
@@ -143,7 +139,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
         Use a roda do mouse para ampliar. Ative a rotação para girar.
       </p>
 
-      <!-- CAMADAS -->
       <section class="layerbox">
         <div class="layerhead"><strong>Camadas do Atlas</strong><span>ligar / desligar</span></div>
         <div class="layergrid" id="layerControls">
@@ -163,7 +158,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
         <button type="button" id="btnReset" style="margin-top:10px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--soft);color:var(--ink);font:inherit;font-size:12px;cursor:pointer;">↺ Restaurar posição e zoom</button>
       </section>
 
-      <!-- LINHA DO TEMPO -->
       <section class="timeline">
         <h3>Linha do tempo</h3>
         <p>Escolha uma época e mova o controle para mudar o ano exibido.</p>
@@ -182,7 +176,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       </section>
     </section>
 
-    <!-- PAINEL LATERAL -->
     <section class="panel">
       <div class="search">
         <label for="q">Buscar país</label>
@@ -210,25 +203,45 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   "use strict";
 
   // ==========================================
-  // 1. DICIONÁRIO GLOBAL DE PAÍSES
+  // 1. DICIONÁRIO DE TRADUÇÃO (Nome em Inglês -> Português)
   // ==========================================
-  let ID_TO_ISO3 = {}; // Vai ser preenchido com os dados do world-countries
   const tradutorPaises = new Intl.DisplayNames(['pt-BR'], { type: 'region' });
 
-  function getNomePaisPT(idNumerico) {
-    const iso3 = ID_TO_ISO3[idNumerico];
-    if (!iso3) return `Desconhecido (${idNumerico})`;
+  // Mapeamento de nomes comuns do world-atlas (inglês) para códigos ISO de 2 letras.
+  // Isso permite traduzir corretamente nomes que a API sozinha não reconhece.
+  const NAME_TO_ISO2 = {
+    "Brazil": "BR", "United States of America": "US", "Russia": "RU", "China": "CN",
+    "Argentina": "AR", "South Africa": "ZA", "Australia": "AU", "United Kingdom": "GB",
+    "France": "FR", "Germany": "DE", "Italy": "IT", "Spain": "ES", "Portugal": "PT",
+    "Japan": "JP", "India": "IN", "Mexico": "MX", "Canada": "CA", "Egypt": "EG",
+    "Nigeria": "NG", "Kenya": "KE", "Iran": "IR", "Iraq": "IQ", "Turkey": "TR",
+    "Saudi Arabia": "SA", "Indonesia": "ID", "Pakistan": "PK", "Bangladesh": "BD",
+    "Colombia": "CO", "Peru": "PE", "Chile": "CL", "Venezuela": "VE", "Ecuador": "EC",
+    "Bolivia": "BO", "Paraguay": "PY", "Uruguay": "UY", "Guyana": "GY", "Suriname": "SR",
+    "Poland": "PL", "Ukraine": "UA", "Romania": "RO", "Netherlands": "NL", "Belgium": "BE",
+    "Sweden": "SE", "Norway": "NO", "Denmark": "DK", "Finland": "FI", "Greece": "GR",
+    "Czechia": "CZ", "Austria": "AT", "Switzerland": "CH", "Hungary": "HU",
+    "Ireland": "IE", "New Zealand": "NZ", "Thailand": "TH", "Vietnam": "VN",
+    "Philippines": "PH", "Malaysia": "MY", "South Korea": "KR", "North Korea": "KP",
+    "Morocco": "MA", "Algeria": "DZ", "Tunisia": "TN", "Libya": "LY", "Sudan": "SD",
+    "Ethiopia": "ET", "Angola": "AO", "Mozambique": "MZ", "Madagascar": "MG"
+  };
+
+  function getNomePaisPT(nomeIngles) {
+    if (!nomeIngles) return "Desconhecido";
     
-    // Converte ISO3 (BRA) para ISO2 (BR) para traduzir
-    const iso2Map = { BRA: "BR", USA: "US", RUS: "RU", CHN: "CN", ARG: "AR", ZAF: "ZA", AUS: "AU", GBR: "GB", FRA: "FR", DEU: "DE", ITA: "IT", ESP: "ES", PRT: "PT", JPN: "JP", IND: "IN", MEX: "MX", CAN: "CA", EGY: "EG", NGA: "NG", KEN: "KE" };
-    const iso2 = iso2Map[iso3];
-    
-    if (!iso2) return iso3; // Se não tiver no dicionário, mostra a sigla
-    try {
-      return tradutorPaises.of(iso2);
-    } catch (e) {
-      return iso3;
+    // Tenta encontrar o código ISO2 correspondente
+    const iso2 = NAME_TO_ISO2[nomeIngles];
+    if (iso2) {
+      try {
+        return tradutorPaises.of(iso2);
+      } catch (e) {
+        return nomeIngles; // Fallback para o inglês se falhar
+      }
     }
+    
+    // Se não estiver no dicionário, retorna o nome em inglês mesmo
+    return nomeIngles;
   }
 
   // ==========================================
@@ -282,17 +295,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 
   async function initMap() {
     try {
-      // 1. Carrega o mapeamento de IDs numéricos para ISO3 usando a biblioteca world-countries
-      const countriesData = await d3.json("https://cdn.jsdelivr.net/npm/world-countries@5.0.0/countries.json");
-      
-      // Mapeia o código numérico (ex: "076") para ISO3 (ex: "BRA")
-      countriesData.forEach(c => {
-        if (c.ccn3) {
-          ID_TO_ISO3[c.ccn3] = c.cca3;
-        }
-      });
-
-      // 2. Carrega o mapa geográfico
       const topo = await d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json");
       const features = topojson.feature(topo, topo.objects.countries).features;
       const g = d3.select("#landGroup");
@@ -315,7 +317,8 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
         .on("click", function(event, d) {
           d3.selectAll(".c").classed("sel", false);
           d3.select(this).classed("sel", true);
-          showInfo(d.id);
+          // Passa o nome em inglês para a função de exibição
+          showInfo(d.id, d.properties.name);
         });
         
       document.getElementById("stats").textContent = "Mapa carregado";
@@ -405,8 +408,8 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   // ==========================================
   // 5. BANDEIRAS E CAMADAS
   // ==========================================
-  function createFlagPattern(iso3) {
-    const patternId = `flag-${iso3}`;
+  function createFlagPattern(iso2) {
+    const patternId = `flag-${iso2}`;
     if (document.getElementById(patternId)) return patternId;
 
     const pattern = document.createElementNS("http://www.w3.org/2000/svg", "pattern");
@@ -416,13 +419,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     pattern.setAttribute("height", "28");
 
     const image = document.createElementNS("http://www.w3.org/2000/svg", "image");
-    // flagcdn espera o código de 2 letras. Vamos usar uma API que converte, ou mandar em minúsculo.
-    // Como a flagcdn aceita 3 letras se for ISO3? Não, ela aceita 2.
-    // Vamos usar a API do countryflags.io que aceita ISO3, ou um mapa. Para simplificar, usaremos um mapa reverso.
-    const iso2Map = { BRA: "br", USA: "us", RUS: "ru", CHN: "cn", ARG: "ar", ZAF: "za", AUS: "au", GBR: "gb" };
-    const iso2 = iso2Map[iso3] || iso3.substring(0,2).toLowerCase();
-
-    image.setAttribute("href", `https://flagcdn.com/w80/${iso2}.png`);
+    image.setAttribute("href", `https://flagcdn.com/w80/${iso2.toLowerCase()}.png`);
     image.setAttribute("width", "40");
     image.setAttribute("height", "28");
     image.setAttribute("preserveAspectRatio", "xMidYMid slice");
@@ -446,9 +443,12 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       document.getElementById("gridStar6").style.display = on ? "" : "none";
     } else if (key === "flags") {
       mapPaths.forEach((el, id) => {
-        const iso3 = ID_TO_ISO3[id];
-        if (on && iso3) {
-          const patternId = createFlagPattern(iso3);
+        const d = d3.select(el).datum();
+        const nomeIngles = d.properties?.name;
+        const iso2 = NAME_TO_ISO2[nomeIngles];
+        
+        if (on && iso2) {
+          const patternId = createFlagPattern(iso2);
           el.style.fill = `url(#${patternId})`;
         } else {
           el.style.fill = "";
@@ -464,32 +464,32 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     const term = e.target.value.toLowerCase();
     if (!term) return;
 
-    for (const [idNumerico, iso3] of Object.entries(ID_TO_ISO3)) {
-      const nome = getNomePaisPT(idNumerico);
-      if (nome && nome.toLowerCase().includes(term)) {
+    mapPaths.forEach((el, id) => {
+      const d = d3.select(el).datum();
+      const nomeIngles = d.properties?.name;
+      const nomePT = getNomePaisPT(nomeIngles);
+      
+      if (nomePT.toLowerCase().includes(term) || (nomeIngles && nomeIngles.toLowerCase().includes(term))) {
         d3.selectAll(".c").classed("sel", false);
-        const el = mapPaths.get(idNumerico);
-        if (el) {
-          d3.select(el).classed("sel", true);
-          showInfo(idNumerico);
-        }
-        break;
+        d3.select(el).classed("sel", true);
+        showInfo(id, nomeIngles);
       }
-    }
+    });
   });
 
-  function showInfo(id) {
+  function showInfo(id, nomeIngles) {
     const box = document.getElementById("countryInfo");
     const view = document.getElementById("view");
     box.style.display = "block";
     view.style.display = "none";
     
-    const nomeTraduzido = getNomePaisPT(id);
+    const nomeTraduzido = getNomePaisPT(nomeIngles);
     const backBtn = `<button onclick="document.getElementById('countryInfo').style.display='none';document.getElementById('view').style.display='block';" style="border:0;background:none;color:var(--accent);cursor:pointer;margin-bottom:10px;">← Todos os países</button>`;
     
     box.innerHTML = `
       ${backBtn}
       <h2 style="font-family:var(--f-display); font-size:24px; margin-bottom:8px;">${nomeTraduzido}</h2>
+      <p style="color:var(--muted); font-size:13px;">Nome original: ${nomeIngles || 'N/A'}</p>
     `;
   }
 
