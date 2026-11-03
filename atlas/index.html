@@ -41,16 +41,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 .ring { fill: none; stroke: var(--line); stroke-width: 2; pointer-events: none; }
 .pole { fill: var(--accent); pointer-events: none; filter: drop-shadow(0 0 6px var(--accent)); }
 
-/* LINHAS DOS TRÓPICOS */
-.tropic-line { stroke: var(--accent); stroke-width: 1; stroke-dasharray: 4 4; opacity: 0.5; pointer-events: none; }
-.tropic-label { font-family: var(--f-mono); font-size: 8px; fill: var(--muted); pointer-events: none; }
-
-/* ESTRELAS */
-.star { fill: var(--star); pointer-events: none; }
-.star-bright { fill: #ffffff; filter: drop-shadow(0 0 3px #fff); }
-.star-label { font-family: var(--f-mono); font-size: 9px; fill: #fff; paint-order: stroke; stroke: #000; stroke-width: 2px; pointer-events: none; }
-.constellation-line { stroke: var(--const); stroke-width: 1.5; opacity: 0.8; fill: none; pointer-events: none; }
-
 /* SOL E LUA */
 .sun-dot { fill: #ffcc00; filter: drop-shadow(0 0 20px #ffcc00); pointer-events: none; }
 .moon-dot { fill: #e0e0e0; filter: drop-shadow(0 0 15px #fff); pointer-events: none; }
@@ -124,7 +114,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
             <!-- Sombra: uma elipse gigante que cobre o mapa -->
             <ellipse id="nightShadow" class="night-shadow" cx="400" cy="400" rx="0" ry="0" />
 
-            <!-- Sol e Lua (Desenhados por cima da sombra) -->
+            <!-- Sol e Lua -->
             <circle id="sun" class="sun-dot" r="12" />
             <g id="moonGroup">
               <circle id="moon" class="moon-dot" r="12" />
@@ -179,7 +169,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
           <label class="layeritem"><input type="checkbox" data-layer="light" checked><i class="swatch" style="--swatch:#ffcc00"></i>Sol</label>
           <label class="layeritem"><input type="checkbox" data-layer="dark" checked><i class="swatch" style="--swatch:#000000"></i>Sombra (Noite)</label>
           <label class="layeritem"><input type="checkbox" data-layer="moon" checked><i class="swatch" style="--swatch:#e0e0e0"></i>Lua</label>
-          <label class="layeritem"><input type="checkbox" data-layer="tropics" checked><i class="swatch" style="--swatch:#a996c0"></i>Trópicos</label>
           <label class="layeritem"><input type="checkbox" data-layer="rotation"><i class="swatch" style="--swatch:#c4a1f0"></i>Rotação</label>
         </div>
         <button type="button" id="btnReset" style="margin-top:10px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--soft);color:var(--ink);font:inherit;font-size:12px;cursor:pointer;">↺ Restaurar</button>
@@ -255,7 +244,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   const moonClipCircle = document.getElementById("moonClipCircle");
   const nightShadow = document.getElementById("nightShadow");
 
-  // Função para calcular a declinação solar (posição no trópico)
   function getSolarDeclination(date) {
     const start = new Date(date.getFullYear(), 0, 0);
     const diff = date - start;
@@ -264,7 +252,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     return 23.5 * Math.sin((360 / 365) * (dayOfYear - 81) * Math.PI / 180);
   }
 
-  // Função para calcular a fase da Lua
   function getMoonPhase(date) {
     const jd = date.getTime() / 86400000 + 2440587.5;
     const T = (jd - 2451545) / 36525;
@@ -381,17 +368,16 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     sunIcon.setAttribute("cy", sunY);
 
     // Sombra (Elipse)
-    // O centro da elipse é oposto ao Sol.
-    // A elipse tem um raio fixo (R * 1.5) e é "empurrada" pela declinação.
+    // O centro da elipse é deslocado pelo Sol e pela declinação
     const shadowAngle = sunAngle + Math.PI;
     
-    // O centro da elipse é deslocado
-    const shadowX = CX + (declination / 23.5) * R * 0.5 * Math.cos(shadowAngle);
-    const shadowY = CY + (declination / 23.5) * R * 0.5 * Math.sin(shadowAngle);
+    // O centro da elipse fica no lado oposto ao Sol, mas "desliza" com a declinação
+    const shadowX = CX + (declination / 23.5) * R * 0.4 * Math.cos(shadowAngle);
+    const shadowY = CY + (declination / 23.5) * R * 0.4 * Math.sin(shadowAngle);
     
-    // A elipse é sempre maior que o mapa, então suas pontas ficam escondidas.
-    const rx = R * 1.5;
-    const ry = R * 1.2; // Achatamento para dar o efeito de ferradura
+    // Tamanho da elipse: grande o suficiente para cobrir o mapa, achatada para criar a ferradura
+    const rx = R * 1.8;
+    const ry = R * 1.4;
 
     nightShadow.setAttribute("cx", shadowX);
     nightShadow.setAttribute("cy", shadowY);
