@@ -18,48 +18,39 @@
 body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5; }
 .wrap { max-width: 1280px; margin: 0 auto; padding: 20px 16px 40px; }
 
-/* TOPO */
 .top { display: flex; flex-wrap: wrap; gap: 8px 32px; align-items: end; justify-content: space-between; margin-bottom: 20px; }
 .top > div { min-width: 0; flex: 1 1 420px; }
 h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw, 40px); margin-bottom: 6px; }
 .lede { color: var(--muted); margin-bottom: 20px; max-width: 62ch; }
 .stats { font-family: var(--f-mono); font-size: 13px; color: var(--muted); }
 
-/* LAYOUT */
 .layout { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 28px; align-items: start; }
 .mapcol { position: sticky; top: 16px; min-width: 0; }
 .mapwrap { position: relative; width: min(100%, calc(100vh - 100px)); margin: 0 auto; user-select: none; touch-action: none; }
 #map { display: block; width: 100%; height: auto; }
 
-/* MAPA */
 .sea { fill: var(--sea); }
 .c { fill: var(--land); stroke: var(--bg); stroke-width: .7; cursor: pointer; transition: opacity .2s; }
 .c:hover { stroke: var(--ink); stroke-width: 1.4; }
 .c.sel { stroke: var(--sel); stroke-width: 2.6; }
 .c.ring { fill: #e8def6 !important; stroke: var(--line); stroke-width: 1; }
 
-/* GRADE */
 .grid-line { stroke: var(--green); stroke-width: 1.2; opacity: 0.4; pointer-events: none; }
 .grid-circle { fill: none; stroke: var(--green); stroke-width: 1; opacity: 0.3; pointer-events: none; }
 .ring { fill: none; stroke: var(--line); stroke-width: 2; pointer-events: none; }
 .pole { fill: var(--accent); pointer-events: none; filter: drop-shadow(0 0 6px var(--accent)); }
 
-/* ESTRELAS (CAMADA SUPERIOR) */
-#skyLayer { pointer-events: none; }
-.star { fill: var(--star); }
+.star { fill: var(--star); pointer-events: none; }
 .star-bright { fill: #ffffff; filter: drop-shadow(0 0 3px #fff); }
-.star-label { font-family: var(--f-mono); font-size: 9px; fill: #fff; paint-order: stroke; stroke: #000; stroke-width: 2px; }
-.constellation-line { stroke: var(--const); stroke-width: 1; opacity: 0.6; fill: none; }
-.sun-dot { fill: #ffcc00; filter: drop-shadow(0 0 4px #ffcc00); }
-.moon-dot { fill: #e0e0e0; filter: drop-shadow(0 0 3px #fff); }
-.night-shadow { fill: rgba(0, 0, 0, 0.6); }
+.star-label { font-family: var(--f-mono); font-size: 9px; fill: #fff; paint-order: stroke; stroke: #000; stroke-width: 2px; pointer-events: none; }
+.constellation-line { stroke: var(--const); stroke-width: 1; opacity: 0.6; fill: none; pointer-events: none; }
+.sun-dot { fill: #ffcc00; pointer-events: none; }
+.moon-dot { fill: #e0e0e0; pointer-events: none; }
 
-/* PAINEL */
 .panel { min-width: 0; }
 .search label { display: block; font-size: 12px; font-family: var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
 .search input { width: 100%; font: inherit; padding: 11px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); }
 
-/* CAMADAS */
 .layerbox { margin: 12px 0 0; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
 .layerhead { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; }
 .layerhead strong { font-family: var(--f-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
@@ -69,7 +60,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 .layeritem input { accent-color: var(--accent); margin: 0; flex: 0 0 auto; }
 .layeritem .swatch { width: 10px; height: 10px; border-radius: 3px; background: var(--swatch, var(--accent)); flex: 0 0 auto; }
 
-/* TIMELINE E HORA */
 .timeline, .time-control { margin-top: 12px; padding: 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); }
 .timeline h3 { font-family: var(--f-display); font-size: 18px; font-weight: 400; margin: 0 0 4px; }
 .timeline p { margin: 0; color: var(--muted); font-size: 12.5px; }
@@ -109,11 +99,9 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
           
           <circle class="sea" cx="400" cy="400" r="372" />
           
-          <!-- TERRA -->
           <g id="landGroup" clip-path="url(#mapclip)"></g>
 
-          <!-- GRADE -->
-          <g id="gridLayer" clip-path="url(#mapclip)">
+          <g id="gridLayer">
             <g id="gridCircles">
               <circle class="grid-circle" cx="400" cy="400" r="120" />
               <circle class="grid-circle" cx="400" cy="400" r="240" />
@@ -130,20 +118,16 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
             <circle class="ring" cx="400" cy="400" r="370" />
           </g>
 
-          <!-- RELÓGIO -->
           <g id="clockLayer">
             <circle cx="400" cy="400" r="385" fill="none" stroke="var(--line)" stroke-width="1.5" />
             <g id="clockTicks"></g>
           </g>
 
-          <!-- POLO NORTE -->
           <circle class="pole" cx="400" cy="400" r="5" />
           <text x="400" y="12" text-anchor="middle" fill="var(--accent)" font-size="12" font-family="var(--f-mono)" font-weight="bold">N</text>
           <text x="400" y="795" text-anchor="middle" fill="var(--muted)" font-size="12" font-family="var(--f-mono)">S</text>
 
-          <!-- CÉU (ÚLTIMA CAMADA PARA FICAR POR CIMA DE TUDO) -->
           <g id="skyLayer" clip-path="url(#mapclip)">
-            <path id="nightShadow" class="night-shadow" style="display:none;" />
             <g id="constellations"></g>
             <g id="stars"></g>
             <g id="starLabels"></g>
@@ -168,7 +152,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
           <label class="layeritem"><input type="checkbox" data-layer="star6" checked><i class="swatch" style="--swatch:#8cff48"></i>Estrela 6</label>
           <label class="layeritem"><input type="checkbox" data-layer="stars" checked><i class="swatch" style="--swatch:#fffbe6"></i>Céu Estelar</label>
           <label class="layeritem"><input type="checkbox" data-layer="sunmoon" checked><i class="swatch" style="--swatch:#ffcc00"></i>Sol/Lua</label>
-          <label class="layeritem"><input type="checkbox" data-layer="night" checked><i class="swatch" style="--swatch:#333"></i>Noite</label>
           <label class="layeritem"><input type="checkbox" data-layer="rotation"><i class="swatch" style="--swatch:#c4a1f0"></i>Rotação</label>
         </div>
         <button type="button" id="btnReset" style="margin-top:10px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--soft);color:var(--ink);font:inherit;font-size:12px;cursor:pointer;">↺ Restaurar</button>
@@ -217,14 +200,10 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 
 <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/suncalc@1.9.0/suncalc.js"></script>
 <script>
 (function () {
   "use strict";
 
-  // ==========================================
-  // 1. VARIÁVEIS GLOBAIS
-  // ==========================================
   const SIZE = 800, CX = 400, CY = 400, R = 372;
   const proj = d3.geoAzimuthalEquidistant().rotate([0, -90]).scale(R / Math.PI).translate([CX, CY]).clipAngle(180);
   const path = d3.geoPath(proj);
@@ -240,21 +219,20 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   const labelsGroup = document.getElementById("starLabels");
   const sunIcon = document.getElementById("sun");
   const moonIcon = document.getElementById("moon");
-  const nightShadow = document.getElementById("nightShadow");
 
   // ==========================================
-  // 2. DADOS DO CÉU
+  // DADOS DAS ESTRELAS (COORDENADAS REAIS RA/DEC)
   // ==========================================
-  const STAR_CATALOG = {
-    "Polaris": { ra: 2.530, dec: 89.264 },
-    "Acrux": { ra: 12.443, dec: -63.099 },
-    "Mimosa": { ra: 12.795, dec: -59.689 },
-    "Gacrux": { ra: 12.519, dec: -57.113 },
-    "Imai": { ra: 12.252, dec: -58.749 },
-    "Sirius": { ra: 6.752, dec: -16.716 },
-    "Betelgeuse": { ra: 5.919, dec: 7.407 },
-    "Rigel": { ra: 5.242, dec: -8.202 }
-  };
+  const STARS = [
+    { name: "Polaris", ra: 2.530, dec: 89.264, bright: true },
+    { name: "Acrux", ra: 12.443, dec: -63.099 },
+    { name: "Mimosa", ra: 12.795, dec: -59.689 },
+    { name: "Gacrux", ra: 12.519, dec: -57.113 },
+    { name: "Imai", ra: 12.252, dec: -58.749 },
+    { name: "Sirius", ra: 6.752, dec: -16.716, bright: true },
+    { name: "Betelgeuse", ra: 5.919, dec: 7.407 },
+    { name: "Rigel", ra: 5.242, dec: -8.202 }
+  ];
 
   const CONSTELLATIONS = [
     ["Acrux", "Gacrux", "Mimosa", "Imai", "Acrux"],
@@ -262,7 +240,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   ];
 
   // ==========================================
-  // 3. FUNÇÕES DO MAPA
+  // FUNÇÕES DO MAPA
   // ==========================================
   function drawClock() {
     const ticksGroup = document.getElementById("clockTicks");
@@ -292,6 +270,62 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       line.setAttribute("stroke-width", isMajor ? "2" : "1");
       ticksGroup.appendChild(line);
     }
+  }
+
+  function updateSky(hour) {
+    starsGroup.innerHTML = "";
+    constGroup.innerHTML = "";
+    labelsGroup.innerHTML = "";
+
+    const rotationAngle = (hour / 24) * 360;
+    const starPositions = {};
+
+    STARS.forEach(star => {
+      // Projeção azimutal polar: raio baseado na declinação
+      const rho = R * (90 - star.dec) / 180;
+      // Ângulo baseado na RA + rotação da hora
+      const angle = ((star.ra * 15) + rotationAngle) * Math.PI / 180;
+      
+      const x = CX + rho * Math.sin(angle);
+      const y = CY - rho * Math.cos(angle);
+
+      if (rho <= R) {
+        starPositions[star.name] = [x, y];
+
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circle.setAttribute("cx", x);
+        circle.setAttribute("cy", y);
+        circle.setAttribute("r", star.bright ? 4 : 2);
+        circle.setAttribute("class", star.bright ? "star star-bright" : "star");
+        starsGroup.appendChild(circle);
+
+        const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        label.setAttribute("x", x + 6);
+        label.setAttribute("y", y + 3);
+        label.setAttribute("class", "star-label");
+        label.textContent = star.name;
+        labelsGroup.appendChild(label);
+      }
+    });
+
+    CONSTELLATIONS.forEach(chain => {
+      const points = chain.map(name => starPositions[name]).filter(p => p);
+      if (points.length > 1) {
+        const polyline = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+        polyline.setAttribute("points", points.map(p => p.join(",")).join(" "));
+        polyline.setAttribute("class", "constellation-line");
+        constGroup.appendChild(polyline);
+      }
+    });
+
+    // Sol e Lua (simplificado)
+    const sunAngle = (hour / 24) * 2 * Math.PI;
+    sunIcon.setAttribute("cx", CX + 200 * Math.sin(sunAngle));
+    sunIcon.setAttribute("cy", CY - 200 * Math.cos(sunAngle));
+    
+    const moonAngle = sunAngle + Math.PI;
+    moonIcon.setAttribute("cx", CX + 250 * Math.sin(moonAngle));
+    moonIcon.setAttribute("cy", CY - 250 * Math.cos(moonAngle));
   }
 
   async function initMap() {
@@ -333,105 +367,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   }
 
   // ==========================================
-  // 4. CÉU ESTELAR (PROJEÇÃO CORRETA)
-  // ==========================================
-  function updateSky(hour) {
-    starsGroup.innerHTML = "";
-    constGroup.innerHTML = "";
-    labelsGroup.innerHTML = "";
-
-    // O céu gira 15 graus por hora
-    const rotationAngle = (hour / 24) * 360;
-
-    const starPositions = {};
-    Object.entries(STAR_CATALOG).forEach(([name, star]) => {
-      // Projeção azimutal simplificada: raio baseado na declinação
-      // Dec=90 -> centro (0); Dec=0 -> borda (R); Dec=-90 -> fora
-      const rho = R * (90 - star.dec) / 180;
-      
-      // Ângulo baseado na RA + rotação
-      const angle = ((star.ra * 15) + rotationAngle) * Math.PI / 180;
-      
-      const x = CX + rho * Math.sin(angle);
-      const y = CY - rho * Math.cos(angle);
-
-      // Só desenha se estiver dentro do disco (rho <= R)
-      if (rho <= R) {
-        starPositions[name] = [x, y];
-
-        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-        circle.setAttribute("cx", x);
-        circle.setAttribute("cy", y);
-        circle.setAttribute("r", name === "Polaris" ? 4 : 2);
-        circle.setAttribute("class", name === "Polaris" || name === "Sirius" ? "star star-bright" : "star");
-        starsGroup.appendChild(circle);
-
-        const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        label.setAttribute("x", x + 6);
-        label.setAttribute("y", y + 3);
-        label.setAttribute("class", "star-label");
-        label.textContent = name;
-        labelsGroup.appendChild(label);
-      }
-    });
-
-    // Conecta as constelações
-    CONSTELLATIONS.forEach(chain => {
-      const points = chain.map(name => starPositions[name]).filter(p => p);
-      if (points.length > 1) {
-        const polyline = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
-        polyline.setAttribute("points", points.map(p => p.join(",")).join(" "));
-        polyline.setAttribute("class", "constellation-line");
-        constGroup.appendChild(polyline);
-      }
-    });
-
-    // Sol, Lua e Iluminação
-    const now = new Date();
-    now.setHours(hour, 0, 0, 0);
-    const lat = -15.78, lng = -47.93; 
-    const sunPos = SunCalc.getPosition(now, lat, lng);
-    const moonPos = SunCalc.getMoonPosition(now, lat, lng);
-
-    // Posição do Sol
-    if (sunPos.altitude > 0) {
-      const sunRho = R * (90 - (sunPos.altitude * 180 / Math.PI)) / 90;
-      if (sunRho <= R) {
-        sunIcon.setAttribute("cx", CX + sunRho * Math.sin(sunPos.azimuth));
-        sunIcon.setAttribute("cy", CY - sunRho * Math.cos(sunPos.azimuth));
-        sunIcon.style.display = "block";
-      }
-    } else {
-      sunIcon.style.display = "none";
-    }
-
-    // Posição da Lua
-    if (moonPos.altitude > 0) {
-      const moonRho = R * (90 - (moonPos.altitude * 180 / Math.PI)) / 90;
-      if (moonRho <= R) {
-        moonIcon.setAttribute("cx", CX + moonRho * Math.sin(moonPos.azimuth));
-        moonIcon.setAttribute("cy", CY - moonRho * Math.cos(moonPos.azimuth));
-        moonIcon.style.display = "block";
-      }
-    } else {
-      moonIcon.style.display = "none";
-    }
-
-    // Sombra da Noite (Iluminação)
-    // A sombra é um semicírculo oposto à posição do Sol
-    if (sunPos.altitude > 0) {
-      // O Sol está acima do horizonte (dia). A sombra fica no lado oposto.
-      const shadowAngle = (sunPos.azimuth + Math.PI) * 180 / Math.PI;
-      const shadowPath = `M ${CX} ${CY} L ${CX + R * Math.cos(shadowAngle * Math.PI / 180)} ${CY + R * Math.sin(shadowAngle * Math.PI / 180)} A ${R} ${R} 0 0 1 ${CX - R * Math.cos(shadowAngle * Math.PI / 180)} ${CY - R * Math.sin(shadowAngle * Math.PI / 180)} Z`;
-      nightShadow.setAttribute("d", shadowPath);
-    } else {
-      // O Sol está abaixo do horizonte (noite total).
-      nightShadow.setAttribute("d", `M ${CX - R} ${CY} A ${R} ${R} 0 1 1 ${CX + R} ${CY} A ${R} ${R} 0 1 1 ${CX - R} ${CY} Z`);
-    }
-  }
-
-  // ==========================================
-  // 5. ROTAÇÃO E ZOOM
+  // ROTAÇÃO E ZOOM (APENAS TERRA)
   // ==========================================
   let rotation = 0, zoom = 1, isRotating = false, rotateEnabled = false;
   let pointerStartX = 0, pointerStartY = 0, dragStarted = false, currentStartRotation = 0;
@@ -484,33 +420,28 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   });
 
   // ==========================================
-  // 6. BANDEIRAS E CAMADAS
+  // CAMADAS E BANDEIRAS
   // ==========================================
   const NOME_PARA_ISO = {
     "Brazil": "br", "United States of America": "us", "Russia": "ru", "China": "cn",
     "Argentina": "ar", "South Africa": "za", "Australia": "au", "United Kingdom": "gb",
     "France": "fr", "Germany": "de", "Italy": "it", "Spain": "es", "Portugal": "pt",
-    "Japan": "jp", "India": "in", "Mexico": "mx", "Canada": "ca", "Egypt": "eg",
-    "Iran": "ir", "Iraq": "iq", "Turkey": "tr", "Saudi Arabia": "sa", "Indonesia": "id",
-    "Colombia": "co", "Peru": "pe", "Chile": "cl", "Venezuela": "ve", "Ecuador": "ec"
+    "Japan": "jp", "India": "in", "Mexico": "mx", "Canada": "ca", "Egypt": "eg"
   };
 
   function createFlagPattern(iso2) {
     const patternId = `flag-${iso2}`;
     if (document.getElementById(patternId)) return patternId;
-
     const pattern = document.createElementNS("http://www.w3.org/2000/svg", "pattern");
     pattern.setAttribute("id", patternId);
     pattern.setAttribute("patternUnits", "userSpaceOnUse");
     pattern.setAttribute("width", "40");
     pattern.setAttribute("height", "28");
-
     const image = document.createElementNS("http://www.w3.org/2000/svg", "image");
     image.setAttribute("href", `https://flagcdn.com/w80/${iso2}.png`);
     image.setAttribute("width", "40");
     image.setAttribute("height", "28");
     image.setAttribute("preserveAspectRatio", "xMidYMid slice");
-
     pattern.appendChild(image);
     defs.appendChild(pattern);
     return patternId;
@@ -529,14 +460,10 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     } else if (key === "star6") {
       document.getElementById("gridStar6").style.display = on ? "" : "none";
     } else if (key === "stars") {
-      starsGroup.style.display = on ? "" : "none";
-      constGroup.style.display = on ? "" : "none";
-      labelsGroup.style.display = on ? "" : "none";
+      document.getElementById("skyLayer").style.display = on ? "" : "none";
     } else if (key === "sunmoon") {
-      sunIcon.style.display = on && sunIcon.getAttribute("cx") ? "block" : "none";
-      moonIcon.style.display = on && moonIcon.getAttribute("cx") ? "block" : "none";
-    } else if (key === "night") {
-      nightShadow.style.display = on && nightShadow.getAttribute("d") ? "block" : "none";
+      sunIcon.style.display = on ? "block" : "none";
+      moonIcon.style.display = on ? "block" : "none";
     } else if (key === "flags") {
       mapPaths.forEach((el, id) => {
         const d = d3.select(el).datum();
@@ -554,7 +481,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   });
 
   // ==========================================
-  // 7. BUSCA E PAINEL
+  // BUSCA E PAINEL
   // ==========================================
   document.getElementById("q").addEventListener("input", (e) => {
     const term = e.target.value.toLowerCase();
@@ -586,7 +513,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   }
 
   // ==========================================
-  // 8. INICIALIZAÇÃO
+  // INICIALIZAÇÃO
   // ==========================================
   drawClock();
   initMap();
@@ -599,6 +526,11 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       timeDisplay.textContent = `${h.toString().padStart(2, '0')}:00`;
       updateSky(h);
     });
+    
+    const now = new Date();
+    timeSlider.value = now.getHours();
+    timeDisplay.textContent = `${now.getHours().toString().padStart(2, '0')}:00`;
+    updateSky(now.getHours());
   }
 
 })();
