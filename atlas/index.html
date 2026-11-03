@@ -99,25 +99,41 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
           
           <circle class="sea" cx="400" cy="400" r="372" />
           
-          <g id="landGroup" clip-path="url(#mapclip)"></g>
+          <!-- GRUPO QUE GIRA JUNTO (TERRA + CÉU) -->
+          <g id="worldGroup" clip-path="url(#mapclip)">
+            <!-- Terra -->
+            <g id="landGroup"></g>
+            
+            <!-- Grade -->
+            <g id="gridLayer">
+              <g id="gridCircles">
+                <circle class="grid-circle" cx="400" cy="400" r="120" />
+                <circle class="grid-circle" cx="400" cy="400" r="240" />
+                <circle class="grid-circle" cx="400" cy="400" r="360" />
+              </g>
+              <g id="gridCross">
+                <line class="grid-line" x1="400" y1="40" x2="400" y2="760" />
+                <line class="grid-line" x1="40" y1="400" x2="760" y2="400" />
+              </g>
+              <g id="gridStar6">
+                <polygon points="400,40 711.8,580 88.2,580" fill="none" class="grid-line" style="opacity:0.6;" />
+                <polygon points="711.8,220 400,760 88.2,220" fill="none" class="grid-line" style="opacity:0.6;" />
+              </g>
+              <circle class="ring" cx="400" cy="400" r="370" />
+            </g>
 
-          <g id="gridLayer">
-            <g id="gridCircles">
-              <circle class="grid-circle" cx="400" cy="400" r="120" />
-              <circle class="grid-circle" cx="400" cy="400" r="240" />
-              <circle class="grid-circle" cx="400" cy="400" r="360" />
+            <!-- Céu (Estrelas, Sol e Lua) -->
+            <g id="skyLayer">
+              <g id="constellations"></g>
+              <g id="stars"></g>
+              <g id="starLabels"></g>
+              <!-- Sol e Lua com raio 12 (3x a Polaris) -->
+              <circle id="sun" class="sun-dot" r="12" style="display:none;" />
+              <circle id="moon" class="moon-dot" r="12" style="display:none;" />
             </g>
-            <g id="gridCross">
-              <line class="grid-line" x1="400" y1="40" x2="400" y2="760" />
-              <line class="grid-line" x1="40" y1="400" x2="760" y2="400" />
-            </g>
-            <g id="gridStar6">
-              <polygon points="400,40 711.8,580 88.2,580" fill="none" class="grid-line" style="opacity:0.6;" />
-              <polygon points="711.8,220 400,760 88.2,220" fill="none" class="grid-line" style="opacity:0.6;" />
-            </g>
-            <circle class="ring" cx="400" cy="400" r="370" />
           </g>
 
+          <!-- RELÓGIO E POLO NORTE (FIXOS, FORA DO GRUPO) -->
           <g id="clockLayer">
             <circle cx="400" cy="400" r="385" fill="none" stroke="var(--line)" stroke-width="1.5" />
             <g id="clockTicks"></g>
@@ -126,14 +142,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
           <circle class="pole" cx="400" cy="400" r="5" />
           <text x="400" y="12" text-anchor="middle" fill="var(--accent)" font-size="12" font-family="var(--f-mono)" font-weight="bold">N</text>
           <text x="400" y="795" text-anchor="middle" fill="var(--muted)" font-size="12" font-family="var(--f-mono)">S</text>
-
-          <g id="skyLayer" clip-path="url(#mapclip)">
-            <g id="constellations"></g>
-            <g id="stars"></g>
-            <g id="starLabels"></g>
-            <circle id="sun" class="sun-dot" r="2" style="display:none;" />
-            <circle id="moon" class="moon-dot" r="1.5" style="display:none;" />
-          </g>
         </svg>
       </div>
 
@@ -209,6 +217,8 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   const path = d3.geoPath(proj);
   let mapPaths = new Map();
 
+  // Elementos
+  const worldGroup = document.getElementById("worldGroup");
   const landGroup = document.getElementById("landGroup");
   const mapWrap = document.getElementById("mapwrap");
   const rotationCheckbox = document.querySelector('[data-layer="rotation"]');
@@ -220,9 +230,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   const sunIcon = document.getElementById("sun");
   const moonIcon = document.getElementById("moon");
 
-  // ==========================================
-  // DADOS DAS ESTRELAS (COORDENADAS REAIS RA/DEC)
-  // ==========================================
+  // Dados das estrelas
   const STARS = [
     { name: "Polaris", ra: 2.530, dec: 89.264, bright: true },
     { name: "Acrux", ra: 12.443, dec: -63.099 },
@@ -239,9 +247,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     ["Betelgeuse", "Rigel"]
   ];
 
-  // ==========================================
-  // FUNÇÕES DO MAPA
-  // ==========================================
+  // Relógio
   function drawClock() {
     const ticksGroup = document.getElementById("clockTicks");
     for (let i = 0; i < 24; i++) {
@@ -272,6 +278,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     }
   }
 
+  // Céu (Estrelas e Planetas)
   function updateSky(hour) {
     starsGroup.innerHTML = "";
     constGroup.innerHTML = "";
@@ -281,9 +288,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     const starPositions = {};
 
     STARS.forEach(star => {
-      // Projeção azimutal polar: raio baseado na declinação
       const rho = R * (90 - star.dec) / 180;
-      // Ângulo baseado na RA + rotação da hora
       const angle = ((star.ra * 15) + rotationAngle) * Math.PI / 180;
       
       const x = CX + rho * Math.sin(angle);
@@ -318,7 +323,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       }
     });
 
-    // Sol e Lua (simplificado)
+    // Sol e Lua (3x maiores que a Polaris)
     const sunAngle = (hour / 24) * 2 * Math.PI;
     sunIcon.setAttribute("cx", CX + 200 * Math.sin(sunAngle));
     sunIcon.setAttribute("cy", CY - 200 * Math.cos(sunAngle));
@@ -328,6 +333,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     moonIcon.setAttribute("cy", CY - 250 * Math.cos(moonAngle));
   }
 
+  // Inicialização do mapa
   async function initMap() {
     try {
       const topo = await d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json");
@@ -366,15 +372,14 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     }
   }
 
-  // ==========================================
-  // ROTAÇÃO E ZOOM (APENAS TERRA)
-  // ==========================================
+  // Rotação e Zoom (Mundo inteiro)
   let rotation = 0, zoom = 1, isRotating = false, rotateEnabled = false;
   let pointerStartX = 0, pointerStartY = 0, dragStarted = false, currentStartRotation = 0;
   const MIN_ZOOM = 1, MAX_ZOOM = 4;
 
   function applyTransform() {
-    landGroup.setAttribute("transform", `translate(400 400) rotate(${rotation}) scale(${zoom}) translate(-400 -400)`);
+    // Aplica a rotação no grupo inteiro (terra + céu)
+    worldGroup.setAttribute("transform", `translate(400 400) rotate(${rotation}) scale(${zoom}) translate(-400 -400)`);
   }
 
   rotationCheckbox.addEventListener("change", () => {
@@ -419,9 +424,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     mapWrap.style.cursor = "default";
   });
 
-  // ==========================================
-  // CAMADAS E BANDEIRAS
-  // ==========================================
+  // Camadas e Bandeiras
   const NOME_PARA_ISO = {
     "Brazil": "br", "United States of America": "us", "Russia": "ru", "China": "cn",
     "Argentina": "ar", "South Africa": "za", "Australia": "au", "United Kingdom": "gb",
@@ -452,7 +455,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     const on = e.target.checked;
 
     if (key === "borders") {
-      document.getElementById("landGroup").style.display = on ? "" : "none";
+      landGroup.style.display = on ? "" : "none";
     } else if (key === "graticule") {
       document.getElementById("gridCircles").style.display = on ? "" : "none";
     } else if (key === "grid") {
@@ -480,9 +483,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     }
   });
 
-  // ==========================================
-  // BUSCA E PAINEL
-  // ==========================================
+  // Busca e Painel
   document.getElementById("q").addEventListener("input", (e) => {
     const term = e.target.value.toLowerCase();
     if (!term) return;
@@ -512,9 +513,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     `;
   }
 
-  // ==========================================
-  // INICIALIZAÇÃO
-  // ==========================================
+  // Inicialização
   drawClock();
   initMap();
   
