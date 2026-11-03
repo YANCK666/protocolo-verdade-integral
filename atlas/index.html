@@ -49,7 +49,8 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 
 /* SOL E LUA */
 .sun-dot { fill: #ffcc00; filter: drop-shadow(0 0 20px #ffcc00); pointer-events: none; }
-.moon-dot { fill: #e0e0e0; filter: drop-shadow(0 0 20px #fff); pointer-events: none; }
+.moon-dot { fill: #e0e0e0; filter: drop-shadow(0 0 15px #fff); pointer-events: none; }
+.moon-shadow { fill: rgba(0, 0, 0, 0.8); pointer-events: none; }
 
 /* CAMADAS DE LUZ E SOMBRA */
 .light-hemisphere { fill: rgba(255, 204, 0, 0.1); stroke: none; pointer-events: none; }
@@ -103,36 +104,36 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
         <svg id="map" viewBox="0 0 800 800">
           <defs>
             <clipPath id="mapclip"><circle cx="400" cy="400" r="372"/></clipPath>
+            <clipPath id="moonclip"><circle id="moonClipCircle" cx="0" cy="0" r="12"/></clipPath>
           </defs>
           
           <circle class="sea" cx="400" cy="400" r="372" />
           
-          <!-- GRUPO MESTRE: TUDO DENTRO DAQUI GIRA JUNTO -->
           <g id="worldGroup" clip-path="url(#mapclip)">
-            <!-- Terra -->
             <g id="landGroup"></g>
             
-            <!-- Céu: Estrelas -->
             <g id="skyLayer">
               <g id="constellations"></g>
               <g id="stars"></g>
               <g id="starLabels"></g>
             </g>
 
-            <!-- CAMADA DE ILUMINAÇÃO (SOL E LUZ) -->
             <g id="lightLayer">
               <path id="lightHemi" class="light-hemisphere" />
               <circle id="sun" class="sun-dot" r="12" />
             </g>
 
-            <!-- CAMADA DE SOMBRA (LUA E ESCURIDÃO) -->
             <g id="darkLayer">
               <path id="darkHemi" class="dark-hemisphere" />
+            </g>
+
+            <!-- Lua com Fase -->
+            <g id="moonGroup">
               <circle id="moon" class="moon-dot" r="12" />
+              <circle id="moonShadow" class="moon-shadow" r="12" clip-path="url(#moonclip)" />
             </g>
           </g>
 
-          <!-- GRUPO ESTÁTICO: GRADE + RELÓGIO + POLO NORTE (NÃO GIRA) -->
           <g id="staticGroup">
             <g id="gridLayer">
               <g id="gridCircles">
@@ -178,7 +179,8 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
           <label class="layeritem"><input type="checkbox" data-layer="star6" checked><i class="swatch" style="--swatch:#8cff48"></i>Estrela 6</label>
           <label class="layeritem"><input type="checkbox" data-layer="stars" checked><i class="swatch" style="--swatch:#fffbe6"></i>Céu Estelar</label>
           <label class="layeritem"><input type="checkbox" data-layer="light" checked><i class="swatch" style="--swatch:#ffcc00"></i>Luz (Sol)</label>
-          <label class="layeritem"><input type="checkbox" data-layer="dark" checked><i class="swatch" style="--swatch:#000000"></i>Sombra (Lua)</label>
+          <label class="layeritem"><input type="checkbox" data-layer="dark" checked><i class="swatch" style="--swatch:#000000"></i>Sombra (Noite)</label>
+          <label class="layeritem"><input type="checkbox" data-layer="moon" checked><i class="swatch" style="--swatch:#e0e0e0"></i>Lua</label>
           <label class="layeritem"><input type="checkbox" data-layer="rotation"><i class="swatch" style="--swatch:#c4a1f0"></i>Rotação</label>
         </div>
         <button type="button" id="btnReset" style="margin-top:10px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--soft);color:var(--ink);font:inherit;font-size:12px;cursor:pointer;">↺ Restaurar</button>
@@ -188,6 +190,12 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
         <label for="timeSlider">Hora do Céu (Tempo Real / Simulação)</label>
         <input id="timeSlider" type="range" min="0" max="23" value="12" step="1">
         <div class="time-display" id="timeDisplay">12:00</div>
+      </section>
+
+      <section class="time-control">
+        <label for="tropicSlider">Posição do Sol (Trópicos)</label>
+        <input id="tropicSlider" type="range" min="-23.5" max="23.5" value="0" step="0.5">
+        <div class="time-display" id="tropicDisplay">Equador (0°)</div>
       </section>
 
       <section class="timeline">
@@ -236,7 +244,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   const path = d3.geoPath(proj);
   let mapPaths = new Map();
 
-  // Elementos
   const worldGroup = document.getElementById("worldGroup");
   const landGroup = document.getElementById("landGroup");
   const mapWrap = document.getElementById("mapwrap");
@@ -249,10 +256,24 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   
   const sunIcon = document.getElementById("sun");
   const moonIcon = document.getElementById("moon");
+  const moonShadow = document.getElementById("moonShadow");
+  const moonClipCircle = document.getElementById("moonClipCircle");
   const lightHemi = document.getElementById("lightHemi");
   const darkHemi = document.getElementById("darkHemi");
 
-  // Dados das estrelas
+  // Função para calcular a fase da Lua (Meeus, simplificada)
+  // Retorna a fração iluminada de 0 a 1
+  function getMoonPhase(date) {
+    const jd = date.getTime() / 86400000 + 2440587.5;
+    const T = (jd - 2451545) / 36525;
+    const D = (297.8501921 + 445267.1114034 * T) * Math.PI / 180;
+    const M = (357.5291092 + 35999.0502909 * T) * Math.PI / 180;
+    const Mp = (134.9633964 + 477198.8675055 * T) * Math.PI / 180;
+    
+    const phaseAngle = Math.acos(Math.sin(M) * Math.sin(Mp) + Math.cos(M) * Math.cos(Mp) * Math.cos(D));
+    return (1 + Math.cos(phaseAngle)) / 2;
+  }
+
   const STARS = [
     { name: "Polaris", ra: 2.530, dec: 89.264, bright: true },
     { name: "Acrux", ra: 12.443, dec: -63.099, bright: true },
@@ -270,7 +291,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     ["Betelgeuse", "Bellatrix", "Rigel"]
   ];
 
-  // Relógio
   function drawClock() {
     const ticksGroup = document.getElementById("clockTicks");
     for (let i = 0; i < 24; i++) {
@@ -301,8 +321,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     }
   }
 
-  // Céu (Estrelas, Sol, Lua e Terminador)
-  function updateSky(hour) {
+  function updateSky(hour, tropicPos) {
     starsGroup.innerHTML = "";
     constGroup.innerHTML = "";
     labelsGroup.innerHTML = "";
@@ -346,36 +365,52 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       }
     });
 
-    // --- LÓGICA DO SOL E DA LUA COMO DONOS DAS CAMADAS ---
-    
-    // O Sol (Luz) fica na metade da frente
+    // --- SOL E LUZ ---
     const sunAngle = (hour / 24) * 2 * Math.PI;
     const sunX = CX + 200 * Math.sin(sunAngle);
     const sunY = CY - 200 * Math.cos(sunAngle);
     sunIcon.setAttribute("cx", sunX);
     sunIcon.setAttribute("cy", sunY);
-    
-    // O semicírculo de luz aponta para o Sol
+
+    const lightOffset = (tropicPos / 90) * Math.PI;
+    const lightAngle = sunAngle - Math.PI/2 + lightOffset;
     const lightPath = `M ${CX} ${CY} 
-      L ${CX + R * Math.sin(sunAngle - Math.PI/2)} ${CY - R * Math.cos(sunAngle - Math.PI/2)} 
-      A ${R} ${R} 0 0 1 ${CX + R * Math.sin(sunAngle + Math.PI/2)} ${CY - R * Math.cos(sunAngle + Math.PI/2)} Z`;
+      L ${CX + R * Math.sin(lightAngle)} ${CY - R * Math.cos(lightAngle)} 
+      A ${R} ${R} 0 0 1 ${CX + R * Math.sin(lightAngle + Math.PI)} ${CY - R * Math.cos(lightAngle + Math.PI)} Z`;
     lightHemi.setAttribute("d", lightPath);
 
-    // A Lua (Sombra) fica na metade de trás (oposta ao Sol)
-    const moonAngle = sunAngle + Math.PI;
-    const moonX = CX + 200 * Math.sin(moonAngle);
-    const moonY = CY - 200 * Math.cos(moonAngle);
+    // --- SOMBRA ---
+    const darkAngle = lightAngle + Math.PI;
+    const darkPath = `M ${CX} ${CY} 
+      L ${CX + R * Math.sin(darkAngle)} ${CY - R * Math.cos(darkAngle)} 
+      A ${R} ${R} 0 0 1 ${CX + R * Math.sin(darkAngle + Math.PI)} ${CY - R * Math.cos(darkAngle + Math.PI)} Z`;
+    darkHemi.setAttribute("d", darkPath);
+
+    // --- LUA (PONTEIRO INDEPENDENTE) ---
+    // A Lua segue o Sol com um atraso de ~50 minutos por dia.
+    // Na escala de 24h, 50 min ≈ 0.0347 de um dia. Mas para o visual do relógio, 5 "minutos" de relógio é 1/12 de hora (0.0833).
+    // Vamos usar o atraso real: a Lua se move ~13° por dia em relação ao Sol. 13/360 ≈ 0.036.
+    // Para o relógio, o atraso visual de 5 min é mais intuitivo.
+    const moonAngle = ((hour - 1/12) / 24) * 2 * Math.PI;
+    const moonX = CX + 250 * Math.sin(moonAngle);
+    const moonY = CY - 250 * Math.cos(moonAngle);
     moonIcon.setAttribute("cx", moonX);
     moonIcon.setAttribute("cy", moonY);
 
-    // O semicírculo escuro aponta para a Lua (oposto ao Sol)
-    const darkPath = `M ${CX} ${CY} 
-      L ${CX + R * Math.sin(moonAngle - Math.PI/2)} ${CY - R * Math.cos(moonAngle - Math.PI/2)} 
-      A ${R} ${R} 0 0 1 ${CX + R * Math.sin(moonAngle + Math.PI/2)} ${CY - R * Math.cos(moonAngle + Math.PI/2)} Z`;
-    darkHemi.setAttribute("d", darkPath);
+    // Atualiza o clip-path da sombra da Lua para a posição dela
+    moonClipCircle.setAttribute("cx", moonX);
+    moonClipCircle.setAttribute("cy", moonY);
+
+    // Calcula a fase da Lua para a data atual
+    const phase = getMoonPhase(new Date());
+    // A sombra da Lua é um círculo deslocado.
+    // Se a fase é 0 (nova), a sombra cobre tudo. Se é 1 (cheia), a sombra não cobre nada.
+    // A sombra se desloca para os lados conforme a fase.
+    const shadowOffset = (phase - 0.5) * 2 * 12; // -12 a +12
+    moonShadow.setAttribute("cx", moonX + shadowOffset);
+    moonShadow.setAttribute("cy", moonY);
   }
 
-  // Inicialização do mapa
   async function initMap() {
     try {
       const topo = await d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json");
@@ -406,7 +441,8 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       const now = new Date();
       const timeSlider = document.getElementById("timeSlider");
       timeSlider.value = now.getHours();
-      updateSky(now.getHours());
+      const tropicSlider = document.getElementById("tropicSlider");
+      updateSky(now.getHours(), parseFloat(tropicSlider.value));
       
     } catch (error) {
       console.error("Erro:", error);
@@ -414,7 +450,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     }
   }
 
-  // Rotação e Zoom (Mundo inteiro)
   let rotation = 0, zoom = 1, isRotating = false, rotateEnabled = false;
   let pointerStartX = 0, pointerStartY = 0, dragStarted = false, currentStartRotation = 0;
   const MIN_ZOOM = 1, MAX_ZOOM = 4;
@@ -465,7 +500,34 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     mapWrap.style.cursor = "default";
   });
 
-  // Camadas e Bandeiras
+  const timeSlider = document.getElementById("timeSlider");
+  const timeDisplay = document.getElementById("timeDisplay");
+  const tropicSlider = document.getElementById("tropicSlider");
+  const tropicDisplay = document.getElementById("tropicDisplay");
+
+  if (timeSlider) {
+    timeSlider.addEventListener("input", (e) => {
+      const h = parseInt(e.target.value);
+      timeDisplay.textContent = `${h.toString().padStart(2, '0')}:00`;
+      updateSky(h, parseFloat(tropicSlider.value));
+    });
+    
+    const now = new Date();
+    timeSlider.value = now.getHours();
+    timeDisplay.textContent = `${now.getHours().toString().padStart(2, '0')}:00`;
+  }
+
+  if (tropicSlider) {
+    tropicSlider.addEventListener("input", (e) => {
+      const val = parseFloat(e.target.value);
+      let text = "Equador (0°)";
+      if (val > 0) text = `Trópico de Câncer (${val}° N)`;
+      else if (val < 0) text = `Trópico de Capricórnio (${Math.abs(val)}° S)`;
+      tropicDisplay.textContent = text;
+      updateSky(parseInt(timeSlider.value), val);
+    });
+  }
+
   const NOME_PARA_ISO = {
     "Brazil": "br", "United States of America": "us", "Russia": "ru", "China": "cn",
     "Argentina": "ar", "South Africa": "za", "Australia": "au", "United Kingdom": "gb",
@@ -509,6 +571,8 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       document.getElementById("lightLayer").style.display = on ? "" : "none";
     } else if (key === "dark") {
       document.getElementById("darkLayer").style.display = on ? "" : "none";
+    } else if (key === "moon") {
+      document.getElementById("moonGroup").style.display = on ? "" : "none";
     } else if (key === "flags") {
       mapPaths.forEach((el, id) => {
         const d = d3.select(el).datum();
@@ -525,7 +589,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     }
   });
 
-  // Busca e Painel
   document.getElementById("q").addEventListener("input", (e) => {
     const term = e.target.value.toLowerCase();
     if (!term) return;
@@ -555,23 +618,14 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     `;
   }
 
-  // Inicialização
   drawClock();
   initMap();
   
-  const timeSlider = document.getElementById("timeSlider");
-  const timeDisplay = document.getElementById("timeDisplay");
   if (timeSlider) {
-    timeSlider.addEventListener("input", (e) => {
-      const h = parseInt(e.target.value);
-      timeDisplay.textContent = `${h.toString().padStart(2, '0')}:00`;
-      updateSky(h);
-    });
-    
     const now = new Date();
     timeSlider.value = now.getHours();
     timeDisplay.textContent = `${now.getHours().toString().padStart(2, '0')}:00`;
-    updateSky(now.getHours());
+    updateSky(now.getHours(), 0);
   }
 
 })();
