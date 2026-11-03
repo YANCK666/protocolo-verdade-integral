@@ -117,7 +117,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
               <g id="starLabels"></g>
             </g>
 
-            <!-- Sombra: Arco Arredondado -->
+            <!-- Sombra: Arco com Curvas Suaves -->
             <path id="nightShadow" class="night-shadow" d="" />
 
             <!-- Sol e Lua -->
@@ -250,7 +250,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   const moonClipCircle = document.getElementById("moonClipCircle");
   const nightShadow = document.getElementById("nightShadow");
 
-  // Função para calcular a declinação solar (posição no trópico)
   function getSolarDeclination(date) {
     const start = new Date(date.getFullYear(), 0, 0);
     const diff = date - start;
@@ -259,7 +258,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     return 23.5 * Math.sin((360 / 365) * (dayOfYear - 81) * Math.PI / 180);
   }
 
-  // Função para calcular a fase da Lua
   function getMoonPhase(date) {
     const jd = date.getTime() / 86400000 + 2440587.5;
     const T = (jd - 2451545) / 36525;
@@ -361,11 +359,10 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       }
     });
 
-    // --- SOL E FERRADURA (TEMPO REAL) ---
+    // --- SOL E SOMBRA (FERRADURA) ---
     const now = new Date();
     const displayHour = hour !== undefined ? hour : (now.getHours() + now.getMinutes() / 60);
     
-    // Declinação Solar
     const declination = getSolarDeclination(now);
 
     // Posição do Sol
@@ -376,23 +373,22 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     sunIcon.setAttribute("cy", sunY);
 
     // Sombra: um arco que "abraça" o polo oposto ao Sol
-    // O ângulo da sombra é o oposto ao Sol
     const shadowAngle = sunAngle + Math.PI;
     
-    // A curvatura da sombra depende da declinação (a ferradura).
+    // A curvatura do arco depende da declinação
     const curve = (declination / 23.5) * R * 0.8; 
 
-    // Pontos da sombra (arco)
+    // Pontos do arco
     const x1 = CX + R * Math.sin(shadowAngle - Math.PI/2);
     const y1 = CY - R * Math.cos(shadowAngle - Math.PI/2);
     const x2 = CX + R * Math.sin(shadowAngle + Math.PI/2);
     const y2 = CY - R * Math.cos(shadowAngle + Math.PI/2);
 
-    // Centro de controle do arco (para dar a curva da ferradura)
+    // Centro de controle do arco
     const cx = CX + (R * 0.5) * Math.sin(shadowAngle) - curve * Math.sin(shadowAngle);
     const cy = CY - (R * 0.5) * Math.cos(shadowAngle) + curve * Math.cos(shadowAngle);
 
-    // Desenha o arco com curvas suaves
+    // O arco é desenhado com uma curva quadrática (Q), que arredonda as pontas
     const shadowPath = `M ${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2} L ${CX} ${CY} Z`;
     
     nightShadow.setAttribute("d", shadowPath);
@@ -406,13 +402,11 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     moonClipCircle.setAttribute("cx", moonX);
     moonClipCircle.setAttribute("cy", moonY);
 
-    // Fase da Lua
     const phase = getMoonPhase(now);
     const shadowOffset = (phase - 0.5) * 2 * 12;
     moonShadow.setAttribute("cx", moonX + shadowOffset);
     moonShadow.setAttribute("cy", moonY);
 
-    // Atualiza o display de hora
     const timeDisplay = document.getElementById("timeDisplay");
     const h = Math.floor(displayHour);
     const m = Math.floor((displayHour - h) * 60);
