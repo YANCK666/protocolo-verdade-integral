@@ -56,9 +56,8 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 .moon-dot { fill: #e0e0e0; filter: drop-shadow(0 0 15px #fff); pointer-events: none; }
 .moon-shadow { fill: rgba(0, 0, 0, 0.8); pointer-events: none; }
 
-/* CAMADAS DE LUZ E SOMBRA */
-.light-hemisphere { fill: rgba(255, 204, 0, 0.15); stroke: none; pointer-events: none; }
-.dark-hemisphere { fill: rgba(0, 0, 0, 0.7); stroke: none; pointer-events: none; }
+/* SOMBRA (ELIPSE) */
+.night-shadow { fill: rgba(0, 0, 0, 0.7); pointer-events: none; }
 
 .panel { min-width: 0; }
 .search label { display: block; font-size: 12px; font-family: var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
@@ -109,6 +108,10 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
           <defs>
             <clipPath id="mapclip"><circle cx="400" cy="400" r="372"/></clipPath>
             <clipPath id="moonclip"><circle id="moonClipCircle" cx="0" cy="0" r="12"/></clipPath>
+            <!-- Clip Path para a Sombra (Elipse) -->
+            <clipPath id="shadowClip">
+              <ellipse id="shadowEllipse" cx="400" cy="400" rx="372" ry="200" />
+            </clipPath>
           </defs>
           
           <circle class="sea" cx="400" cy="400" r="372" />
@@ -122,15 +125,11 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
               <g id="starLabels"></g>
             </g>
 
-            <g id="lightLayer">
-              <path id="lightHemi" class="light-hemisphere" />
-              <circle id="sun" class="sun-dot" r="12" />
-            </g>
+            <!-- Sombra: um retângulo preto que é recortado pela elipse -->
+            <rect id="nightShadow" class="night-shadow" x="0" y="0" width="800" height="800" clip-path="url(#shadowClip)" />
 
-            <g id="darkLayer">
-              <path id="darkHemi" class="dark-hemisphere" />
-            </g>
-
+            <!-- Sol e Lua (Desenhados por cima da sombra) -->
+            <circle id="sun" class="sun-dot" r="12" />
             <g id="moonGroup">
               <circle id="moon" class="moon-dot" r="12" />
               <circle id="moonShadow" class="moon-shadow" r="12" clip-path="url(#moonclip)" />
@@ -181,7 +180,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
           <label class="layeritem"><input type="checkbox" data-layer="grid" checked><i class="swatch" style="--swatch:#4ade80"></i>Grade 12</label>
           <label class="layeritem"><input type="checkbox" data-layer="star6" checked><i class="swatch" style="--swatch:#8cff48"></i>Estrela 6</label>
           <label class="layeritem"><input type="checkbox" data-layer="stars" checked><i class="swatch" style="--swatch:#fffbe6"></i>Céu Estelar</label>
-          <label class="layeritem"><input type="checkbox" data-layer="light" checked><i class="swatch" style="--swatch:#ffcc00"></i>Luz (Sol)</label>
+          <label class="layeritem"><input type="checkbox" data-layer="light" checked><i class="swatch" style="--swatch:#ffcc00"></i>Sol</label>
           <label class="layeritem"><input type="checkbox" data-layer="dark" checked><i class="swatch" style="--swatch:#000000"></i>Sombra (Noite)</label>
           <label class="layeritem"><input type="checkbox" data-layer="moon" checked><i class="swatch" style="--swatch:#e0e0e0"></i>Lua</label>
           <label class="layeritem"><input type="checkbox" data-layer="tropics" checked><i class="swatch" style="--swatch:#a996c0"></i>Trópicos</label>
@@ -258,8 +257,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   const moonIcon = document.getElementById("moon");
   const moonShadow = document.getElementById("moonShadow");
   const moonClipCircle = document.getElementById("moonClipCircle");
-  const lightHemi = document.getElementById("lightHemi");
-  const darkHemi = document.getElementById("darkHemi");
+  const shadowEllipse = document.getElementById("shadowEllipse");
 
   // Função para calcular a declinação solar (posição no trópico)
   function getSolarDeclination(date) {
@@ -372,39 +370,38 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       }
     });
 
-    // --- SOL E LUZ (TEMPO REAL COM FERRADURA) ---
+    // --- SOL E FERRADURA (TEMPO REAL) ---
     const now = new Date();
     const displayHour = hour !== undefined ? hour : (now.getHours() + now.getMinutes() / 60);
     
-    // 1. Declinação Solar (posição entre os trópicos)
+    // Declinação Solar
     const declination = getSolarDeclination(now);
-    // Mapeia a declinação para um deslocamento visual (quanto mais para o sul, mais a ferradura "abre")
-    const tropicOffset = (declination / 23.5) * (R * 0.3); 
 
-    // 2. Posição do Sol (hora)
+    // Posição do Sol
     const sunAngle = (displayHour / 24) * 2 * Math.PI;
     const sunX = CX + 200 * Math.sin(sunAngle);
     const sunY = CY - 200 * Math.cos(sunAngle);
     sunIcon.setAttribute("cx", sunX);
     sunIcon.setAttribute("cy", sunY);
 
-    // 3. Desenho da Ferradura (Luz)
-    // A luz é um semicírculo, mas o centro dele é "empurrado" pela declinação.
-    const lightAngle = sunAngle - Math.PI/2;
-    const lightPath = `M ${CX} ${CY} 
-      L ${CX + R * Math.sin(lightAngle)} ${CY - R * Math.cos(lightAngle)} 
-      A ${R} ${R} 0 0 1 ${CX + R * Math.sin(lightAngle + Math.PI)} ${CY - R * Math.cos(lightAngle + Math.PI)} Z`;
-    lightHemi.setAttribute("d", lightPath);
+    // Sombra (Elipse)
+    // O centro da elipse é oposto ao Sol.
+    // A largura (rx) e altura (ry) mudam com a declinação.
+    const shadowAngle = sunAngle + Math.PI;
+    const shadowX = CX + 100 * Math.sin(shadowAngle); 
+    const shadowY = CY - 100 * Math.cos(shadowAngle); 
 
-    // 4. Desenho da Sombra (Noite) - Oposta à Luz
-    const darkAngle = lightAngle + Math.PI;
-    // A sombra é um arco que "abraça" o polo oposto ao Sol. 
-    // O raio da sombra diminui conforme a declinação (efeito ferradura).
-    const shadowRadius = R - Math.abs(tropicOffset) * 0.5; 
-    const darkPath = `M ${CX} ${CY} 
-      L ${CX + shadowRadius * Math.sin(darkAngle)} ${CY - shadowRadius * Math.cos(darkAngle)} 
-      A ${shadowRadius} ${shadowRadius} 0 0 1 ${CX + shadowRadius * Math.sin(darkAngle + Math.PI)} ${CY - shadowRadius * Math.cos(darkAngle + Math.PI)} Z`;
-    darkHemi.setAttribute("d", darkPath);
+    // Ajuste do tamanho da elipse para criar a ferradura
+    // Quando a declinação é positiva (Sol no Norte), a sombra "abraça" o Sul (fica mais fina e alongada)
+    // Quando negativa (Sol no Sul), a sombra "abraça" o Norte.
+    const rx = R * (1 + Math.abs(declination) / 90);
+    const ry = R * (1 - Math.abs(declination) / 90);
+
+    shadowEllipse.setAttribute("cx", shadowX);
+    shadowEllipse.setAttribute("cy", shadowY);
+    shadowEllipse.setAttribute("rx", rx);
+    shadowEllipse.setAttribute("ry", ry);
+    shadowEllipse.setAttribute("transform", `rotate(${shadowAngle * 180 / Math.PI} ${shadowX} ${shadowY})`);
 
     // --- LUA ---
     const moonAngle = ((displayHour - 1/12) / 24) * 2 * Math.PI;
@@ -573,9 +570,9 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     } else if (key === "stars") {
       document.getElementById("skyLayer").style.display = on ? "" : "none";
     } else if (key === "light") {
-      document.getElementById("lightLayer").style.display = on ? "" : "none";
+      document.getElementById("sun").style.display = on ? "block" : "none";
     } else if (key === "dark") {
-      document.getElementById("darkLayer").style.display = on ? "" : "none";
+      document.getElementById("nightShadow").style.display = on ? "block" : "none";
     } else if (key === "moon") {
       document.getElementById("moonGroup").style.display = on ? "" : "none";
     } else if (key === "flags") {
