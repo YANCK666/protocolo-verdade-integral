@@ -45,14 +45,14 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 .star { fill: var(--star); pointer-events: none; }
 .star-bright { fill: #ffffff; filter: drop-shadow(0 0 3px #fff); }
 .star-label { font-family: var(--f-mono); font-size: 9px; fill: #fff; paint-order: stroke; stroke: #000; stroke-width: 2px; pointer-events: none; }
-.constellation-line { stroke: var(--const); stroke-width: 1; opacity: 0.6; fill: none; pointer-events: none; }
+.constellation-line { stroke: var(--const); stroke-width: 1.5; opacity: 0.8; fill: none; pointer-events: none; }
 
 /* SOL E LUA */
-.sun-dot { fill: #ffcc00; filter: drop-shadow(0 0 10px #ffcc00); pointer-events: none; }
+.sun-dot { fill: #ffcc00; filter: drop-shadow(0 0 15px #ffcc00); pointer-events: none; }
 .moon-dot { fill: #e0e0e0; filter: drop-shadow(0 0 10px #fff); pointer-events: none; }
 
 /* SOMBRA DA NOITE (TERMINADOR) */
-.night-shadow { fill: rgba(0, 0, 0, 0.6); pointer-events: none; }
+.night-shadow { fill: rgba(0, 0, 0, 0.7); pointer-events: none; }
 
 .panel { min-width: 0; }
 .search label { display: block; font-size: 12px; font-family: var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
@@ -111,11 +111,12 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
             <!-- Terra -->
             <g id="landGroup"></g>
             
-            <!-- Céu: Estrelas, Sol e Lua -->
+            <!-- Céu: Estrelas, Sol, Lua e Sombra -->
             <g id="skyLayer">
               <g id="constellations"></g>
               <g id="stars"></g>
               <g id="starLabels"></g>
+              <!-- Sol e Lua (3x maiores que a Polaris) -->
               <circle id="sun" class="sun-dot" r="12" style="display:none;" />
               <circle id="moon" class="moon-dot" r="12" style="display:none;" />
               <!-- Sombra da Noite -->
@@ -245,21 +246,22 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   const moonIcon = document.getElementById("moon");
   const nightShadow = document.getElementById("nightShadow");
 
-  // Dados das estrelas
+  // Dados das estrelas (Catálogo completo com Cruzeiro do Sul e Órion)
   const STARS = [
     { name: "Polaris", ra: 2.530, dec: 89.264, bright: true },
-    { name: "Acrux", ra: 12.443, dec: -63.099 },
+    { name: "Acrux", ra: 12.443, dec: -63.099, bright: true },
     { name: "Mimosa", ra: 12.795, dec: -59.689 },
     { name: "Gacrux", ra: 12.519, dec: -57.113 },
     { name: "Imai", ra: 12.252, dec: -58.749 },
     { name: "Sirius", ra: 6.752, dec: -16.716, bright: true },
-    { name: "Betelgeuse", ra: 5.919, dec: 7.407 },
-    { name: "Rigel", ra: 5.242, dec: -8.202 }
+    { name: "Betelgeuse", ra: 5.919, dec: 7.407, bright: true },
+    { name: "Rigel", ra: 5.242, dec: -8.202 },
+    { name: "Bellatrix", ra: 5.418, dec: 6.350 }
   ];
 
   const CONSTELLATIONS = [
-    ["Acrux", "Gacrux", "Mimosa", "Imai", "Acrux"],
-    ["Betelgeuse", "Rigel"]
+    ["Acrux", "Gacrux", "Mimosa", "Imai", "Acrux"], // Cruzeiro do Sul
+    ["Betelgeuse", "Bellatrix", "Rigel"] // Órion (simplificado)
   ];
 
   // Relógio
@@ -338,64 +340,43 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       }
     });
 
-    // --- Cálculo Astronômico para Sol, Lua e Terminador (Padrão timeanddate.com) ---
-    // Usa a data atual e a hora do slider
+    // --- Cálculo Astronômico para Sol, Lua e Terminador ---
     const now = new Date();
     now.setHours(hour, 0, 0, 0);
     
-    // Usamos a latitude/longitude de Greenwich (0,0) como referência para o terminador
-    const lat = 0; 
-    const lng = 0; 
-    
+    const lat = 0; const lng = 0; // Referência Greenwich para o terminador
     const sunPos = SunCalc.getPosition(now, lat, lng);
     const moonPos = SunCalc.getMoonPosition(now, lat, lng);
 
-    // 1. Posição do Sol (Ponto Subsolar)
-    // SunCalc retorna altitude (acima do horizonte) e azimuth (direção).
-    // Convertemos para coordenadas no disco azimutal.
+    // Sol (Ponto Subsolar)
     if (sunPos.altitude > 0) {
       const sunRho = R * (90 - (sunPos.altitude * 180 / Math.PI)) / 90;
       const sunAngle = sunPos.azimuth;
-      const sunX = CX + sunRho * Math.sin(sunAngle);
-      const sunY = CY - sunRho * Math.cos(sunAngle);
-      
-      sunIcon.setAttribute("cx", sunX);
-      sunIcon.setAttribute("cy", sunY);
+      sunIcon.setAttribute("cx", CX + sunRho * Math.sin(sunAngle));
+      sunIcon.setAttribute("cy", CY - sunRho * Math.cos(sunAngle));
       sunIcon.style.display = "block";
     } else {
       sunIcon.style.display = "none";
     }
 
-    // 2. Posição da Lua
+    // Lua
     if (moonPos.altitude > 0) {
       const moonRho = R * (90 - (moonPos.altitude * 180 / Math.PI)) / 90;
       const moonAngle = moonPos.azimuth;
-      const moonX = CX + moonRho * Math.sin(moonAngle);
-      const moonY = CY - moonRho * Math.cos(moonAngle);
-      
-      moonIcon.setAttribute("cx", moonX);
-      moonIcon.setAttribute("cy", moonY);
+      moonIcon.setAttribute("cx", CX + moonRho * Math.sin(moonAngle));
+      moonIcon.setAttribute("cy", CY - moonRho * Math.cos(moonAngle));
       moonIcon.style.display = "block";
     } else {
       moonIcon.style.display = "none";
     }
 
-    // 3. Terminador Dia/Noite (Sombra)
-    // O terminador é um círculo máximo a 90° do ponto subsolar.
-    // No mapa azimutal, isso se traduz em um arco.
+    // Terminador (Sombra)
     if (sunPos.altitude > 0) {
-      // O Sol está acima do horizonte. A sombra fica no lado oposto.
       const shadowAngle = (sunPos.azimuth + Math.PI) * 180 / Math.PI;
-      
-      // Desenha um semicírculo preto no lado oposto ao Sol
-      const shadowPath = `M ${CX} ${CY} 
-        L ${CX + R * Math.cos(shadowAngle * Math.PI / 180)} ${CY + R * Math.sin(shadowAngle * Math.PI / 180)} 
-        A ${R} ${R} 0 0 1 ${CX - R * Math.cos(shadowAngle * Math.PI / 180)} ${CY - R * Math.sin(shadowAngle * Math.PI / 180)} Z`;
-      
+      const shadowPath = `M ${CX} ${CY} L ${CX + R * Math.cos(shadowAngle * Math.PI / 180)} ${CY + R * Math.sin(shadowAngle * Math.PI / 180)} A ${R} ${R} 0 0 1 ${CX - R * Math.cos(shadowAngle * Math.PI / 180)} ${CY - R * Math.sin(shadowAngle * Math.PI / 180)} Z`;
       nightShadow.setAttribute("d", shadowPath);
       nightShadow.style.display = "block";
     } else {
-      // O Sol está abaixo do horizonte (noite total no local de referência)
       nightShadow.setAttribute("d", `M ${CX - R} ${CY} A ${R} ${R} 0 1 1 ${CX + R} ${CY} A ${R} ${R} 0 1 1 ${CX - R} ${CY} Z`);
       nightShadow.style.display = "block";
     }
