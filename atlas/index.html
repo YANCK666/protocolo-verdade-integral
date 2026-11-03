@@ -48,11 +48,10 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 .constellation-line { stroke: var(--const); stroke-width: 1.5; opacity: 0.8; fill: none; pointer-events: none; }
 
 /* SOL E LUA */
-.sun-dot { fill: #ffcc00; filter: drop-shadow(0 0 20px #ffcc00); pointer-events: none; }
-.moon-dot { fill: #e0e0e0; filter: drop-shadow(0 0 15px #fff); pointer-events: none; }
-.moon-shadow { fill: rgba(0, 0, 0, 0.8); pointer-events: none; }
+.sun-dot { fill: #ffcc00; filter: drop-shadow(0 0 15px #ffcc00); pointer-events: none; }
+.moon-dot { fill: #e0e0e0; filter: drop-shadow(0 0 10px #fff); pointer-events: none; }
 
-/* SOMBRA (ARCO ARREDONDADO) */
+/* SOMBRA DA NOITE (TERMINADOR) */
 .night-shadow { fill: rgba(0, 0, 0, 0.7); pointer-events: none; }
 
 .panel { min-width: 0; }
@@ -103,32 +102,33 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
         <svg id="map" viewBox="0 0 800 800">
           <defs>
             <clipPath id="mapclip"><circle cx="400" cy="400" r="372"/></clipPath>
-            <clipPath id="moonclip"><circle id="moonClipCircle" cx="0" cy="0" r="12"/></clipPath>
           </defs>
           
           <circle class="sea" cx="400" cy="400" r="372" />
           
+          <!-- GRUPO MESTRE: TUDO DENTRO DAQUI GIRA JUNTO -->
           <g id="worldGroup" clip-path="url(#mapclip)">
+            <!-- Terra -->
             <g id="landGroup"></g>
             
+            <!-- Céu: Estrelas -->
             <g id="skyLayer">
               <g id="constellations"></g>
               <g id="stars"></g>
               <g id="starLabels"></g>
             </g>
 
-            <!-- Sombra: Arco com Curvas Suaves -->
-            <path id="nightShadow" class="night-shadow" d="" />
+            <!-- Sombra da Noite (Fixa em relação ao Sol) -->
+            <path id="nightShadow" class="night-shadow" style="display:none;" />
 
-            <!-- Sol e Lua -->
-            <circle id="sun" class="sun-dot" r="12" />
-            <g id="moonGroup">
-              <circle id="moon" class="moon-dot" r="12" />
-              <circle id="moonShadow" class="moon-shadow" r="12" clip-path="url(#moonclip)" />
-            </g>
+            <!-- Sol e Lua (Ficam no topo para garantir visibilidade) -->
+            <circle id="sun" class="sun-dot" r="12" style="display:none;" />
+            <circle id="moon" class="moon-dot" r="12" style="display:none;" />
           </g>
 
+          <!-- GRUPO ESTÁTICO: GRADE + RELÓGIO + POLO NORTE (NÃO GIRA) -->
           <g id="staticGroup">
+            <!-- Grade Geométrica -->
             <g id="gridLayer">
               <g id="gridCircles">
                 <circle class="grid-circle" cx="400" cy="400" r="120" />
@@ -146,11 +146,13 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
               <circle class="ring" cx="400" cy="400" r="370" />
             </g>
 
+            <!-- Relógio -->
             <g id="clockLayer">
               <circle cx="400" cy="400" r="385" fill="none" stroke="var(--line)" stroke-width="1.5" />
               <g id="clockTicks"></g>
             </g>
 
+            <!-- Polo Norte -->
             <circle class="pole" cx="400" cy="400" r="5" />
             <text x="400" y="12" text-anchor="middle" fill="var(--accent)" font-size="12" font-family="var(--f-mono)" font-weight="bold">N</text>
             <text x="400" y="795" text-anchor="middle" fill="var(--muted)" font-size="12" font-family="var(--f-mono)">S</text>
@@ -172,19 +174,18 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
           <label class="layeritem"><input type="checkbox" data-layer="grid" checked><i class="swatch" style="--swatch:#4ade80"></i>Grade 12</label>
           <label class="layeritem"><input type="checkbox" data-layer="star6" checked><i class="swatch" style="--swatch:#8cff48"></i>Estrela 6</label>
           <label class="layeritem"><input type="checkbox" data-layer="stars" checked><i class="swatch" style="--swatch:#fffbe6"></i>Céu Estelar</label>
-          <label class="layeritem"><input type="checkbox" data-layer="light" checked><i class="swatch" style="--swatch:#ffcc00"></i>Sol</label>
-          <label class="layeritem"><input type="checkbox" data-layer="dark" checked><i class="swatch" style="--swatch:#000000"></i>Sombra (Noite)</label>
+          <label class="layeritem"><input type="checkbox" data-layer="sun" checked><i class="swatch" style="--swatch:#ffcc00"></i>Sol</label>
           <label class="layeritem"><input type="checkbox" data-layer="moon" checked><i class="swatch" style="--swatch:#e0e0e0"></i>Lua</label>
+          <label class="layeritem"><input type="checkbox" data-layer="night" checked><i class="swatch" style="--swatch:#333"></i>Iluminação</label>
           <label class="layeritem"><input type="checkbox" data-layer="rotation"><i class="swatch" style="--swatch:#c4a1f0"></i>Rotação</label>
         </div>
         <button type="button" id="btnReset" style="margin-top:10px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--soft);color:var(--ink);font:inherit;font-size:12px;cursor:pointer;">↺ Restaurar</button>
       </section>
 
       <section class="time-control">
-        <label for="timeSlider">Hora do Céu (Simulação)</label>
+        <label for="timeSlider">Hora do Céu (Tempo Real / Simulação)</label>
         <input id="timeSlider" type="range" min="0" max="23" value="12" step="1">
         <div class="time-display" id="timeDisplay">12:00</div>
-        <button id="btnNow" style="margin-top:8px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--accent);color:var(--bg);font:inherit;font-size:12px;cursor:pointer;font-weight:600;width:100%;">⏱️ Sincronizar com o Agora</button>
       </section>
 
       <section class="timeline">
@@ -233,41 +234,21 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   const path = d3.geoPath(proj);
   let mapPaths = new Map();
 
+  // Elementos
   const worldGroup = document.getElementById("worldGroup");
   const landGroup = document.getElementById("landGroup");
   const mapWrap = document.getElementById("mapwrap");
   const rotationCheckbox = document.querySelector('[data-layer="rotation"]');
   const btnReset = document.getElementById("btnReset");
-  const btnNow = document.getElementById("btnNow");
   const defs = document.querySelector("#map defs");
   const starsGroup = document.getElementById("stars");
   const constGroup = document.getElementById("constellations");
   const labelsGroup = document.getElementById("starLabels");
-  
   const sunIcon = document.getElementById("sun");
   const moonIcon = document.getElementById("moon");
-  const moonShadow = document.getElementById("moonShadow");
-  const moonClipCircle = document.getElementById("moonClipCircle");
   const nightShadow = document.getElementById("nightShadow");
 
-  function getSolarDeclination(date) {
-    const start = new Date(date.getFullYear(), 0, 0);
-    const diff = date - start;
-    const oneDay = 1000 * 60 * 60 * 24;
-    const dayOfYear = Math.floor(diff / oneDay);
-    return 23.5 * Math.sin((360 / 365) * (dayOfYear - 81) * Math.PI / 180);
-  }
-
-  function getMoonPhase(date) {
-    const jd = date.getTime() / 86400000 + 2440587.5;
-    const T = (jd - 2451545) / 36525;
-    const D = (297.8501921 + 445267.1114034 * T) * Math.PI / 180;
-    const M = (357.5291092 + 35999.0502909 * T) * Math.PI / 180;
-    const Mp = (134.9633964 + 477198.8675055 * T) * Math.PI / 180;
-    const phaseAngle = Math.acos(Math.sin(M) * Math.sin(Mp) + Math.cos(M) * Math.cos(Mp) * Math.cos(D));
-    return (1 + Math.cos(phaseAngle)) / 2;
-  }
-
+  // Dados das estrelas
   const STARS = [
     { name: "Polaris", ra: 2.530, dec: 89.264, bright: true },
     { name: "Acrux", ra: 12.443, dec: -63.099, bright: true },
@@ -285,6 +266,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     ["Betelgeuse", "Bellatrix", "Rigel"]
   ];
 
+  // Relógio
   function drawClock() {
     const ticksGroup = document.getElementById("clockTicks");
     for (let i = 0; i < 24; i++) {
@@ -315,6 +297,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     }
   }
 
+  // Céu (Estrelas, Sol, Lua e Terminador)
   function updateSky(hour) {
     starsGroup.innerHTML = "";
     constGroup.innerHTML = "";
@@ -359,60 +342,39 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       }
     });
 
-    // --- SOL E SOMBRA (FERRADURA) ---
-    const now = new Date();
-    const displayHour = hour !== undefined ? hour : (now.getHours() + now.getMinutes() / 60);
+    // --- LÓGICA CORRIGIDA DO SOL, LUA E SOMBRA ---
     
-    const declination = getSolarDeclination(now);
-
-    // Posição do Sol
-    const sunAngle = (displayHour / 24) * 2 * Math.PI;
+    // 1. Posição do Sol (Ponteiro do Relógio)
+    // A hora 12:00 aponta para cima (ângulo 0). A hora 00:00 aponta para baixo.
+    // A fórmula converte a hora em radianos (2 * PI / 24) e ajusta para o topo.
+    const sunAngle = (hour / 24) * 2 * Math.PI; 
     const sunX = CX + 200 * Math.sin(sunAngle);
     const sunY = CY - 200 * Math.cos(sunAngle);
     sunIcon.setAttribute("cx", sunX);
     sunIcon.setAttribute("cy", sunY);
-
-    // Sombra: um arco que "abraça" o polo oposto ao Sol
-    const shadowAngle = sunAngle + Math.PI;
     
-    // A curvatura do arco depende da declinação
-    const curve = (declination / 23.5) * R * 0.8; 
-
-    // Pontos do arco
-    const x1 = CX + R * Math.sin(shadowAngle - Math.PI/2);
-    const y1 = CY - R * Math.cos(shadowAngle - Math.PI/2);
-    const x2 = CX + R * Math.sin(shadowAngle + Math.PI/2);
-    const y2 = CY - R * Math.cos(shadowAngle + Math.PI/2);
-
-    // Centro de controle do arco
-    const cx = CX + (R * 0.5) * Math.sin(shadowAngle) - curve * Math.sin(shadowAngle);
-    const cy = CY - (R * 0.5) * Math.cos(shadowAngle) + curve * Math.cos(shadowAngle);
-
-    // O arco é desenhado com uma curva quadrática (Q), que arredonda as pontas
-    const shadowPath = `M ${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2} L ${CX} ${CY} Z`;
-    
-    nightShadow.setAttribute("d", shadowPath);
-
-    // --- LUA ---
-    const moonAngle = ((displayHour - 1/12) / 24) * 2 * Math.PI;
+    // 2. Posição da Lua (5 "minutos" = 1/12 de hora atrás do Sol)
+    const moonAngle = ((hour - 1/12) / 24) * 2 * Math.PI;
     const moonX = CX + 250 * Math.sin(moonAngle);
     const moonY = CY - 250 * Math.cos(moonAngle);
     moonIcon.setAttribute("cx", moonX);
     moonIcon.setAttribute("cy", moonY);
-    moonClipCircle.setAttribute("cx", moonX);
-    moonClipCircle.setAttribute("cy", moonY);
 
-    const phase = getMoonPhase(now);
-    const shadowOffset = (phase - 0.5) * 2 * 12;
-    moonShadow.setAttribute("cx", moonX + shadowOffset);
-    moonShadow.setAttribute("cy", moonY);
-
-    const timeDisplay = document.getElementById("timeDisplay");
-    const h = Math.floor(displayHour);
-    const m = Math.floor((displayHour - h) * 60);
-    timeDisplay.textContent = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+    // 3. Sombra da Noite (Terminador)
+    // A sombra é SEMPRE o semicírculo oposto ao Sol.
+    // Se o Sol está no topo (12:00), a sombra cobre a metade de baixo.
+    // O ângulo da sombra é o ângulo do Sol + 180 graus (PI).
+    const shadowAngle = sunAngle + Math.PI;
+    
+    // Desenha um semicírculo a partir do centro até a borda oposta
+    const shadowPath = `M ${CX} ${CY} 
+      L ${CX + R * Math.sin(shadowAngle)} ${CY - R * Math.cos(shadowAngle)} 
+      A ${R} ${R} 0 0 1 ${CX - R * Math.sin(shadowAngle)} ${CY + R * Math.cos(shadowAngle)} Z`;
+    
+    nightShadow.setAttribute("d", shadowPath);
   }
 
+  // Inicialização do mapa
   async function initMap() {
     try {
       const topo = await d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json");
@@ -440,8 +402,10 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
         
       document.getElementById("stats").textContent = "Mapa carregado";
       
-      updateSky();
-      setInterval(updateSky, 60000);
+      const now = new Date();
+      const timeSlider = document.getElementById("timeSlider");
+      timeSlider.value = now.getHours();
+      updateSky(now.getHours());
       
     } catch (error) {
       console.error("Erro:", error);
@@ -449,6 +413,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     }
   }
 
+  // Rotação e Zoom (Mundo inteiro)
   let rotation = 0, zoom = 1, isRotating = false, rotateEnabled = false;
   let pointerStartX = 0, pointerStartY = 0, dragStarted = false, currentStartRotation = 0;
   const MIN_ZOOM = 1, MAX_ZOOM = 4;
@@ -499,25 +464,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     mapWrap.style.cursor = "default";
   });
 
-  if (btnNow) {
-    btnNow.addEventListener("click", () => {
-      const now = new Date();
-      const h = now.getHours() + now.getMinutes() / 60;
-      document.getElementById("timeSlider").value = h;
-      updateSky(h);
-    });
-  }
-
-  const timeSlider = document.getElementById("timeSlider");
-  const timeDisplay = document.getElementById("timeDisplay");
-
-  if (timeSlider) {
-    timeSlider.addEventListener("input", (e) => {
-      const h = parseFloat(e.target.value);
-      updateSky(h);
-    });
-  }
-
+  // Camadas e Bandeiras
   const NOME_PARA_ISO = {
     "Brazil": "br", "United States of America": "us", "Russia": "ru", "China": "cn",
     "Argentina": "ar", "South Africa": "za", "Australia": "au", "United Kingdom": "gb",
@@ -557,12 +504,12 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       document.getElementById("gridStar6").style.display = on ? "" : "none";
     } else if (key === "stars") {
       document.getElementById("skyLayer").style.display = on ? "" : "none";
-    } else if (key === "light") {
-      document.getElementById("sun").style.display = on ? "block" : "none";
-    } else if (key === "dark") {
-      document.getElementById("nightShadow").style.display = on ? "block" : "none";
+    } else if (key === "sun") {
+      sunIcon.style.display = on ? "block" : "none";
     } else if (key === "moon") {
-      document.getElementById("moonGroup").style.display = on ? "" : "none";
+      moonIcon.style.display = on ? "block" : "none";
+    } else if (key === "night") {
+      nightShadow.style.display = on ? "block" : "none";
     } else if (key === "flags") {
       mapPaths.forEach((el, id) => {
         const d = d3.select(el).datum();
@@ -579,6 +526,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     }
   });
 
+  // Busca e Painel
   document.getElementById("q").addEventListener("input", (e) => {
     const term = e.target.value.toLowerCase();
     if (!term) return;
@@ -608,8 +556,24 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     `;
   }
 
+  // Inicialização
   drawClock();
   initMap();
+  
+  const timeSlider = document.getElementById("timeSlider");
+  const timeDisplay = document.getElementById("timeDisplay");
+  if (timeSlider) {
+    timeSlider.addEventListener("input", (e) => {
+      const h = parseInt(e.target.value);
+      timeDisplay.textContent = `${h.toString().padStart(2, '0')}:00`;
+      updateSky(h);
+    });
+    
+    const now = new Date();
+    timeSlider.value = now.getHours();
+    timeDisplay.textContent = `${now.getHours().toString().padStart(2, '0')}:00`;
+    updateSky(now.getHours());
+  }
 
 })();
 </script>
