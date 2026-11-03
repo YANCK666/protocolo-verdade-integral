@@ -111,7 +111,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
             <!-- Terra -->
             <g id="landGroup"></g>
             
-            <!-- Céu: Estrelas, Sol, Lua e Sombra -->
+            <!-- Céu: Estrelas, Sol e Lua -->
             <g id="skyLayer">
               <g id="constellations"></g>
               <g id="stars"></g>
@@ -340,11 +340,11 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       }
     });
 
-    // --- Cálculo Astronômico para Sol, Lua e Terminador ---
+    // --- Cálculo Astronômico para Sol, Lua e Terminador (Padrão timeanddate.com) ---
     const now = new Date();
     now.setHours(hour, 0, 0, 0);
     
-    const lat = 0; const lng = 0; // Referência Greenwich para o terminador
+    const lat = 0; const lng = 0; // Referência Greenwich
     const sunPos = SunCalc.getPosition(now, lat, lng);
     const moonPos = SunCalc.getMoonPosition(now, lat, lng);
 
