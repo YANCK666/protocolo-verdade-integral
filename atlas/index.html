@@ -44,8 +44,10 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 .star-bright { fill: #ffffff; filter: drop-shadow(0 0 3px #fff); }
 .star-label { font-family: var(--f-mono); font-size: 9px; fill: #fff; paint-order: stroke; stroke: #000; stroke-width: 2px; pointer-events: none; }
 .constellation-line { stroke: var(--const); stroke-width: 1; opacity: 0.6; fill: none; pointer-events: none; }
-.sun-dot { fill: #ffcc00; pointer-events: none; }
-.moon-dot { fill: #e0e0e0; pointer-events: none; }
+
+/* SOL E LUA MAIORES */
+.sun-dot { fill: #ffcc00; filter: drop-shadow(0 0 10px #ffcc00); pointer-events: none; }
+.moon-dot { fill: #e0e0e0; filter: drop-shadow(0 0 10px #fff); pointer-events: none; }
 
 .panel { min-width: 0; }
 .search label { display: block; font-size: 12px; font-family: var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
@@ -99,9 +101,9 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
           
           <circle class="sea" cx="400" cy="400" r="372" />
           
-          <!-- GRUPO QUE GIRA JUNTO (TERRA + CÉU) -->
+          <!-- GRUPO MESTRE: TUDO DENTRO DAQUI GIRA JUNTO -->
           <g id="worldGroup" clip-path="url(#mapclip)">
-            <!-- Terra -->
+            <!-- Países -->
             <g id="landGroup"></g>
             
             <!-- Grade -->
@@ -122,7 +124,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
               <circle class="ring" cx="400" cy="400" r="370" />
             </g>
 
-            <!-- Céu (Estrelas, Sol e Lua) -->
+            <!-- Céu: Estrelas, Sol e Lua -->
             <g id="skyLayer">
               <g id="constellations"></g>
               <g id="stars"></g>
@@ -133,7 +135,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
             </g>
           </g>
 
-          <!-- RELÓGIO E POLO NORTE (FIXOS, FORA DO GRUPO) -->
+          <!-- RELÓGIO E POLO NORTE (FIXOS, FORA DO GRUPO MESTRE) -->
           <g id="clockLayer">
             <circle cx="400" cy="400" r="385" fill="none" stroke="var(--line)" stroke-width="1.5" />
             <g id="clockTicks"></g>
