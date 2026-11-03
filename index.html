@@ -44,16 +44,15 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 .ring { fill: none; stroke: var(--line); stroke-width: 2; pointer-events: none; }
 .pole { fill: var(--accent); pointer-events: none; filter: drop-shadow(0 0 6px var(--accent)); }
 
-/* ESTRELAS */
-.star { fill: var(--star); pointer-events: none; }
+/* ESTRELAS (CAMADA SUPERIOR) */
+#skyLayer { pointer-events: none; }
+.star { fill: var(--star); }
 .star-bright { fill: #ffffff; filter: drop-shadow(0 0 3px #fff); }
-.star-label { font-family: var(--f-mono); font-size: 9px; fill: #fff; paint-order: stroke; stroke: #000; stroke-width: 2px; pointer-events: none; }
-.constellation-line { stroke: var(--const); stroke-width: 1; opacity: 0.6; fill: none; pointer-events: none; }
-.sun-dot { fill: #ffcc00; pointer-events: none; }
-.moon-dot { fill: #e0e0e0; pointer-events: none; }
-
-/* ILUMINAÇÃO (SOMBRA DA NOITE) */
-.night-shadow { fill: rgba(0, 0, 0, 0.5); pointer-events: none; }
+.star-label { font-family: var(--f-mono); font-size: 9px; fill: #fff; paint-order: stroke; stroke: #000; stroke-width: 2px; }
+.constellation-line { stroke: var(--const); stroke-width: 1; opacity: 0.6; fill: none; }
+.sun-dot { fill: #ffcc00; filter: drop-shadow(0 0 4px #ffcc00); }
+.moon-dot { fill: #e0e0e0; filter: drop-shadow(0 0 3px #fff); }
+.night-shadow { fill: rgba(0, 0, 0, 0.6); }
 
 /* PAINEL */
 .panel { min-width: 0; }
@@ -95,7 +94,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   <header class="top">
     <div>
       <h1>Atlas Polar</h1>
-      <p class="lede">Um único mapa por camadas: território, céu, tempo e informação. Ligue e desligue referências como em um editor gráfico; cada camada pode crescer do macro ao micro.</p>
+      <p class="lede">Um único mapa por camadas: território, céu, tempo e informação.</p>
     </div>
     <p class="stats" id="stats">Carregando...</p>
   </header>
@@ -110,20 +109,11 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
           
           <circle class="sea" cx="400" cy="400" r="372" />
           
+          <!-- TERRA -->
           <g id="landGroup" clip-path="url(#mapclip)"></g>
 
-          <!-- CAMADA DO CÉU -->
-          <g id="skyLayer" clip-path="url(#mapclip)">
-            <g id="constellations"></g>
-            <g id="stars"></g>
-            <g id="starLabels"></g>
-            <circle id="sun" class="sun-dot" r="2" style="display:none;" />
-            <circle id="moon" class="moon-dot" r="1.5" style="display:none;" />
-            <path id="nightShadow" class="night-shadow" style="display:none;" />
-          </g>
-
           <!-- GRADE -->
-          <g id="gridLayer">
+          <g id="gridLayer" clip-path="url(#mapclip)">
             <g id="gridCircles">
               <circle class="grid-circle" cx="400" cy="400" r="120" />
               <circle class="grid-circle" cx="400" cy="400" r="240" />
@@ -140,14 +130,26 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
             <circle class="ring" cx="400" cy="400" r="370" />
           </g>
 
+          <!-- RELÓGIO -->
           <g id="clockLayer">
             <circle cx="400" cy="400" r="385" fill="none" stroke="var(--line)" stroke-width="1.5" />
             <g id="clockTicks"></g>
           </g>
 
+          <!-- POLO NORTE -->
           <circle class="pole" cx="400" cy="400" r="5" />
           <text x="400" y="12" text-anchor="middle" fill="var(--accent)" font-size="12" font-family="var(--f-mono)" font-weight="bold">N</text>
           <text x="400" y="795" text-anchor="middle" fill="var(--muted)" font-size="12" font-family="var(--f-mono)">S</text>
+
+          <!-- CÉU (ÚLTIMA CAMADA PARA FICAR POR CIMA DE TUDO) -->
+          <g id="skyLayer" clip-path="url(#mapclip)">
+            <path id="nightShadow" class="night-shadow" style="display:none;" />
+            <g id="constellations"></g>
+            <g id="stars"></g>
+            <g id="starLabels"></g>
+            <circle id="sun" class="sun-dot" r="2" style="display:none;" />
+            <circle id="moon" class="moon-dot" r="1.5" style="display:none;" />
+          </g>
         </svg>
       </div>
 
@@ -221,7 +223,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   "use strict";
 
   // ==========================================
-  // 1. CONFIGURAÇÃO E VARIÁVEIS GLOBAIS
+  // 1. VARIÁVEIS GLOBAIS
   // ==========================================
   const SIZE = 800, CX = 400, CY = 400, R = 372;
   const proj = d3.geoAzimuthalEquidistant().rotate([0, -90]).scale(R / Math.PI).translate([CX, CY]).clipAngle(180);
@@ -260,7 +262,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   ];
 
   // ==========================================
-  // 3. FUNÇÕES DO MAPA (RELÓGIO E TERRA)
+  // 3. FUNÇÕES DO MAPA
   // ==========================================
   function drawClock() {
     const ticksGroup = document.getElementById("clockTicks");
@@ -298,13 +300,11 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       const features = topojson.feature(topo, topo.objects.countries).features;
       const g = d3.select("#landGroup");
       
-      // Antártida
       const antarctica = features.find(f => f.id === "010");
       if (antarctica) {
         g.append("path").datum(antarctica).attr("class", "c ring").attr("d", path);
       }
 
-      // Países
       const countries = features.filter(f => f.id !== "010");
       g.selectAll("path.country")
         .data(countries)
@@ -321,7 +321,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
         
       document.getElementById("stats").textContent = "Mapa carregado";
       
-      // Inicializa o céu
       const now = new Date();
       const timeSlider = document.getElementById("timeSlider");
       timeSlider.value = now.getHours();
@@ -334,23 +333,29 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   }
 
   // ==========================================
-  // 4. CÉU ESTELAR E ILUMINAÇÃO
+  // 4. CÉU ESTELAR (PROJEÇÃO CORRETA)
   // ==========================================
   function updateSky(hour) {
     starsGroup.innerHTML = "";
     constGroup.innerHTML = "";
     labelsGroup.innerHTML = "";
 
+    // O céu gira 15 graus por hora
     const rotationAngle = (hour / 24) * 360;
 
     const starPositions = {};
     Object.entries(STAR_CATALOG).forEach(([name, star]) => {
+      // Projeção azimutal simplificada: raio baseado na declinação
+      // Dec=90 -> centro (0); Dec=0 -> borda (R); Dec=-90 -> fora
       const rho = R * (90 - star.dec) / 180;
+      
+      // Ângulo baseado na RA + rotação
       const angle = ((star.ra * 15) + rotationAngle) * Math.PI / 180;
       
       const x = CX + rho * Math.sin(angle);
       const y = CY - rho * Math.cos(angle);
 
+      // Só desenha se estiver dentro do disco (rho <= R)
       if (rho <= R) {
         starPositions[name] = [x, y];
 
@@ -370,6 +375,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       }
     });
 
+    // Conecta as constelações
     CONSTELLATIONS.forEach(chain => {
       const points = chain.map(name => starPositions[name]).filter(p => p);
       if (points.length > 1) {
@@ -388,14 +394,11 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     const moonPos = SunCalc.getMoonPosition(now, lat, lng);
 
     // Posição do Sol
-    let sunX = 0, sunY = 0;
     if (sunPos.altitude > 0) {
       const sunRho = R * (90 - (sunPos.altitude * 180 / Math.PI)) / 90;
       if (sunRho <= R) {
-        sunX = CX + sunRho * Math.sin(sunPos.azimuth);
-        sunY = CY - sunRho * Math.cos(sunPos.azimuth);
-        sunIcon.setAttribute("cx", sunX);
-        sunIcon.setAttribute("cy", sunY);
+        sunIcon.setAttribute("cx", CX + sunRho * Math.sin(sunPos.azimuth));
+        sunIcon.setAttribute("cy", CY - sunRho * Math.cos(sunPos.azimuth));
         sunIcon.style.display = "block";
       }
     } else {
@@ -414,18 +417,16 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       moonIcon.style.display = "none";
     }
 
-    // Iluminação (Sombra da Noite)
-    // A sombra é um semicírculo oposto ao Sol
+    // Sombra da Noite (Iluminação)
+    // A sombra é um semicírculo oposto à posição do Sol
     if (sunPos.altitude > 0) {
-      // Sol está acima do horizonte (dia). A sombra fica do outro lado.
+      // O Sol está acima do horizonte (dia). A sombra fica no lado oposto.
       const shadowAngle = (sunPos.azimuth + Math.PI) * 180 / Math.PI;
       const shadowPath = `M ${CX} ${CY} L ${CX + R * Math.cos(shadowAngle * Math.PI / 180)} ${CY + R * Math.sin(shadowAngle * Math.PI / 180)} A ${R} ${R} 0 0 1 ${CX - R * Math.cos(shadowAngle * Math.PI / 180)} ${CY - R * Math.sin(shadowAngle * Math.PI / 180)} Z`;
       nightShadow.setAttribute("d", shadowPath);
-      nightShadow.style.display = "block";
     } else {
-      // Sol abaixo do horizonte (noite). O disco inteiro fica escuro.
+      // O Sol está abaixo do horizonte (noite total).
       nightShadow.setAttribute("d", `M ${CX - R} ${CY} A ${R} ${R} 0 1 1 ${CX + R} ${CY} A ${R} ${R} 0 1 1 ${CX - R} ${CY} Z`);
-      nightShadow.style.display = "block";
     }
   }
 
@@ -528,7 +529,9 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     } else if (key === "star6") {
       document.getElementById("gridStar6").style.display = on ? "" : "none";
     } else if (key === "stars") {
-      document.getElementById("skyLayer").style.display = on ? "" : "none";
+      starsGroup.style.display = on ? "" : "none";
+      constGroup.style.display = on ? "" : "none";
+      labelsGroup.style.display = on ? "" : "none";
     } else if (key === "sunmoon") {
       sunIcon.style.display = on && sunIcon.getAttribute("cx") ? "block" : "none";
       moonIcon.style.display = on && moonIcon.getAttribute("cx") ? "block" : "none";
