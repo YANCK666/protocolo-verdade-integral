@@ -46,11 +46,11 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 .pole { fill: var(--accent); pointer-events: none; filter: drop-shadow(0 0 6px var(--accent)); }
 
 /* ESTRELAS E CONSTELAÇÕES */
-.star { fill: var(--star); pointer-events: none; }
-.star-bright { fill: #ffffff; filter: drop-shadow(0 0 3px #fff); }
-.constellation-line { stroke: var(--const); stroke-width: 1; opacity: 0.5; fill: none; pointer-events: none; }
-.sun-icon { fill: #ffcc00; filter: drop-shadow(0 0 10px #ffcc00); pointer-events: none; }
-.moon-icon { fill: #e0e0e0; filter: drop-shadow(0 0 5px #fff); pointer-events: none; }
+.star { fill: #fffbe6; pointer-events: none; }
+.star-bright { fill: #ffffff; filter: drop-shadow(0 0 5px #fff); }
+.constellation-line { stroke: #4da6ff; stroke-width: 1.5; opacity: 0.6; fill: none; pointer-events: none; }
+.sun-icon { fill: #ffcc00; filter: drop-shadow(0 0 15px #ffcc00); pointer-events: none; }
+.moon-icon { fill: #e0e0e0; filter: drop-shadow(0 0 8px #fff); pointer-events: none; }
 
 /* PAINEL LATERAL */
 .panel { min-width: 0; }
@@ -80,7 +80,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 .yearline output { color: var(--accent); font-family: var(--f-mono); font-weight: 600; }
 .timeline input[type="range"] { width: 100%; accent-color: var(--accent); margin: 8px 0; }
 
-/* CONTROLE DE HORA (NOVO) */
+/* CONTROLE DE HORA */
 .time-control { margin-top: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--soft); }
 .time-control label { display: block; font-size: 12px; font-family: var(--f-mono); text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
 .time-control input[type="range"] { width: 100%; accent-color: var(--accent); }
@@ -123,8 +123,8 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
           <g id="skyLayer" clip-path="url(#mapclip)">
             <g id="constellations"></g>
             <g id="stars"></g>
-            <circle id="sun" class="sun-icon" r="8" style="display:none;" />
-            <circle id="moon" class="moon-icon" r="6" style="display:none;" />
+            <circle id="sun" class="sun-icon" r="10" style="display:none;" />
+            <circle id="moon" class="moon-icon" r="8" style="display:none;" />
           </g>
 
           <g id="gridLayer">
@@ -236,7 +236,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   // ==========================================
   // 1. DADOS DO CÉU (ESTRELAS E CONSTELAÇÕES)
   // ==========================================
-  // Catálogo simplificado de estrelas (Ascensão Reta em horas, Declinação em graus)
   const STAR_CATALOG = {
     // Cruzeiro do Sul
     "Acrux": { ra: 12.443, dec: -63.099 },
@@ -245,7 +244,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     "Imai": { ra: 12.252, dec: -58.749 },
     // Polaris
     "Polaris": { ra: 2.530, dec: 89.264 },
-    // Ursa Maior (parte)
+    // Ursa Maior
     "Dubhe": { ra: 11.062, dec: 61.751 },
     "Merak": { ra: 11.031, dec: 56.382 },
     "Phecda": { ra: 11.897, dec: 53.695 },
@@ -260,12 +259,11 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     "Arcturus": { ra: 14.261, dec: 19.182 }
   };
 
-  // Linhas das constelações (conectando os nomes)
   const CONSTELLATIONS = [
-    ["Acrux", "Gacrux", "Mimosa", "Imai", "Acrux"], // Cruzeiro do Sul
-    ["Dubhe", "Merak", "Phecda"], // Ursa Maior (simplificado)
-    ["Betelgeuse", "Bellatrix", "Rigel"], // Órion (simplificado)
-    ["Polaris", "Dubhe"] // Ligação simbólica
+    ["Acrux", "Gacrux", "Mimosa", "Imai", "Acrux"],
+    ["Dubhe", "Merak", "Phecda"],
+    ["Betelgeuse", "Bellatrix", "Rigel"],
+    ["Polaris", "Dubhe"]
   ];
 
   const SIZE = 800, CX = 400, CY = 400, R = 372;
@@ -353,8 +351,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   // ==========================================
   // 3. CÉU ESTELAR (POSIÇÃO BASEADA NA HORA)
   // ==========================================
-  function updateSky(hour, minute = 0) {
-    // Limpa o céu
+  function updateSky(hour) {
     starsGroup.innerHTML = "";
     constGroup.innerHTML = "";
     sunIcon.style.display = "none";
@@ -367,19 +364,12 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       timeDisplay.textContent = `${hour.toString().padStart(2, '0')}:00`;
     }
 
-    // Simulação simples: o céu gira 15 graus por hora
     const rotationAngle = (hour / 24) * 360;
 
-    // Desenha estrelas
     const starPositions = {};
     Object.entries(STAR_CATALOG).forEach(([name, star]) => {
-      // Converte RA/Dec para coordenadas no disco
-      // A projeção azimutal com rotação [0, -90] coloca o Polo Norte no centro.
-      // RA=0h aponta para cima, e a hora do dia adiciona um offset.
       const ra = star.ra;
       const dec = star.dec;
-      
-      // Projeção simplificada (não é astronomicamente perfeita, mas visualmente funciona)
       const rho = R * (90 - dec) / 180;
       const angle = (ra * 15 + rotationAngle) * Math.PI / 180;
       
@@ -391,12 +381,11 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
       circle.setAttribute("cx", x);
       circle.setAttribute("cy", y);
-      circle.setAttribute("r", name === "Polaris" ? 4 : 2);
+      circle.setAttribute("r", name === "Polaris" ? 5 : 2.5);
       circle.setAttribute("class", name === "Polaris" || name === "Sirius" ? "star star-bright" : "star");
       starsGroup.appendChild(circle);
     });
 
-    // Desenha constelações
     CONSTELLATIONS.forEach(chain => {
       const points = chain.map(name => starPositions[name]).filter(p => p);
       if (points.length > 1) {
@@ -411,15 +400,13 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     const now = new Date();
     now.setHours(hour, 0, 0, 0);
     
-    // Usa uma localização genérica (Brasil) para calcular o Sol/Lua
     const lat = -15.78, lng = -47.93; 
     const sunPos = SunCalc.getPosition(now, lat, lng);
     const moonPos = SunCalc.getMoonPosition(now, lat, lng);
 
-    // Converte posição do Sol (altitude, azimuth) para o disco
-    if (sunPos.altitude > 0) { // Só mostra se estiver acima do horizonte
-      const sunRho = R * (90 - sunPos.altitude) / 90;
-      const sunAngle = sunPos.azimuth * Math.PI / 180;
+    if (sunPos.altitude > 0) {
+      const sunRho = R * (90 - (sunPos.altitude * 180 / Math.PI)) / 90;
+      const sunAngle = sunPos.azimuth;
       const sunX = CX + sunRho * Math.sin(sunAngle);
       const sunY = CY - sunRho * Math.cos(sunAngle);
       
@@ -429,8 +416,8 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     }
 
     if (moonPos.altitude > 0) {
-      const moonRho = R * (90 - moonPos.altitude) / 90;
-      const moonAngle = moonPos.azimuth * Math.PI / 180;
+      const moonRho = R * (90 - (moonPos.altitude * 180 / Math.PI)) / 90;
+      const moonAngle = moonPos.azimuth;
       const moonX = CX + moonRho * Math.sin(moonAngle);
       const moonY = CY - moonRho * Math.cos(moonAngle);
       
@@ -598,14 +585,12 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   drawClock();
   initMap();
   
-  // Configura o controle de hora
   const timeSlider = document.getElementById("timeSlider");
   const timeDisplay = document.getElementById("timeDisplay");
   if (timeSlider) {
     timeSlider.addEventListener("input", (e) => {
       updateSky(parseInt(e.target.value));
     });
-    // Inicializa com a hora atual
     const now = new Date();
     timeSlider.value = now.getHours();
     timeDisplay.textContent = `${now.getHours().toString().padStart(2, '0')}:00`;
