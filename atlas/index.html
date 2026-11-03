@@ -108,10 +108,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
           <defs>
             <clipPath id="mapclip"><circle cx="400" cy="400" r="372"/></clipPath>
             <clipPath id="moonclip"><circle id="moonClipCircle" cx="0" cy="0" r="12"/></clipPath>
-            <!-- Clip Path para a Sombra (Elipse) -->
-            <clipPath id="shadowClip">
-              <ellipse id="shadowEllipse" cx="400" cy="400" rx="372" ry="200" />
-            </clipPath>
           </defs>
           
           <circle class="sea" cx="400" cy="400" r="372" />
@@ -125,8 +121,8 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
               <g id="starLabels"></g>
             </g>
 
-            <!-- Sombra: um retângulo preto que é recortado pela elipse -->
-            <rect id="nightShadow" class="night-shadow" x="0" y="0" width="800" height="800" clip-path="url(#shadowClip)" />
+            <!-- Sombra: uma elipse gigante que cobre o mapa -->
+            <ellipse id="nightShadow" class="night-shadow" cx="400" cy="400" rx="0" ry="0" />
 
             <!-- Sol e Lua (Desenhados por cima da sombra) -->
             <circle id="sun" class="sun-dot" r="12" />
@@ -257,7 +253,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   const moonIcon = document.getElementById("moon");
   const moonShadow = document.getElementById("moonShadow");
   const moonClipCircle = document.getElementById("moonClipCircle");
-  const shadowEllipse = document.getElementById("shadowEllipse");
+  const nightShadow = document.getElementById("nightShadow");
 
   // Função para calcular a declinação solar (posição no trópico)
   function getSolarDeclination(date) {
@@ -386,22 +382,22 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 
     // Sombra (Elipse)
     // O centro da elipse é oposto ao Sol.
-    // A largura (rx) e altura (ry) mudam com a declinação.
+    // A elipse tem um raio fixo (R * 1.5) e é "empurrada" pela declinação.
     const shadowAngle = sunAngle + Math.PI;
-    const shadowX = CX + 100 * Math.sin(shadowAngle); 
-    const shadowY = CY - 100 * Math.cos(shadowAngle); 
+    
+    // O centro da elipse é deslocado
+    const shadowX = CX + (declination / 23.5) * R * 0.5 * Math.cos(shadowAngle);
+    const shadowY = CY + (declination / 23.5) * R * 0.5 * Math.sin(shadowAngle);
+    
+    // A elipse é sempre maior que o mapa, então suas pontas ficam escondidas.
+    const rx = R * 1.5;
+    const ry = R * 1.2; // Achatamento para dar o efeito de ferradura
 
-    // Ajuste do tamanho da elipse para criar a ferradura
-    // Quando a declinação é positiva (Sol no Norte), a sombra "abraça" o Sul (fica mais fina e alongada)
-    // Quando negativa (Sol no Sul), a sombra "abraça" o Norte.
-    const rx = R * (1 + Math.abs(declination) / 90);
-    const ry = R * (1 - Math.abs(declination) / 90);
-
-    shadowEllipse.setAttribute("cx", shadowX);
-    shadowEllipse.setAttribute("cy", shadowY);
-    shadowEllipse.setAttribute("rx", rx);
-    shadowEllipse.setAttribute("ry", ry);
-    shadowEllipse.setAttribute("transform", `rotate(${shadowAngle * 180 / Math.PI} ${shadowX} ${shadowY})`);
+    nightShadow.setAttribute("cx", shadowX);
+    nightShadow.setAttribute("cy", shadowY);
+    nightShadow.setAttribute("rx", rx);
+    nightShadow.setAttribute("ry", ry);
+    nightShadow.setAttribute("transform", `rotate(${shadowAngle * 180 / Math.PI} ${shadowX} ${shadowY})`);
 
     // --- LUA ---
     const moonAngle = ((displayHour - 1/12) / 24) * 2 * Math.PI;
