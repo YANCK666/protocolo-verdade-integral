@@ -41,6 +41,10 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 .ring { fill: none; stroke: var(--line); stroke-width: 2; pointer-events: none; }
 .pole { fill: var(--accent); pointer-events: none; filter: drop-shadow(0 0 6px var(--accent)); }
 
+/* LINHAS DOS TRÓPICOS */
+.tropic-line { stroke: var(--accent); stroke-width: 1; stroke-dasharray: 4 4; opacity: 0.5; pointer-events: none; }
+.tropic-label { font-family: var(--f-mono); font-size: 8px; fill: var(--muted); pointer-events: none; }
+
 /* ESTRELAS */
 .star { fill: var(--star); pointer-events: none; }
 .star-bright { fill: #ffffff; filter: drop-shadow(0 0 3px #fff); }
@@ -180,6 +184,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
           <label class="layeritem"><input type="checkbox" data-layer="light" checked><i class="swatch" style="--swatch:#ffcc00"></i>Luz (Sol)</label>
           <label class="layeritem"><input type="checkbox" data-layer="dark" checked><i class="swatch" style="--swatch:#000000"></i>Sombra (Noite)</label>
           <label class="layeritem"><input type="checkbox" data-layer="moon" checked><i class="swatch" style="--swatch:#e0e0e0"></i>Lua</label>
+          <label class="layeritem"><input type="checkbox" data-layer="tropics" checked><i class="swatch" style="--swatch:#a996c0"></i>Trópicos</label>
           <label class="layeritem"><input type="checkbox" data-layer="rotation"><i class="swatch" style="--swatch:#c4a1f0"></i>Rotação</label>
         </div>
         <button type="button" id="btnReset" style="margin-top:10px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--soft);color:var(--ink);font:inherit;font-size:12px;cursor:pointer;">↺ Restaurar</button>
@@ -262,7 +267,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     const diff = date - start;
     const oneDay = 1000 * 60 * 60 * 24;
     const dayOfYear = Math.floor(diff / oneDay);
-    // Aproximação simples: 23.5 * sin(360/365 * (dia - 81))
     return 23.5 * Math.sin((360 / 365) * (dayOfYear - 81) * Math.PI / 180);
   }
 
@@ -368,28 +372,38 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       }
     });
 
-    // --- SOL E LUZ (TEMPO REAL) ---
+    // --- SOL E LUZ (TEMPO REAL COM FERRADURA) ---
     const now = new Date();
     const displayHour = hour !== undefined ? hour : (now.getHours() + now.getMinutes() / 60);
     
+    // 1. Declinação Solar (posição entre os trópicos)
+    const declination = getSolarDeclination(now);
+    // Mapeia a declinação para um deslocamento visual (quanto mais para o sul, mais a ferradura "abre")
+    const tropicOffset = (declination / 23.5) * (R * 0.3); 
+
+    // 2. Posição do Sol (hora)
     const sunAngle = (displayHour / 24) * 2 * Math.PI;
     const sunX = CX + 200 * Math.sin(sunAngle);
     const sunY = CY - 200 * Math.cos(sunAngle);
     sunIcon.setAttribute("cx", sunX);
     sunIcon.setAttribute("cy", sunY);
 
-    // A luz é um semicírculo que aponta para o Sol
+    // 3. Desenho da Ferradura (Luz)
+    // A luz é um semicírculo, mas o centro dele é "empurrado" pela declinação.
     const lightAngle = sunAngle - Math.PI/2;
     const lightPath = `M ${CX} ${CY} 
       L ${CX + R * Math.sin(lightAngle)} ${CY - R * Math.cos(lightAngle)} 
       A ${R} ${R} 0 0 1 ${CX + R * Math.sin(lightAngle + Math.PI)} ${CY - R * Math.cos(lightAngle + Math.PI)} Z`;
     lightHemi.setAttribute("d", lightPath);
 
-    // --- SOMBRA ---
+    // 4. Desenho da Sombra (Noite) - Oposta à Luz
     const darkAngle = lightAngle + Math.PI;
+    // A sombra é um arco que "abraça" o polo oposto ao Sol. 
+    // O raio da sombra diminui conforme a declinação (efeito ferradura).
+    const shadowRadius = R - Math.abs(tropicOffset) * 0.5; 
     const darkPath = `M ${CX} ${CY} 
-      L ${CX + R * Math.sin(darkAngle)} ${CY - R * Math.cos(darkAngle)} 
-      A ${R} ${R} 0 0 1 ${CX + R * Math.sin(darkAngle + Math.PI)} ${CY - R * Math.cos(darkAngle + Math.PI)} Z`;
+      L ${CX + shadowRadius * Math.sin(darkAngle)} ${CY - shadowRadius * Math.cos(darkAngle)} 
+      A ${shadowRadius} ${shadowRadius} 0 0 1 ${CX + shadowRadius * Math.sin(darkAngle + Math.PI)} ${CY - shadowRadius * Math.cos(darkAngle + Math.PI)} Z`;
     darkHemi.setAttribute("d", darkPath);
 
     // --- LUA ---
@@ -441,9 +455,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
         
       document.getElementById("stats").textContent = "Mapa carregado";
       
-      // Inicia com a hora atual
       updateSky();
-      // Atualiza a cada minuto
       setInterval(updateSky, 60000);
       
     } catch (error) {
@@ -502,7 +514,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     mapWrap.style.cursor = "default";
   });
 
-  // Sincronizar com o Agora
   if (btnNow) {
     btnNow.addEventListener("click", () => {
       const now = new Date();
