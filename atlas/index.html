@@ -111,17 +111,19 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
             <!-- Terra -->
             <g id="landGroup"></g>
             
-            <!-- Céu: Estrelas, Sol e Lua -->
+            <!-- Céu: Estrelas -->
             <g id="skyLayer">
               <g id="constellations"></g>
               <g id="stars"></g>
               <g id="starLabels"></g>
-              <!-- Sol e Lua (3x maiores que a Polaris) -->
-              <circle id="sun" class="sun-dot" r="12" style="display:none;" />
-              <circle id="moon" class="moon-dot" r="12" style="display:none;" />
-              <!-- Sombra da Noite -->
-              <path id="nightShadow" class="night-shadow" style="display:none;" />
             </g>
+
+            <!-- Sombra da Noite (Fixa em relação ao Sol) -->
+            <path id="nightShadow" class="night-shadow" style="display:none;" />
+
+            <!-- Sol e Lua (Ficam no topo para garantir visibilidade) -->
+            <circle id="sun" class="sun-dot" r="12" style="display:none;" />
+            <circle id="moon" class="moon-dot" r="12" style="display:none;" />
           </g>
 
           <!-- GRUPO ESTÁTICO: GRADE + RELÓGIO + POLO NORTE (NÃO GIRA) -->
@@ -172,7 +174,8 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
           <label class="layeritem"><input type="checkbox" data-layer="grid" checked><i class="swatch" style="--swatch:#4ade80"></i>Grade 12</label>
           <label class="layeritem"><input type="checkbox" data-layer="star6" checked><i class="swatch" style="--swatch:#8cff48"></i>Estrela 6</label>
           <label class="layeritem"><input type="checkbox" data-layer="stars" checked><i class="swatch" style="--swatch:#fffbe6"></i>Céu Estelar</label>
-          <label class="layeritem"><input type="checkbox" data-layer="sunmoon" checked><i class="swatch" style="--swatch:#ffcc00"></i>Sol/Lua</label>
+          <label class="layeritem"><input type="checkbox" data-layer="sun" checked><i class="swatch" style="--swatch:#ffcc00"></i>Sol</label>
+          <label class="layeritem"><input type="checkbox" data-layer="moon" checked><i class="swatch" style="--swatch:#e0e0e0"></i>Lua</label>
           <label class="layeritem"><input type="checkbox" data-layer="night" checked><i class="swatch" style="--swatch:#333"></i>Iluminação</label>
           <label class="layeritem"><input type="checkbox" data-layer="rotation"><i class="swatch" style="--swatch:#c4a1f0"></i>Rotação</label>
         </div>
@@ -222,7 +225,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 
 <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/suncalc@1.9.0/suncalc.js"></script>
 <script>
 (function () {
   "use strict";
@@ -246,7 +248,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   const moonIcon = document.getElementById("moon");
   const nightShadow = document.getElementById("nightShadow");
 
-  // Dados das estrelas (Catálogo completo com Cruzeiro do Sul e Órion)
+  // Dados das estrelas
   const STARS = [
     { name: "Polaris", ra: 2.530, dec: 89.264, bright: true },
     { name: "Acrux", ra: 12.443, dec: -63.099, bright: true },
@@ -260,8 +262,8 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   ];
 
   const CONSTELLATIONS = [
-    ["Acrux", "Gacrux", "Mimosa", "Imai", "Acrux"], // Cruzeiro do Sul
-    ["Betelgeuse", "Bellatrix", "Rigel"] // Órion (simplificado)
+    ["Acrux", "Gacrux", "Mimosa", "Imai", "Acrux"],
+    ["Betelgeuse", "Bellatrix", "Rigel"]
   ];
 
   // Relógio
@@ -340,46 +342,36 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       }
     });
 
-    // --- Cálculo Astronômico para Sol, Lua e Terminador (Padrão timeanddate.com) ---
-    const now = new Date();
-    now.setHours(hour, 0, 0, 0);
+    // --- LÓGICA CORRIGIDA DO SOL, LUA E SOMBRA ---
     
-    const lat = 0; const lng = 0; // Referência Greenwich
-    const sunPos = SunCalc.getPosition(now, lat, lng);
-    const moonPos = SunCalc.getMoonPosition(now, lat, lng);
+    // 1. Posição do Sol (Ponteiro do Relógio)
+    // A hora 12:00 aponta para cima (ângulo 0). A hora 00:00 aponta para baixo.
+    // A fórmula converte a hora em radianos (2 * PI / 24) e ajusta para o topo.
+    const sunAngle = (hour / 24) * 2 * Math.PI; 
+    const sunX = CX + 200 * Math.sin(sunAngle);
+    const sunY = CY - 200 * Math.cos(sunAngle);
+    sunIcon.setAttribute("cx", sunX);
+    sunIcon.setAttribute("cy", sunY);
+    
+    // 2. Posição da Lua (5 "minutos" = 1/12 de hora atrás do Sol)
+    const moonAngle = ((hour - 1/12) / 24) * 2 * Math.PI;
+    const moonX = CX + 250 * Math.sin(moonAngle);
+    const moonY = CY - 250 * Math.cos(moonAngle);
+    moonIcon.setAttribute("cx", moonX);
+    moonIcon.setAttribute("cy", moonY);
 
-    // Sol (Ponto Subsolar)
-    if (sunPos.altitude > 0) {
-      const sunRho = R * (90 - (sunPos.altitude * 180 / Math.PI)) / 90;
-      const sunAngle = sunPos.azimuth;
-      sunIcon.setAttribute("cx", CX + sunRho * Math.sin(sunAngle));
-      sunIcon.setAttribute("cy", CY - sunRho * Math.cos(sunAngle));
-      sunIcon.style.display = "block";
-    } else {
-      sunIcon.style.display = "none";
-    }
-
-    // Lua
-    if (moonPos.altitude > 0) {
-      const moonRho = R * (90 - (moonPos.altitude * 180 / Math.PI)) / 90;
-      const moonAngle = moonPos.azimuth;
-      moonIcon.setAttribute("cx", CX + moonRho * Math.sin(moonAngle));
-      moonIcon.setAttribute("cy", CY - moonRho * Math.cos(moonAngle));
-      moonIcon.style.display = "block";
-    } else {
-      moonIcon.style.display = "none";
-    }
-
-    // Terminador (Sombra)
-    if (sunPos.altitude > 0) {
-      const shadowAngle = (sunPos.azimuth + Math.PI) * 180 / Math.PI;
-      const shadowPath = `M ${CX} ${CY} L ${CX + R * Math.cos(shadowAngle * Math.PI / 180)} ${CY + R * Math.sin(shadowAngle * Math.PI / 180)} A ${R} ${R} 0 0 1 ${CX - R * Math.cos(shadowAngle * Math.PI / 180)} ${CY - R * Math.sin(shadowAngle * Math.PI / 180)} Z`;
-      nightShadow.setAttribute("d", shadowPath);
-      nightShadow.style.display = "block";
-    } else {
-      nightShadow.setAttribute("d", `M ${CX - R} ${CY} A ${R} ${R} 0 1 1 ${CX + R} ${CY} A ${R} ${R} 0 1 1 ${CX - R} ${CY} Z`);
-      nightShadow.style.display = "block";
-    }
+    // 3. Sombra da Noite (Terminador)
+    // A sombra é SEMPRE o semicírculo oposto ao Sol.
+    // Se o Sol está no topo (12:00), a sombra cobre a metade de baixo.
+    // O ângulo da sombra é o ângulo do Sol + 180 graus (PI).
+    const shadowAngle = sunAngle + Math.PI;
+    
+    // Desenha um semicírculo a partir do centro até a borda oposta
+    const shadowPath = `M ${CX} ${CY} 
+      L ${CX + R * Math.sin(shadowAngle)} ${CY - R * Math.cos(shadowAngle)} 
+      A ${R} ${R} 0 0 1 ${CX - R * Math.sin(shadowAngle)} ${CY + R * Math.cos(shadowAngle)} Z`;
+    
+    nightShadow.setAttribute("d", shadowPath);
   }
 
   // Inicialização do mapa
@@ -512,11 +504,12 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       document.getElementById("gridStar6").style.display = on ? "" : "none";
     } else if (key === "stars") {
       document.getElementById("skyLayer").style.display = on ? "" : "none";
-    } else if (key === "sunmoon") {
-      sunIcon.style.display = on && sunIcon.getAttribute("cx") ? "block" : "none";
-      moonIcon.style.display = on && moonIcon.getAttribute("cx") ? "block" : "none";
+    } else if (key === "sun") {
+      sunIcon.style.display = on ? "block" : "none";
+    } else if (key === "moon") {
+      moonIcon.style.display = on ? "block" : "none";
     } else if (key === "night") {
-      nightShadow.style.display = on && nightShadow.getAttribute("d") ? "block" : "none";
+      nightShadow.style.display = on ? "block" : "none";
     } else if (key === "flags") {
       mapPaths.forEach((el, id) => {
         const d = d3.select(el).datum();
