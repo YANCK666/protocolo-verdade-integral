@@ -56,9 +56,8 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 .moon-dot { fill: #e0e0e0; filter: drop-shadow(0 0 15px #fff); pointer-events: none; }
 .moon-shadow { fill: rgba(0, 0, 0, 0.8); pointer-events: none; }
 
-/* CAMADAS DE LUZ E SOMBRA */
-.light-hemisphere { fill: rgba(255, 204, 0, 0.15); stroke: none; pointer-events: none; }
-.dark-hemisphere { fill: rgba(0, 0, 0, 0.7); stroke: none; pointer-events: none; }
+/* SOMBRA (ELIPSE) */
+.night-shadow { fill: rgba(0, 0, 0, 0.7); pointer-events: none; }
 
 .panel { min-width: 0; }
 .search label { display: block; font-size: 12px; font-family: var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
@@ -122,15 +121,11 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
               <g id="starLabels"></g>
             </g>
 
-            <g id="lightLayer">
-              <path id="lightHemi" class="light-hemisphere" />
-              <circle id="sun" class="sun-dot" r="12" />
-            </g>
+            <!-- SOMBRA (ELIPSE) -->
+            <ellipse id="nightShadow" class="night-shadow" cx="400" cy="400" rx="0" ry="0" />
 
-            <g id="darkLayer">
-              <path id="darkHemi" class="dark-hemisphere" />
-            </g>
-
+            <!-- SOL E LUA -->
+            <circle id="sun" class="sun-dot" r="12" />
             <g id="moonGroup">
               <circle id="moon" class="moon-dot" r="12" />
               <circle id="moonShadow" class="moon-shadow" r="12" clip-path="url(#moonclip)" />
@@ -181,10 +176,9 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
           <label class="layeritem"><input type="checkbox" data-layer="grid" checked><i class="swatch" style="--swatch:#4ade80"></i>Grade 12</label>
           <label class="layeritem"><input type="checkbox" data-layer="star6" checked><i class="swatch" style="--swatch:#8cff48"></i>Estrela 6</label>
           <label class="layeritem"><input type="checkbox" data-layer="stars" checked><i class="swatch" style="--swatch:#fffbe6"></i>Céu Estelar</label>
-          <label class="layeritem"><input type="checkbox" data-layer="light" checked><i class="swatch" style="--swatch:#ffcc00"></i>Luz (Sol)</label>
+          <label class="layeritem"><input type="checkbox" data-layer="light" checked><i class="swatch" style="--swatch:#ffcc00"></i>Sol</label>
           <label class="layeritem"><input type="checkbox" data-layer="dark" checked><i class="swatch" style="--swatch:#000000"></i>Sombra (Noite)</label>
           <label class="layeritem"><input type="checkbox" data-layer="moon" checked><i class="swatch" style="--swatch:#e0e0e0"></i>Lua</label>
-          <label class="layeritem"><input type="checkbox" data-layer="tropics" checked><i class="swatch" style="--swatch:#a996c0"></i>Trópicos</label>
           <label class="layeritem"><input type="checkbox" data-layer="rotation"><i class="swatch" style="--swatch:#c4a1f0"></i>Rotação</label>
         </div>
         <button type="button" id="btnReset" style="margin-top:10px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--soft);color:var(--ink);font:inherit;font-size:12px;cursor:pointer;">↺ Restaurar</button>
@@ -258,8 +252,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   const moonIcon = document.getElementById("moon");
   const moonShadow = document.getElementById("moonShadow");
   const moonClipCircle = document.getElementById("moonClipCircle");
-  const lightHemi = document.getElementById("lightHemi");
-  const darkHemi = document.getElementById("darkHemi");
+  const nightShadow = document.getElementById("nightShadow");
 
   // Função para calcular a declinação solar (posição no trópico)
   function getSolarDeclination(date) {
@@ -372,39 +365,37 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       }
     });
 
-    // --- SOL E LUZ (TEMPO REAL COM FERRADURA) ---
+    // --- SOL E FERRADURA (TEMPO REAL) ---
     const now = new Date();
     const displayHour = hour !== undefined ? hour : (now.getHours() + now.getMinutes() / 60);
     
-    // 1. Declinação Solar (posição entre os trópicos)
+    // Declinação Solar
     const declination = getSolarDeclination(now);
-    // Mapeia a declinação para um deslocamento visual (quanto mais para o sul, mais a ferradura "abre")
-    const tropicOffset = (declination / 23.5) * (R * 0.3); 
 
-    // 2. Posição do Sol (hora)
+    // Posição do Sol
     const sunAngle = (displayHour / 24) * 2 * Math.PI;
     const sunX = CX + 200 * Math.sin(sunAngle);
     const sunY = CY - 200 * Math.cos(sunAngle);
     sunIcon.setAttribute("cx", sunX);
     sunIcon.setAttribute("cy", sunY);
 
-    // 3. Desenho da Ferradura (Luz)
-    // A luz é um semicírculo, mas o centro dele é "empurrado" pela declinação.
-    const lightAngle = sunAngle - Math.PI/2;
-    const lightPath = `M ${CX} ${CY} 
-      L ${CX + R * Math.sin(lightAngle)} ${CY - R * Math.cos(lightAngle)} 
-      A ${R} ${R} 0 0 1 ${CX + R * Math.sin(lightAngle + Math.PI)} ${CY - R * Math.cos(lightAngle + Math.PI)} Z`;
-    lightHemi.setAttribute("d", lightPath);
+    // Sombra (Elipse)
+    // O centro da elipse é oposto ao Sol.
+    const shadowAngle = sunAngle + Math.PI;
+    
+    // Posição do centro da elipse
+    const shadowX = CX + (declination / 23.5) * R * 0.4 * Math.cos(shadowAngle);
+    const shadowY = CY + (declination / 23.5) * R * 0.4 * Math.sin(shadowAngle);
 
-    // 4. Desenho da Sombra (Noite) - Oposta à Luz
-    const darkAngle = lightAngle + Math.PI;
-    // A sombra é um arco que "abraça" o polo oposto ao Sol. 
-    // O raio da sombra diminui conforme a declinação (efeito ferradura).
-    const shadowRadius = R - Math.abs(tropicOffset) * 0.5; 
-    const darkPath = `M ${CX} ${CY} 
-      L ${CX + shadowRadius * Math.sin(darkAngle)} ${CY - shadowRadius * Math.cos(darkAngle)} 
-      A ${shadowRadius} ${shadowRadius} 0 0 1 ${CX + shadowRadius * Math.sin(darkAngle + Math.PI)} ${CY - shadowRadius * Math.cos(darkAngle + Math.PI)} Z`;
-    darkHemi.setAttribute("d", darkPath);
+    // Tamanho da elipse
+    const rx = R * 0.9;
+    const ry = R * 0.7;
+
+    nightShadow.setAttribute("cx", shadowX);
+    nightShadow.setAttribute("cy", shadowY);
+    nightShadow.setAttribute("rx", rx);
+    nightShadow.setAttribute("ry", ry);
+    nightShadow.setAttribute("transform", `rotate(${shadowAngle * 180 / Math.PI} ${shadowX} ${shadowY})`);
 
     // --- LUA ---
     const moonAngle = ((displayHour - 1/12) / 24) * 2 * Math.PI;
@@ -573,9 +564,9 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     } else if (key === "stars") {
       document.getElementById("skyLayer").style.display = on ? "" : "none";
     } else if (key === "light") {
-      document.getElementById("lightLayer").style.display = on ? "" : "none";
+      document.getElementById("sun").style.display = on ? "block" : "none";
     } else if (key === "dark") {
-      document.getElementById("darkLayer").style.display = on ? "" : "none";
+      document.getElementById("nightShadow").style.display = on ? "block" : "none";
     } else if (key === "moon") {
       document.getElementById("moonGroup").style.display = on ? "" : "none";
     } else if (key === "flags") {
@@ -625,158 +616,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 
   drawClock();
   initMap();
-  
-/* =====================================================
-   MAPA LUCIFERIANO — ILUMINAÇÃO SOLAR E SOMBRA
-   Projeção azimutal equidistante:
-   centro = Polo Norte
-   borda = Polo Sul
-   ===================================================== */
-
-(function () {
-  const svg = document.getElementById("map");
-  const worldGroup = document.getElementById("worldGroup");
-
-  if (!svg || !worldGroup) {
-    console.error("Mapa ou worldGroup não encontrado.");
-    return;
-  }
-
-  // Geometria do mapa (viewBox 800 x 800)
-  const CX = 400;
-  const CY = 400;
-  const RADIUS = 380;
-
-  // Resolução da imagem de sombra
-  const SIZE = 800;
-
-  // Criar imagem da sombra dentro do SVG
-  let shadowImage = document.getElementById("solarShadowImage");
-
-  if (!shadowImage) {
-    shadowImage = document.createElementNS(
-      "http://www.w3.org/2000/svg",
-      "image"
-    );
-
-    shadowImage.setAttribute("id", "solarShadowImage");
-    shadowImage.setAttribute("x", "0");
-    shadowImage.setAttribute("y", "0");
-    shadowImage.setAttribute("width", SIZE);
-    shadowImage.setAttribute("height", SIZE);
-    shadowImage.setAttribute("preserveAspectRatio", "none");
-
-    // Coloca a sombra acima do território
-    // e antes das linhas e elementos fixos.
-    svg.insertBefore(shadowImage, svg.querySelector("#staticGroup"));
-  }
-
-  // Criar imagem em memória para desenhar a noite
-  const canvas = document.createElement("canvas");
-  canvas.width = SIZE;
-  canvas.height = SIZE;
-
-  const ctx = canvas.getContext("2d");
-  const pixels = ctx.createImageData(SIZE, SIZE);
-
-  // Declinação solar aproximada
-  function solarDeclination(date) {
-    const start = new Date(Date.UTC(date.getUTCFullYear(), 0, 0));
-    const day = Math.floor((date - start) / 86400000);
-
-    const gamma = 2 * Math.PI / 365 * (day - 1);
-
-    return (
-      0.006918
-      - 0.399912 * Math.cos(gamma)
-      + 0.070257 * Math.sin(gamma)
-      - 0.006758 * Math.cos(2 * gamma)
-      + 0.000907 * Math.sin(2 * gamma)
-      - 0.002697 * Math.cos(3 * gamma)
-      + 0.00148 * Math.sin(3 * gamma)
-    );
-  }
-
-  // Longitude aproximada do ponto onde o Sol está a pino
-  function solarLongitude(date) {
-    const hours =
-      date.getUTCHours() +
-      date.getUTCMinutes() / 60 +
-      date.getUTCSeconds() / 3600;
-
-    return (180 - hours * 15 + 360) % 360;
-  }
-
-  function drawSolarShadow() {
-    const now = new Date();
-
-    const declination = solarDeclination(now);
-    const sunLongitude = solarLongitude(now);
-
-    const sinDeclination = Math.sin(declination);
-    const cosDeclination = Math.cos(declination);
-
-    for (let y = 0; y < SIZE; y++) {
-      for (let x = 0; x < SIZE; x++) {
-        const dx = x - CX;
-        const dy = y - CY;
-
-        const radius = Math.sqrt(dx * dx + dy * dy);
-        const index = (y * SIZE + x) * 4;
-
-        // Fora do disco: transparente
-        if (radius > RADIUS) {
-          pixels.data[index + 3] = 0;
-          continue;
-        }
-
-        // Converter posição do disco em latitude
-        const latitude =
-          Math.PI / 2 - (radius / RADIUS) * Math.PI;
-
-        // Longitude na projeção polar
-        const longitude =
-          Math.atan2(dx, -dy) * 180 / Math.PI;
-
-        const hourAngle =
-          (longitude - sunLongitude) * Math.PI / 180;
-
-        // Altura solar: positiva = dia; negativa = noite
-        const solarHeight =
-          Math.sin(latitude) * sinDeclination +
-          Math.cos(latitude) * cosDeclination *
-          Math.cos(hourAngle);
-
-        if (solarHeight < 0) {
-          // Sombra: azul escuro translúcido
-          pixels.data[index] = 3;
-          pixels.data[index + 1] = 8;
-          pixels.data[index + 2] = 35;
-          pixels.data[index + 3] = 205;
-        } else {
-          // Dia: transparente, preserva a luz e o mapa
-          pixels.data[index + 3] = 0;
-        }
-      }
-    }
-
-    ctx.putImageData(pixels, 0, 0);
-
-    shadowImage.setAttribute(
-      "href",
-      canvas.toDataURL("image/png")
-    );
-  }
-
-  // Atualização inicial e periódica
-  drawSolarShadow();
-  setInterval(drawSolarShadow, 60000);
-
-  // Permite atualizar a sombra manualmente
-  window.atualizarSombraSolar = drawSolarShadow;
-
-})();
-
 
 })();
 </script>
