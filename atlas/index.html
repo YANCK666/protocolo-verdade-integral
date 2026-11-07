@@ -52,7 +52,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 .moon-dot { fill: #e0e0e0; filter: drop-shadow(0 0 15px #fff); pointer-events: none; }
 .moon-shadow { fill: rgba(0, 0, 0, 0.8); pointer-events: none; }
 
-/* SOMBRA (ELIPSE) */
+/* SOMBRA (ARCO SUAVE) */
 .night-shadow { fill: rgba(0, 0, 0, 0.7); pointer-events: none; }
 
 .panel { min-width: 0; }
@@ -117,8 +117,8 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
               <g id="starLabels"></g>
             </g>
 
-            <!-- SOMBRA (ELIPSE) -->
-            <ellipse id="nightShadow" class="night-shadow" cx="400" cy="400" rx="0" ry="0" />
+            <!-- SOMBRA (ARCO SUAVE) -->
+            <path id="nightShadow" class="night-shadow" d="" />
 
             <!-- SOL E LUA -->
             <circle id="sun" class="sun-dot" r="12" />
@@ -359,7 +359,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       }
     });
 
-    // --- SOL E SOMBRA (ELIPSE) ---
+    // --- SOL E SOMBRA (ARCO SUAVE) ---
     const now = new Date();
     const displayHour = hour !== undefined ? hour : (now.getHours() + now.getMinutes() / 60);
     
@@ -372,24 +372,27 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     sunIcon.setAttribute("cx", sunX);
     sunIcon.setAttribute("cy", sunY);
 
-    // A SOMBRA (Elipse)
-    // O centro da elipse é oposto ao Sol.
+    // A SOMBRA (Arco Fechado com Curvas Suaves)
+    // O ângulo da sombra é o oposto ao Sol
     const shadowAngle = sunAngle + Math.PI;
     
-    // Posição do centro da elipse: no lado oposto ao Sol, mas "desliza" com a declinação
-    const shadowX = CX + (declination / 23.5) * R * 0.4 * Math.cos(shadowAngle);
-    const shadowY = CY + (declination / 23.5) * R * 0.4 * Math.sin(shadowAngle);
+    // A curvatura da sombra depende da declinação (ferradura)
+    const curve = (declination / 23.5) * R * 0.8; 
 
-    // TAMANHO DA ELIPSE: GRANDE O SUFICIENTE PARA COBRIR O MAPA E AS PONTAS FICAREM ESCONDIDAS
-    // O raio deve ser maior que o mapa (R=372) para esconder as pontas.
-    const rx = R * 1.2;
-    const ry = R * 0.9;
+    // Pontos do arco (as "pontas" da ferradura, que ficarão escondidas)
+    const x1 = CX + R * Math.sin(shadowAngle - Math.PI/2);
+    const y1 = CY - R * Math.cos(shadowAngle - Math.PI/2);
+    const x2 = CX + R * Math.sin(shadowAngle + Math.PI/2);
+    const y2 = CY - R * Math.cos(shadowAngle + Math.PI/2);
 
-    nightShadow.setAttribute("cx", shadowX);
-    nightShadow.setAttribute("cy", shadowY);
-    nightShadow.setAttribute("rx", rx);
-    nightShadow.setAttribute("ry", ry);
-    nightShadow.setAttribute("transform", `rotate(${shadowAngle * 180 / Math.PI} ${shadowX} ${shadowY})`);
+    // Centro de controle do arco (para dar a curva suave)
+    const cx = CX + (R * 0.5) * Math.sin(shadowAngle) - curve * Math.sin(shadowAngle);
+    const cy = CY - (R * 0.5) * Math.cos(shadowAngle) + curve * Math.cos(shadowAngle);
+
+    // O arco é desenhado com uma curva quadrática (Q), que arredonda as pontas
+    const shadowPath = `M ${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2} L ${CX} ${CY} Z`;
+    
+    nightShadow.setAttribute("d", shadowPath);
 
     // --- LUA ---
     const moonAngle = ((displayHour - 1/12) / 24) * 2 * Math.PI;
