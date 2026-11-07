@@ -52,7 +52,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 .moon-dot { fill: #e0e0e0; filter: drop-shadow(0 0 15px #fff); pointer-events: none; }
 .moon-shadow { fill: rgba(0, 0, 0, 0.8); pointer-events: none; }
 
-/* SOMBRA (ARCO SUAVE) */
+/* SOMBRA (TERMINADOR) */
 .night-shadow { fill: rgba(0, 0, 0, 0.7); pointer-events: none; }
 
 .panel { min-width: 0; }
@@ -117,7 +117,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
               <g id="starLabels"></g>
             </g>
 
-            <!-- SOMBRA (ARCO SUAVE) -->
+            <!-- SOMBRA (TERMINADOR REAL) -->
             <path id="nightShadow" class="night-shadow" d="" />
 
             <!-- SOL E LUA -->
@@ -359,7 +359,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       }
     });
 
-    // --- SOL E SOMBRA (ARCO SUAVE) ---
+    // --- SOL E FERRADURA (TEMPO REAL) ---
     const now = new Date();
     const displayHour = hour !== undefined ? hour : (now.getHours() + now.getMinutes() / 60);
     
