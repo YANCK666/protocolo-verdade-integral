@@ -380,10 +380,10 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     const shadowX = CX + (declination / 23.5) * R * 0.4 * Math.cos(shadowAngle);
     const shadowY = CY + (declination / 23.5) * R * 0.4 * Math.sin(shadowAngle);
 
-    // TAMANHO DA ELIPSE: GRANDE O SUFICIENTE PARA COBRIR A METADE OPOSTA AO SOL
-    // As pontas ficam escondidas fora do círculo, formando a ferradura.
-    const rx = R * 1.8;
-    const ry = R * 1.4;
+    // TAMANHO DA ELIPSE: GRANDE O SUFICIENTE PARA COBRIR O MAPA E AS PONTAS FICAREM ESCONDIDAS
+    // O raio deve ser maior que o mapa (R=372) para esconder as pontas.
+    const rx = R * 1.2;
+    const ry = R * 0.9;
 
     nightShadow.setAttribute("cx", shadowX);
     nightShadow.setAttribute("cy", shadowY);
