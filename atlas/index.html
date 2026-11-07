@@ -41,10 +41,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 .ring { fill: none; stroke: var(--line); stroke-width: 2; pointer-events: none; }
 .pole { fill: var(--accent); pointer-events: none; filter: drop-shadow(0 0 6px var(--accent)); }
 
-/* LINHAS DOS TRÓPICOS */
-.tropic-line { stroke: var(--accent); stroke-width: 1; stroke-dasharray: 4 4; opacity: 0.5; pointer-events: none; }
-.tropic-label { font-family: var(--f-mono); font-size: 8px; fill: var(--muted); pointer-events: none; }
-
 /* ESTRELAS */
 .star { fill: var(--star); pointer-events: none; }
 .star-bright { fill: #ffffff; filter: drop-shadow(0 0 3px #fff); }
@@ -369,25 +365,24 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     const now = new Date();
     const displayHour = hour !== undefined ? hour : (now.getHours() + now.getMinutes() / 60);
     
-    // Declinação Solar
     const declination = getSolarDeclination(now);
 
-    // Posição do Sol
+    // Posição do Sol (Ponteiro do Relógio)
     const sunAngle = (displayHour / 24) * 2 * Math.PI;
     const sunX = CX + 200 * Math.sin(sunAngle);
     const sunY = CY - 200 * Math.cos(sunAngle);
     sunIcon.setAttribute("cx", sunX);
     sunIcon.setAttribute("cy", sunY);
 
-    // Sombra (Elipse)
+    // A SOMBRA (Elipse)
     // O centro da elipse é oposto ao Sol.
     const shadowAngle = sunAngle + Math.PI;
     
-    // Posição do centro da elipse
+    // Posição do centro da elipse: no lado oposto ao Sol, mas "desliza" com a declinação
     const shadowX = CX + (declination / 23.5) * R * 0.4 * Math.cos(shadowAngle);
     const shadowY = CY + (declination / 23.5) * R * 0.4 * Math.sin(shadowAngle);
 
-    // Tamanho da elipse
+    // Tamanho da elipse: grande o suficiente para cobrir o mapa, mas não o Sol.
     const rx = R * 0.9;
     const ry = R * 0.7;
 
@@ -406,7 +401,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     moonClipCircle.setAttribute("cx", moonX);
     moonClipCircle.setAttribute("cy", moonY);
 
-    // Fase da Lua
     const phase = getMoonPhase(now);
     const shadowOffset = (phase - 0.5) * 2 * 12;
     moonShadow.setAttribute("cx", moonX + shadowOffset);
