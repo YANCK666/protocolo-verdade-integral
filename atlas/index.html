@@ -251,7 +251,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   const lctx = lightCanvas.getContext("2d");
   const sctx = shadowCanvas.getContext("2d");
 
-  // Função para calcular a fase da Lua
+  // Fase da Lua
   function getMoonPhase(date) {
     const jd = date.getTime() / 86400000 + 2440587.5;
     const T = (jd - 2451545) / 36525;
@@ -262,7 +262,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     return (1 + Math.cos(phaseAngle)) / 2;
   }
 
-  // --- CÉU E ESTRELAS ---
+  // Estrelas
   const STARS = [
     { name: "Polaris", ra: 2.530, dec: 89.264, bright: true },
     { name: "Acrux", ra: 12.443, dec: -63.099, bright: true },
@@ -331,17 +331,15 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     const lightData = lctx.createImageData(W, H);
     const shadowData = sctx.createImageData(W, H);
 
-    // Posição do Sol no mundo (latitude e longitude subsolar)
+    // Posição do Sol (declinação e longitude subsolar)
     const sunPos = SunCalc.getPosition(date, 0, 0);
-    // O SunCalc usa coordenadas locais, então precisamos do ponto subsolar global.
-    // Vamos calcular a longitude subsolar com base na hora UTC.
+    // O SunCalc retorna a posição do Sol no céu para uma localização (0,0).
+    // Para o ponto subsolar, calculamos com base na hora UTC.
+    
     const utcHours = date.getUTCHours() + date.getUTCMinutes() / 60 + date.getUTCSeconds() / 3600;
     const subsolarLon = 180 - utcHours * 15;
     
-    // Declinação solar exata
-    const decDeg = SunCalc.getPosition(date, 0, 0).altitude; // Não é a declinação, mas vamos calcular.
-    
-    // Cálculo manual da declinação (mais preciso que a aproximação)
+    // Declinação solar exata via fórmula de Meeus (simplificada)
     const jd = date.getTime() / 86400000 + 2440587.5;
     const T = (jd - 2451545) / 36525;
     const L0 = (280.46646 + T * (36000.76983 + T * 0.0003032)) % 360;
@@ -428,7 +426,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     drawStars(h);
   }
 
-  // Relógio na borda
+  // Relógio
   function drawClock() {
     const ticksGroup = document.getElementById("clockTicks");
     for (let i = 0; i < 24; i++) {
@@ -490,7 +488,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       drawClock();
       update();
       
-      // Atualiza a cada segundo para precisão de relógio
+      // Atualiza a cada segundo
       setInterval(update, 1000);
       
     } catch (error) {
@@ -563,7 +561,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   timeSlider.addEventListener("input", update);
   dateInput.addEventListener("change", update);
 
-  // Controles de camada
+  // Camadas
   document.getElementById("layerControls").addEventListener("change", (e) => {
     const key = e.target.dataset.layer;
     const on = e.target.checked;
@@ -588,7 +586,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     }
   });
 
-  // Busca e Info
+  // Busca
   document.getElementById("q").addEventListener("input", (e) => {
     const term = e.target.value.toLowerCase();
     if (!term) return;
