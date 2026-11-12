@@ -339,6 +339,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   const localOffsetHours = -new Date().getTimezoneOffset() / 60;
 
   let sunMoving = true;
+  let simulationTime = new Date(); // Tempo simulado (sempre atualizado)
 
   // --- ESTADO DO MAPA ---
   let zoom = 1, panX = 0, panY = 0;
@@ -520,6 +521,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   }
 
   function getSimulatedDate() {
+    // Usa a hora do slider + data do input
     const localHour = parseFloat(timeSlider.value);
     const baseDay = new Date(dateInput.value + "T00:00:00");
     return new Date(baseDay.getTime() + (localHour * 3600000));
@@ -527,6 +529,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 
   function update() {
     const date = getSimulatedDate();
+    simulationTime = date;
     drawLight(date);
     drawStars(parseFloat(timeSlider.value));
     updateClock(date);
@@ -655,6 +658,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       setupTooltip();
       update();
       
+      // Loop de atualização em tempo real (sempre ativo)
       setInterval(() => {
         if (sunMoving && !isRotating && !isPanning) {
           const now = new Date();
