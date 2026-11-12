@@ -43,7 +43,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 
 /* FUSOS HORÁRIOS */
 .timezone-line { stroke: var(--accent); stroke-width: 0.5; opacity: 0.2; pointer-events: none; }
-.timezone-label { font-family: var(--f-mono); font-size: 8px; fill: var(--muted); pointer-events: none; }
 
 /* ESTRELAS */
 .star { fill: var(--star); pointer-events: none; }
@@ -102,7 +101,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   <header class="top">
     <div>
       <h1>Atlas Polar</h1>
-      <p class="lede">Iluminação solar calculada em tempo real. A luz forma a ferradura; a sombra é o complemento.</p>
+      <p class="lede">Iluminação solar calculada em tempo real. O Sol está sempre no ponto de meio-dia solar. Passe o mouse para ver o horário local de cada lugar.</p>
     </div>
     <p class="stats" id="stats">Carregando...</p>
   </header>
@@ -139,9 +138,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 
           <g id="staticGroup">
             <!-- FUSOS HORÁRIOS -->
-            <g id="timezoneLayer">
-              <!-- Linhas de longitude a cada 15 graus -->
-            </g>
+            <g id="timezoneLayer"></g>
 
             <g id="gridLayer">
               <g id="gridCircles">
@@ -197,9 +194,9 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       </section>
 
       <section class="time-control">
-        <label for="timeSlider">Hora (UTC)</label>
-        <input id="timeSlider" type="range" min="0" max="23" value="12" step="1">
-        <div class="time-display" id="timeDisplay">12:00 UTC</div>
+        <label for="timeSlider">Hora Local (seu computador)</label>
+        <input id="timeSlider" type="range" min="0" max="23.99" value="12" step="0.01">
+        <div class="time-display" id="timeDisplay">12:00</div>
         <button id="btnNow" style="margin-top:8px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--accent);color:var(--bg);font:inherit;font-size:12px;cursor:pointer;font-weight:600;width:100%;">⏱️ Sincronizar com o Agora</button>
       </section>
 
@@ -271,6 +268,9 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   shadowCanvas.width = shadowCanvas.height = RES;
   const lctx = lightCanvas.getContext("2d");
   const sctx = shadowCanvas.getContext("2d");
+
+  // Fuso horário local do computador (em horas)
+  const localOffsetHours = -new Date().getTimezoneOffset() / 60;
 
   // Fase da Lua
   function getMoonPhase(date) {
@@ -346,7 +346,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     });
   }
 
-  // --- LUZ E SOMBRA (PRECISÃO DE RELÓGIO) ---
+  // --- LUZ E SOMBRA ---
   function drawLight(date) {
     const W = RES, H = RES;
     const lightData = lctx.createImageData(W, H);
@@ -355,7 +355,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     const utcHours = date.getUTCHours() + date.getUTCMinutes() / 60 + date.getUTCSeconds() / 3600;
     const subsolarLon = 180 - utcHours * 15;
     
-    // Declinação solar exata via fórmula de Meeus
+    // Declinação solar exata
     const jd = date.getTime() / 86400000 + 2440587.5;
     const T = (jd - 2451545) / 36525;
     const L0 = (280.46646 + T * (36000.76983 + T * 0.0003032)) % 360;
@@ -435,11 +435,15 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   }
 
   function update() {
-    const h = parseFloat(timeSlider.value);
-    const d = new Date(dateInput.value + "T" + String(h).padStart(2, '0') + ":00:00Z");
-    timeDisplay.textContent = `${String(Math.floor(h)).padStart(2, "0")}:00 UTC`;
+    const localHour = parseFloat(timeSlider.value);
+    // Converte a hora local para UTC usando o offset do computador
+    const utcHour = (localHour - localOffsetHours + 24) % 24;
+    const d = new Date(dateInput.value + "T" + String(Math.floor(utcHour)).padStart(2, '0') + ":" + String(Math.floor((utcHour % 1) * 60)).padStart(2, '0') + ":00Z");
+    
+    timeDisplay.textContent = `${String(Math.floor(localHour)).padStart(2, "0")}:${String(Math.floor((localHour % 1) * 60)).padStart(2, "0")} (Local)`;
+    
     drawLight(d);
-    drawStars(h);
+    drawStars(localHour);
   }
 
   // Relógio
@@ -473,12 +477,11 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     }
   }
 
-  // --- FUSOS HORÁRIOS (LINHAS VISUAIS) ---
+  // Fusos Horários (linhas visuais)
   function drawTimezones() {
     const tzGroup = document.getElementById("timezoneLayer");
     if (!tzGroup) return;
     tzGroup.innerHTML = "";
-    // Desenha meridianos a cada 15 graus (24 fusos)
     for (let i = 0; i < 24; i++) {
       const lon = i * 15 - 180;
       const p1 = proj([lon, 0]);
@@ -493,7 +496,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     }
   }
 
-  // --- TOOLTIP DE HORÁRIO LOCAL ---
+  // Tooltip de horário local
   function setupTooltip() {
     mapWrap.addEventListener("mousemove", (e) => {
       const rect = mapWrap.getBoundingClientRect();
@@ -507,9 +510,8 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       }
 
       const lon = geo[0];
-      // Calcula o fuso horário aproximado (15 graus = 1 hora)
       const offsetHours = Math.round(lon / 15);
-      const utcHour = parseFloat(timeSlider.value);
+      const utcHour = parseFloat(timeSlider.value) - localOffsetHours;
       const localHour = (utcHour + offsetHours + 24) % 24;
       
       const h = Math.floor(localHour);
@@ -622,8 +624,8 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   if (btnNow) {
     btnNow.addEventListener("click", () => {
       const now = new Date();
-      const h = now.getUTCHours() + now.getUTCMinutes() / 60 + now.getUTCSeconds() / 3600;
-      timeSlider.value = h;
+      const localHour = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
+      timeSlider.value = localHour;
       dateInput.value = now.toISOString().split('T')[0];
       update();
     });
