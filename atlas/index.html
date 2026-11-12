@@ -16,7 +16,7 @@
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5; }
-.wrap { max-width: 1280px; margin: 0 auto; padding: 20px 16px 40px; }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 20px 16px 40px; }
 
 .top { display: flex; flex-wrap: wrap; gap: 8px 32px; align-items: end; justify-content: space-between; margin-bottom: 20px; }
 .top > div { min-width: 0; flex: 1 1 420px; }
@@ -28,6 +28,25 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 .mapcol { position: sticky; top: 16px; min-width: 0; }
 .mapwrap { position: relative; width: min(100%, calc(100vh - 100px)); margin: 0 auto; user-select: none; touch-action: none; }
 #map { display: block; width: 100%; height: auto; }
+
+/* RELÓGIO DIGITAL */
+.clock-display {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 18px;
+  font-family: var(--f-mono);
+  color: var(--ink);
+  text-align: center;
+  z-index: 50;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+.clock-display .date { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+.clock-display .time { font-size: 28px; font-weight: 700; color: var(--accent); letter-spacing: 0.05em; }
+.clock-display .label { font-size: 10px; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.1em; }
 
 .sea { fill: var(--sea); }
 .c { fill: var(--land); stroke: var(--bg); stroke-width: .7; cursor: pointer; transition: opacity .2s; }
@@ -93,6 +112,8 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   .layout { grid-template-columns: minmax(0, 1fr); gap: 18px; }
   .mapcol { position: static; }
   .mapwrap { width: 100%; }
+  .clock-display { top: 10px; right: 10px; padding: 8px 12px; }
+  .clock-display .time { font-size: 20px; }
 }
 </style>
 </head>
@@ -101,7 +122,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   <header class="top">
     <div>
       <h1>Atlas Polar</h1>
-      <p class="lede">Iluminação solar calculada em tempo real. O Sol está sempre no ponto de meio-dia solar. Passe o mouse para ver o horário local de cada lugar.</p>
+      <p class="lede">Projeção azimutal. A Terra fica parada. O Sol, a Lua e o céu giram com o mouse. O relógio mostra o horário local em tempo real.</p>
     </div>
     <p class="stats" id="stats">Carregando...</p>
   </header>
@@ -109,6 +130,12 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   <main class="layout">
     <section class="mapcol">
       <div class="mapwrap" id="mapwrap">
+        <div class="clock-display">
+          <div class="date" id="clockDate">--/--/----</div>
+          <div class="time" id="clockTime">--:--:--</div>
+          <div class="label" id="clockLabel">LOCAL</div>
+        </div>
+
         <svg id="map" viewBox="0 0 800 800">
           <defs>
             <clipPath id="mapclip"><circle cx="400" cy="400" r="372"/></clipPath>
@@ -117,27 +144,29 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
           
           <circle class="sea" cx="400" cy="400" r="372" />
           
-          <g id="worldGroup" clip-path="url(#mapclip)">
-            <g id="landGroup"></g>
-            
-            <image id="solarLight" x="0" y="0" width="800" height="800" preserveAspectRatio="none" style="pointer-events:none" />
-            <image id="nightShadow" x="0" y="0" width="800" height="800" preserveAspectRatio="none" style="pointer-events:none" />
+          <!-- TERRA (FIXA) -->
+          <g id="landGroup" clip-path="url(#mapclip)"></g>
 
-            <g id="skyLayer">
-              <g id="constellations"></g>
-              <g id="stars"></g>
-              <g id="starLabels"></g>
+          <!-- LUZ E SOMBRA (FIXAS, calculadas pixel a pixel) -->
+          <image id="solarLight" x="0" y="0" width="800" height="800" preserveAspectRatio="none" style="pointer-events:none" clip-path="url(#mapclip)" />
+          <image id="nightShadow" x="0" y="0" width="800" height="800" preserveAspectRatio="none" style="pointer-events:none" clip-path="url(#mapclip)" />
+
+          <!-- CÉU E ASTROS (GIRAM COM O MOUSE) -->
+          <g id="skyGroup" clip-path="url(#mapclip)">
+            <g id="constellations"></g>
+            <g id="stars"></g>
+            <g id="starLabels"></g>
+            <g id="sunLayer">
+              <circle id="sun" class="sun-dot" r="12" />
             </g>
-            
-            <circle id="sun" class="sun-dot" r="12" />
-            <g id="moonGroup">
+            <g id="moonLayer">
               <circle id="moon" class="moon-dot" r="12" />
               <circle id="moonShadow" class="moon-shadow" r="12" clip-path="url(#moonclip)" />
             </g>
           </g>
 
+          <!-- GRADE (FIXA) -->
           <g id="staticGroup">
-            <!-- FUSOS HORÁRIOS -->
             <g id="timezoneLayer"></g>
 
             <g id="gridLayer">
@@ -172,7 +201,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 
       <p style="text-align:center; margin-top:12px; font-size:13px; color:var(--muted);">
         Centro = Polo Norte · Borda = Polo Sul<br>
-        Passe o mouse para ver o horário local. Use a roda para ampliar.
+        Passe o mouse para ver o horário local. Ative a rotação para girar o céu.
       </p>
 
       <section class="layerbox">
@@ -188,7 +217,8 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
           <label class="layeritem"><input type="checkbox" data-layer="dark" checked><i class="swatch" style="--swatch:#000000"></i>Sombra (Noite)</label>
           <label class="layeritem"><input type="checkbox" data-layer="moon" checked><i class="swatch" style="--swatch:#e0e0e0"></i>Lua</label>
           <label class="layeritem"><input type="checkbox" data-layer="timezones" checked><i class="swatch" style="--swatch:#a996c0"></i>Fusos Horários</label>
-          <label class="layeritem"><input type="checkbox" data-layer="rotation"><i class="swatch" style="--swatch:#c4a1f0"></i>Rotação</label>
+          <label class="layeritem"><input type="checkbox" data-layer="rotation"><i class="swatch" style="--swatch:#c4a1f0"></i>Rotação (Céu)</label>
+          <label class="layeritem"><input type="checkbox" data-layer="sunMove" checked><i class="swatch" style="--swatch:#ffaa00"></i>Movimento do Sol</label>
         </div>
         <button type="button" id="btnReset" style="margin-top:10px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--soft);color:var(--ink);font:inherit;font-size:12px;cursor:pointer;">↺ Restaurar</button>
       </section>
@@ -238,10 +268,11 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   let mapPaths = new Map();
 
   // Elementos
-  const worldGroup = document.getElementById("worldGroup");
   const landGroup = document.getElementById("landGroup");
+  const skyGroup = document.getElementById("skyGroup");
   const mapWrap = document.getElementById("mapwrap");
   const rotationCheckbox = document.querySelector('[data-layer="rotation"]');
+  const sunMoveCheckbox = document.querySelector('[data-layer="sunMove"]');
   const btnReset = document.getElementById("btnReset");
   const btnNow = document.getElementById("btnNow");
   const defs = document.querySelector("#map defs");
@@ -251,6 +282,8 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   
   const solarLight = document.getElementById("solarLight");
   const solarShadow = document.getElementById("nightShadow");
+  const sunLayer = document.getElementById("sunLayer");
+  const moonLayer = document.getElementById("moonLayer");
   const sunIcon = document.getElementById("sun");
   const moonIcon = document.getElementById("moon");
   const moonShadow = document.getElementById("moonShadow");
@@ -259,6 +292,10 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   const timeDisplay = document.getElementById("timeDisplay");
   const dateInput = document.getElementById("dateInput");
   const timeTooltip = document.getElementById("timeTooltip");
+  
+  const clockDate = document.getElementById("clockDate");
+  const clockTime = document.getElementById("clockTime");
+  const clockLabel = document.getElementById("clockLabel");
 
   // Canvas para luz/sombra
   const RES = 400;
@@ -269,8 +306,10 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   const lctx = lightCanvas.getContext("2d");
   const sctx = shadowCanvas.getContext("2d");
 
-  // Fuso horário local do computador (em horas)
   const localOffsetHours = -new Date().getTimezoneOffset() / 60;
+
+  // Movimento do Sol (ativo por padrão)
+  let sunMoving = true;
 
   // Fase da Lua
   function getMoonPhase(date) {
@@ -355,7 +394,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     const utcHours = date.getUTCHours() + date.getUTCMinutes() / 60 + date.getUTCSeconds() / 3600;
     const subsolarLon = 180 - utcHours * 15;
     
-    // Declinação solar exata
     const jd = date.getTime() / 86400000 + 2440587.5;
     const T = (jd - 2451545) / 36525;
     const L0 = (280.46646 + T * (36000.76983 + T * 0.0003032)) % 360;
@@ -434,9 +472,24 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     moonShadow.setAttribute("cy", moonY);
   }
 
+  // Relógio digital
+  function updateClock() {
+    const now = new Date();
+    const d = String(now.getDate()).padStart(2, '0');
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const y = now.getFullYear();
+    clockDate.textContent = `${d}/${m}/${y}`;
+    
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    const ss = String(now.getSeconds()).padStart(2, '0');
+    clockTime.textContent = `${hh}:${mm}:${ss}`;
+    
+    clockLabel.textContent = localOffsetHours >= 0 ? `UTC+${localOffsetHours}` : `UTC${localOffsetHours}`;
+  }
+
   function update() {
     const localHour = parseFloat(timeSlider.value);
-    // Converte a hora local para UTC usando o offset do computador
     const utcHour = (localHour - localOffsetHours + 24) % 24;
     const d = new Date(dateInput.value + "T" + String(Math.floor(utcHour)).padStart(2, '0') + ":" + String(Math.floor((utcHour % 1) * 60)).padStart(2, '0') + ":00Z");
     
@@ -444,9 +497,10 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     
     drawLight(d);
     drawStars(localHour);
+    updateClock();
   }
 
-  // Relógio
+  // Relógio na borda
   function drawClock() {
     const ticksGroup = document.getElementById("clockTicks");
     for (let i = 0; i < 24; i++) {
@@ -477,7 +531,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     }
   }
 
-  // Fusos Horários (linhas visuais)
+  // Fusos Horários
   function drawTimezones() {
     const tzGroup = document.getElementById("timezoneLayer");
     if (!tzGroup) return;
@@ -496,7 +550,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     }
   }
 
-  // Tooltip de horário local
+  // Tooltip
   function setupTooltip() {
     mapWrap.addEventListener("mousemove", (e) => {
       const rect = mapWrap.getBoundingClientRect();
@@ -561,7 +615,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       setupTooltip();
       update();
       
-      // Atualiza a cada segundo
       setInterval(update, 1000);
       
     } catch (error) {
@@ -570,13 +623,14 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     }
   }
 
-  // Rotação e Zoom
+  // Rotação (apenas céu e astros)
   let rotation = 0, zoom = 1, isRotating = false, rotateEnabled = false;
   let pointerStartX = 0, pointerStartY = 0, dragStarted = false, currentStartRotation = 0;
   const MIN_ZOOM = 1, MAX_ZOOM = 4;
 
   function applyTransform() {
-    worldGroup.setAttribute("transform", `translate(400 400) rotate(${rotation}) scale(${zoom}) translate(-400 -400)`);
+    // Gira apenas o grupo do céu (estrelas, sol, lua)
+    skyGroup.setAttribute("transform", `translate(400 400) rotate(${rotation}) scale(${zoom}) translate(-400 -400)`);
   }
 
   rotationCheckbox.addEventListener("change", () => {
@@ -634,6 +688,19 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   timeSlider.addEventListener("input", update);
   dateInput.addEventListener("change", update);
 
+  // Controle de movimento do Sol
+  sunMoveCheckbox.addEventListener("change", () => {
+    sunMoving = sunMoveCheckbox.checked;
+    if (sunMoving) {
+      // Se voltou ao modo tempo real, sincroniza com o agora
+      const now = new Date();
+      const localHour = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
+      timeSlider.value = localHour;
+      dateInput.value = now.toISOString().split('T')[0];
+      update();
+    }
+  });
+
   // Camadas
   document.getElementById("layerControls").addEventListener("change", (e) => {
     const key = e.target.dataset.layer;
@@ -648,14 +715,16 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     } else if (key === "star6") {
       document.getElementById("gridStar6").style.display = on ? "" : "none";
     } else if (key === "stars") {
-      document.getElementById("skyLayer").style.display = on ? "" : "none";
+      starsGroup.style.display = on ? "" : "none";
+      constGroup.style.display = on ? "" : "none";
+      labelsGroup.style.display = on ? "" : "none";
     } else if (key === "light") {
       solarLight.style.display = on ? "" : "none";
-      sunIcon.style.display = on ? "" : "none";
+      sunLayer.style.display = on ? "" : "none";
     } else if (key === "dark") {
       solarShadow.style.display = on ? "" : "none";
     } else if (key === "moon") {
-      document.getElementById("moonGroup").style.display = on ? "" : "none";
+      moonLayer.style.display = on ? "" : "none";
     } else if (key === "timezones") {
       document.getElementById("timezoneLayer").style.display = on ? "" : "none";
     }
