@@ -26,8 +26,9 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 
 .layout { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 28px; align-items: start; }
 .mapcol { position: sticky; top: 16px; min-width: 0; }
-.mapwrap { position: relative; width: min(100%, calc(100vh - 100px)); margin: 0 auto; user-select: none; touch-action: none; }
-#map { display: block; width: 100%; height: auto; }
+.mapwrap { position: relative; width: min(100%, calc(100vh - 100px)); margin: 0 auto; user-select: none; touch-action: none; overflow: hidden; }
+.mapwrap.fullscreen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; max-width: none; z-index: 1000; border-radius: 0; background: var(--bg); }
+#map { display: block; width: 100%; height: 100%; }
 
 .sea { fill: var(--sea); }
 .c { fill: var(--land); stroke: var(--bg); stroke-width: .7; cursor: pointer; transition: opacity .2s; }
@@ -54,6 +55,39 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 .sun-dot { fill: #ffcc00; filter: drop-shadow(0 0 20px #ffcc00); pointer-events: none; }
 .moon-dot { fill: #e0e0e0; filter: drop-shadow(0 0 15px #fff); pointer-events: none; }
 .moon-shadow { fill: rgba(0, 0, 0, 0.8); pointer-events: none; }
+
+/* CONTROLES DO MAPA */
+.map-controls {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 50;
+}
+.map-controls button {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+.map-controls button:hover {
+  background: var(--soft);
+  border-color: var(--accent);
+}
+.map-controls button.active {
+  background: var(--accent);
+  color: var(--bg);
+}
 
 /* RELÓGIO DIGITAL */
 .clock-display {
@@ -118,7 +152,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   <header class="top">
     <div>
       <h1>Atlas Polar</h1>
-      <p class="lede">Gire o céu com o mouse para viajar no tempo. Arraste para a direita para avançar (futuro), para a esquerda para retroceder (passado). O relógio acompanha.</p>
+      <p class="lede">Gire o céu com o mouse para viajar no tempo. Use a roda do mouse para dar zoom. Arraste para mover o mapa.</p>
     </div>
     <p class="stats" id="stats">Carregando...</p>
   </header>
@@ -126,64 +160,73 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   <main class="layout">
     <section class="mapcol">
       <div class="mapwrap" id="mapwrap">
+        <!-- CONTROLES DO MAPA -->
+        <div class="map-controls">
+          <button id="btnZoomIn" title="Aproximar">+</button>
+          <button id="btnZoomOut" title="Afastar">−</button>
+          <button id="btnFullscreen" title="Tela Cheia">⛶</button>
+        </div>
+
         <svg id="map" viewBox="0 0 800 800">
           <defs>
             <clipPath id="mapclip"><circle cx="400" cy="400" r="372"/></clipPath>
             <clipPath id="moonclip"><circle id="moonClipCircle" cx="0" cy="0" r="12"/></clipPath>
           </defs>
           
-          <circle class="sea" cx="400" cy="400" r="372" />
-          
-          <!-- TERRA (FIXA) -->
-          <g id="landGroup" clip-path="url(#mapclip)"></g>
+          <g id="wholeMap" transform="translate(0,0) scale(1)">
+            <circle class="sea" cx="400" cy="400" r="372" />
+            
+            <!-- TERRA (FIXA) -->
+            <g id="landGroup" clip-path="url(#mapclip)"></g>
 
-          <!-- LUZ E SOMBRA (FIXAS) -->
-          <image id="solarLight" x="0" y="0" width="800" height="800" preserveAspectRatio="none" style="pointer-events:none" clip-path="url(#mapclip)" />
-          <image id="nightShadow" x="0" y="0" width="800" height="800" preserveAspectRatio="none" style="pointer-events:none" clip-path="url(#mapclip)" />
+            <!-- LUZ E SOMBRA (FIXAS) -->
+            <image id="solarLight" x="0" y="0" width="800" height="800" preserveAspectRatio="none" style="pointer-events:none" clip-path="url(#mapclip)" />
+            <image id="nightShadow" x="0" y="0" width="800" height="800" preserveAspectRatio="none" style="pointer-events:none" clip-path="url(#mapclip)" />
 
-          <!-- CÉU E ASTROS (GIRAM COM O MOUSE) -->
-          <g id="skyGroup" clip-path="url(#mapclip)">
-            <g id="constellations"></g>
-            <g id="stars"></g>
-            <g id="starLabels"></g>
-            <g id="sunLayer">
-              <circle id="sun" class="sun-dot" r="12" />
-            </g>
-            <g id="moonLayer">
-              <circle id="moon" class="moon-dot" r="12" />
-              <circle id="moonShadow" class="moon-shadow" r="12" clip-path="url(#moonclip)" />
-            </g>
-          </g>
-
-          <!-- GRADE (FIXA) -->
-          <g id="staticGroup">
-            <g id="timezoneLayer"></g>
-
-            <g id="gridLayer">
-              <g id="gridCircles">
-                <circle class="grid-circle" cx="400" cy="400" r="120" />
-                <circle class="grid-circle" cx="400" cy="400" r="240" />
-                <circle class="grid-circle" cx="400" cy="400" r="360" />
+            <!-- CÉU E ASTROS (GIRAM COM O MOUSE) -->
+            <g id="skyGroup" clip-path="url(#mapclip)">
+              <g id="constellations"></g>
+              <g id="stars"></g>
+              <g id="starLabels"></g>
+              <g id="sunLayer">
+                <circle id="sun" class="sun-dot" r="12" />
               </g>
-              <g id="gridCross">
-                <line class="grid-line" x1="400" y1="40" x2="400" y2="760" />
-                <line class="grid-line" x1="40" y1="400" x2="760" y2="400" />
+              <g id="moonLayer">
+                <circle id="moon" class="moon-dot" r="12" />
+                <circle id="moonShadow" class="moon-shadow" r="12" clip-path="url(#moonclip)" />
               </g>
-              <g id="gridStar6">
-                <polygon points="400,40 711.8,580 88.2,580" fill="none" class="grid-line" style="opacity:0.6;" />
-                <polygon points="711.8,220 400,760 88.2,220" fill="none" class="grid-line" style="opacity:0.6;" />
-              </g>
-              <circle class="ring" cx="400" cy="400" r="370" />
             </g>
 
-            <g id="clockLayer">
-              <circle cx="400" cy="400" r="385" fill="none" stroke="var(--line)" stroke-width="1.5" />
-              <g id="clockTicks"></g>
-            </g>
+            <!-- GRADE (FIXA) -->
+            <g id="staticGroup">
+              <g id="timezoneLayer"></g>
 
-            <circle class="pole" cx="400" cy="400" r="5" />
-            <text x="400" y="12" text-anchor="middle" fill="var(--accent)" font-size="12" font-family="var(--f-mono)" font-weight="bold">N</text>
-            <text x="400" y="795" text-anchor="middle" fill="var(--muted)" font-size="12" font-family="var(--f-mono)">S</text>
+              <g id="gridLayer">
+                <g id="gridCircles">
+                  <circle class="grid-circle" cx="400" cy="400" r="120" />
+                  <circle class="grid-circle" cx="400" cy="400" r="240" />
+                  <circle class="grid-circle" cx="400" cy="400" r="360" />
+                </g>
+                <g id="gridCross">
+                  <line class="grid-line" x1="400" y1="40" x2="400" y2="760" />
+                  <line class="grid-line" x1="40" y1="400" x2="760" y2="400" />
+                </g>
+                <g id="gridStar6">
+                  <polygon points="400,40 711.8,580 88.2,580" fill="none" class="grid-line" style="opacity:0.6;" />
+                  <polygon points="711.8,220 400,760 88.2,220" fill="none" class="grid-line" style="opacity:0.6;" />
+                </g>
+                <circle class="ring" cx="400" cy="400" r="370" />
+              </g>
+
+              <g id="clockLayer">
+                <circle cx="400" cy="400" r="385" fill="none" stroke="var(--line)" stroke-width="1.5" />
+                <g id="clockTicks"></g>
+              </g>
+
+              <circle class="pole" cx="400" cy="400" r="5" />
+              <text x="400" y="12" text-anchor="middle" fill="var(--accent)" font-size="12" font-family="var(--f-mono)" font-weight="bold">N</text>
+              <text x="400" y="795" text-anchor="middle" fill="var(--muted)" font-size="12" font-family="var(--f-mono)">S</text>
+            </g>
           </g>
         </svg>
         <div id="timeTooltip" class="tooltip"></div>
@@ -266,6 +309,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   let mapPaths = new Map();
 
   // Elementos
+  const wholeMap = document.getElementById("wholeMap");
   const landGroup = document.getElementById("landGroup");
   const skyGroup = document.getElementById("skyGroup");
   const mapWrap = document.getElementById("mapwrap");
@@ -308,8 +352,27 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 
   let sunMoving = true;
 
-  // Data base (usada para calcular a data atual do mapa)
-  let currentDate = new Date();
+  // Estado do Zoom e Pan (todo o mapa)
+  let zoom = 1, panX = 0, panY = 0;
+  const MIN_ZOOM = 1, MAX_ZOOM = 10;
+
+  function applyWholeTransform() {
+    // Aplica o zoom e pan em todo o mapa
+    wholeMap.setAttribute("transform", `translate(${panX} ${panY}) scale(${zoom}) translate(${CX} ${CY}) translate(${-CX} ${-CY})`);
+    // Nota: a ordem translate/scale é importante para o zoom ser centrado no mapa
+  }
+
+  function updateWholeTransform() {
+    // Traduz para o centro, escala, e volta
+    const tx = panX + (1 - zoom) * CX;
+    const ty = panY + (1 - zoom) * CY;
+    wholeMap.setAttribute("transform", `translate(${tx} ${tx}) scale(${zoom})`);
+    // Simplificando: usamos o grupo com transform de escala e translação
+    wholeMap.setAttribute("transform", `translate(${panX} ${panY}) translate(${CX} ${CY}) scale(${zoom}) translate(${-CX} ${-CY})`);
+  }
+
+  // Aplica o transform inicial
+  updateWholeTransform();
 
   function getMoonPhase(date) {
     const jd = date.getTime() / 86400000 + 2440587.5;
@@ -467,7 +530,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     moonShadow.setAttribute("cy", moonY);
   }
 
-  // Atualiza o relógio digital a partir da data simulada
   function updateClock(date) {
     const d = String(date.getDate()).padStart(2, '0');
     const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -482,13 +544,9 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     clockLabel.textContent = localOffsetHours >= 0 ? `UTC+${localOffsetHours}` : `UTC${localOffsetHours}`;
   }
 
-  // Função que reconstrói a data simulada
   function getSimulatedDate() {
     const localHour = parseFloat(timeSlider.value);
     const baseDay = new Date(dateInput.value + "T00:00:00");
-    // Converte hora local para UTC
-    const utcHour = (localHour - localOffsetHours + 24) % 24;
-    // Cria a data simulada
     return new Date(baseDay.getTime() + (localHour * 3600000));
   }
 
@@ -552,28 +610,30 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 
   function setupTooltip() {
     mapWrap.addEventListener("mousemove", (e) => {
-      const rect = mapWrap.getBoundingClientRect();
-      const x = (e.clientX - rect.left) / rect.width * SIZE;
-      const y = (e.clientY - rect.top) / rect.height * SIZE;
-      const geo = proj.invert([x, y]);
-      
-      if (!geo) {
-        timeTooltip.style.display = "none";
-        return;
-      }
+      if (!rotateEnabled && !isRotating && !isPanning) {
+        const rect = mapWrap.getBoundingClientRect();
+        const x = (e.clientX - rect.left) / rect.width * SIZE;
+        const y = (e.clientY - rect.top) / rect.height * SIZE;
+        const geo = proj.invert([x, y]);
+        
+        if (!geo) {
+          timeTooltip.style.display = "none";
+          return;
+        }
 
-      const lon = geo[0];
-      const offsetHours = Math.round(lon / 15);
-      const utcHour = parseFloat(timeSlider.value) - localOffsetHours;
-      const localHour = (utcHour + offsetHours + 24) % 24;
-      
-      const h = Math.floor(localHour);
-      const m = Math.floor((localHour - h) * 60);
-      
-      timeTooltip.textContent = `Fuso ~${offsetHours >= 0 ? '+' : ''}${offsetHours} UTC | Local: ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
-      timeTooltip.style.display = "block";
-      timeTooltip.style.left = (e.clientX - rect.left + 15) + "px";
-      timeTooltip.style.top = (e.clientY - rect.top + 15) + "px";
+        const lon = geo[0];
+        const offsetHours = Math.round(lon / 15);
+        const utcHour = parseFloat(timeSlider.value) - localOffsetHours;
+        const localHour = (utcHour + offsetHours + 24) % 24;
+        
+        const h = Math.floor(localHour);
+        const m = Math.floor((localHour - h) * 60);
+        
+        timeTooltip.textContent = `Fuso ~${offsetHours >= 0 ? '+' : ''}${offsetHours} UTC | Local: ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+        timeTooltip.style.display = "block";
+        timeTooltip.style.left = (e.clientX - rect.left + 15) + "px";
+        timeTooltip.style.top = (e.clientY - rect.top + 15) + "px";
+      }
     });
 
     mapWrap.addEventListener("mouseleave", () => {
@@ -601,6 +661,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
         .attr("data-id", d => d.id)
         .each(function(d) { mapPaths.set(d.id, this); })
         .on("click", function(event, d) {
+          if (rotateEnabled || isRotating || isPanning) return;
           d3.selectAll(".c").classed("sel", false);
           d3.select(this).classed("sel", true);
           showInfo(d.id, d.properties.name);
@@ -629,78 +690,120 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     }
   }
 
-  // Rotação (apenas céu e astros)
-  let rotation = 0, zoom = 1, isRotating = false, rotateEnabled = false;
-  let pointerStartX = 0, pointerStartY = 0, dragStarted = false, currentStartRotation = 0;
-  let baseDate = new Date();
+  // Rotação (apenas céu e astros) e Pan (todo o mapa)
+  let rotation = 0;
+  let rotateEnabled = false;
+  let isRotating = false;
+  let isPanning = false;
+  let startX = 0, startY = 0;
+  let startRotation = 0;
+  let startPanX = 0, startPanY = 0;
   let baseHour = 0;
-  const MIN_ZOOM = 1, MAX_ZOOM = 4;
-
-  function applyTransform() {
-    skyGroup.setAttribute("transform", `translate(400 400) rotate(${rotation}) scale(${zoom}) translate(-400 -400)`);
-  }
+  let baseDate = new Date();
 
   rotationCheckbox.addEventListener("change", () => {
     rotateEnabled = rotationCheckbox.checked;
     mapWrap.style.cursor = rotateEnabled ? "grab" : "default";
-    if (!rotateEnabled) isRotating = false;
   });
 
   mapWrap.addEventListener("pointerdown", (e) => {
-    if (!rotateEnabled || e.button !== 0) return;
-    isRotating = true; dragStarted = false;
-    pointerStartX = e.clientX; pointerStartY = e.clientY;
-    currentStartRotation = rotation;
-    baseHour = parseFloat(timeSlider.value);
-    baseDate = new Date(dateInput.value + "T00:00:00");
+    if (e.button !== 0) return;
+    
+    if (rotateEnabled) {
+      // Inicia rotação do céu
+      isRotating = true;
+      mapWrap.setPointerCapture(e.pointerId);
+      startX = e.clientX;
+      startY = e.clientY;
+      startRotation = rotation;
+      baseHour = parseFloat(timeSlider.value);
+      baseDate = new Date(dateInput.value + "T00:00:00");
+      mapWrap.style.cursor = "grabbing";
+    } else {
+      // Inicia pan do mapa
+      isPanning = true;
+      mapWrap.setPointerCapture(e.pointerId);
+      startX = e.clientX;
+      startY = e.clientY;
+      startPanX = panX;
+      startPanY = panY;
+      mapWrap.style.cursor = "grabbing";
+    }
   });
 
   mapWrap.addEventListener("pointermove", (e) => {
-    if (!isRotating || !rotateEnabled) return;
-    const dx = e.clientX - pointerStartX, dy = e.clientY - pointerStartY;
-    if (!dragStarted && Math.hypot(dx, dy) > 4) {
-      dragStarted = true; mapWrap.setPointerCapture(e.pointerId);
+    if (isRotating) {
+      const dx = e.clientX - startX;
+      const deltaDegrees = -dx * 0.5;
+      const deltaHours = deltaDegrees / 15;
+      
+      let totalHours = baseHour + deltaHours;
+      let newHour = ((totalHours % 24) + 24) % 24;
+      timeSlider.value = newHour;
+      
+      const dayOffset = Math.floor(totalHours / 24);
+      const newDate = new Date(baseDate.getTime() + (dayOffset * 86400000));
+      dateInput.value = newDate.toISOString().split('T')[0];
+      
+      rotation = startRotation + deltaDegrees;
+      skyGroup.setAttribute("transform", `translate(400 400) rotate(${rotation}) translate(-400 -400)`);
+      
+      update();
+    } else if (isPanning) {
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      panX = startPanX + dx;
+      panY = startPanY + dy;
+      updateWholeTransform();
     }
-    if (!dragStarted) return;
-    
-    // Cada 15 graus de rotação = 1 hora
-    const deltaDegrees = -dx * 0.5;
-    const deltaHours = deltaDegrees / 15;
-    
-    // Calcula a nova hora local (com data)
-    let totalHours = baseHour + deltaHours;
-    
-    // Atualiza o slider (0-24)
-    let newHour = ((totalHours % 24) + 24) % 24;
-    timeSlider.value = newHour;
-    
-    // Calcula a nova data
-    const dayOffset = Math.floor(totalHours / 24);
-    const newDate = new Date(baseDate.getTime() + (dayOffset * 86400000));
-    dateInput.value = newDate.toISOString().split('T')[0];
-    
-    rotation = currentStartRotation + deltaDegrees;
-    applyTransform();
-    
-    update();
   });
 
-  function stopRotation() { isRotating = false; dragStarted = false; }
-  mapWrap.addEventListener("pointerup", stopRotation);
-  mapWrap.addEventListener("pointercancel", stopRotation);
-  mapWrap.addEventListener("lostpointercapture", stopRotation);
+  function stopInteraction() {
+    isRotating = false;
+    isPanning = false;
+    mapWrap.style.cursor = rotateEnabled ? "grab" : "default";
+  }
+  mapWrap.addEventListener("pointerup", stopInteraction);
+  mapWrap.addEventListener("pointercancel", stopInteraction);
+  mapWrap.addEventListener("lostpointercapture", stopInteraction);
 
+  // Zoom (roda do mouse)
   mapWrap.addEventListener("wheel", (e) => {
     e.preventDefault();
-    const factor = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+    const factor = e.deltaY < 0 ? 1.2 : 1 / 1.2;
     zoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom * factor));
-    applyTransform();
+    updateWholeTransform();
   }, { passive: false });
 
+  // Botões de Zoom
+  document.getElementById("btnZoomIn").addEventListener("click", () => {
+    zoom = Math.min(MAX_ZOOM, zoom * 1.3);
+    updateWholeTransform();
+  });
+  
+  document.getElementById("btnZoomOut").addEventListener("click", () => {
+    zoom = Math.max(MIN_ZOOM, zoom / 1.3);
+    updateWholeTransform();
+  });
+
+  // Botão de Tela Cheia
+  document.getElementById("btnFullscreen").addEventListener("click", () => {
+    if (!document.fullscreenElement) {
+      mapWrap.requestFullscreen().catch(err => console.log(err));
+    } else {
+      document.exitFullscreen();
+    }
+  });
+
   btnReset.addEventListener("click", () => {
-    rotation = 0; zoom = 1; applyTransform();
-    rotationCheckbox.checked = false; rotateEnabled = false;
+    zoom = 1; panX = 0; panY = 0;
+    updateWholeTransform();
+    rotationCheckbox.checked = false;
+    rotateEnabled = false;
     mapWrap.style.cursor = "default";
+    rotation = 0;
+    skyGroup.setAttribute("transform", "translate(400 400) rotate(0) translate(-400 -400)");
+    update();
   });
 
   if (btnNow) {
