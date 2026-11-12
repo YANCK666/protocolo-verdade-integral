@@ -89,7 +89,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   <header class="top">
     <div>
       <h1>Atlas Polar</h1>
-      <p class="lede">Um único mapa por camadas: território, céu, tempo e informação. A luz forma a ferradura; a sombra é o complemento.</p>
+      <p class="lede">Iluminação solar calculada em tempo real. A luz forma a ferradura; a sombra é o complemento.</p>
     </div>
     <p class="stats" id="stats">Carregando...</p>
   </header>
@@ -108,7 +108,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
           <g id="worldGroup" clip-path="url(#mapclip)">
             <g id="landGroup"></g>
             
-            <!-- LUZ E SOMBRA (calculadas pixel a pixel) -->
             <image id="solarLight" x="0" y="0" width="800" height="800" preserveAspectRatio="none" style="pointer-events:none" />
             <image id="nightShadow" x="0" y="0" width="800" height="800" preserveAspectRatio="none" style="pointer-events:none" />
 
@@ -118,7 +117,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
               <g id="starLabels"></g>
             </g>
             
-            <!-- SOL E LUA -->
             <circle id="sun" class="sun-dot" r="12" />
             <g id="moonGroup">
               <circle id="moon" class="moon-dot" r="12" />
@@ -189,19 +187,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
         <label for="dateInput">Data</label>
         <input id="dateInput" type="date" value="2026-11-07">
       </section>
-
-      <section class="timeline">
-        <h3>Linha do tempo</h3>
-        <div class="era-buttons" id="eraButtons">
-          <button type="button" data-era="cyrus" aria-pressed="true">Ciro II</button>
-          <button type="button" data-era="alexander" aria-pressed="false">Alexandre</button>
-          <button type="button" data-era="caesar" aria-pressed="false">Júlio César</button>
-          <button type="button" data-era="christ" aria-pressed="false">Cristo</button>
-          <button type="button" data-era="napoleon" aria-pressed="false">Napoleão</button>
-          <button type="button" data-era="hitler" aria-pressed="false">Hitler</button>
-          <button type="button" data-era="current" aria-pressed="false">Atual</button>
-        </div>
-      </section>
     </section>
 
     <section class="panel">
@@ -225,6 +210,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 
 <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/suncalc@1.9.0/suncalc.js"></script>
 <script>
 (function () {
   "use strict";
@@ -265,12 +251,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   const lctx = lightCanvas.getContext("2d");
   const sctx = shadowCanvas.getContext("2d");
 
-  function declination(date) {
-    const start = new Date(date.getFullYear(), 0, 0);
-    const dayOfYear = Math.floor((date - start) / 86400000);
-    return 23.44 * Math.sin((360 / 365.2422) * (dayOfYear - 80) * Math.PI / 180);
-  }
-
+  // Função para calcular a fase da Lua
   function getMoonPhase(date) {
     const jd = date.getTime() / 86400000 + 2440587.5;
     const T = (jd - 2451545) / 36525;
@@ -344,17 +325,39 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     });
   }
 
-  // --- LUZ E SOMBRA ---
-  function drawLight(utcHour, date) {
+  // --- LUZ E SOMBRA (PRECISÃO DE RELÓGIO) ---
+  function drawLight(date) {
     const W = RES, H = RES;
     const lightData = lctx.createImageData(W, H);
     const shadowData = sctx.createImageData(W, H);
 
-    const decDeg = declination(date);
-    const decRad = decDeg * Math.PI / 180;
+    // Posição do Sol no mundo (latitude e longitude subsolar)
+    const sunPos = SunCalc.getPosition(date, 0, 0);
+    // O SunCalc usa coordenadas locais, então precisamos do ponto subsolar global.
+    // Vamos calcular a longitude subsolar com base na hora UTC.
+    const utcHours = date.getUTCHours() + date.getUTCMinutes() / 60 + date.getUTCSeconds() / 3600;
+    const subsolarLon = 180 - utcHours * 15;
+    
+    // Declinação solar exata
+    const decDeg = SunCalc.getPosition(date, 0, 0).altitude; // Não é a declinação, mas vamos calcular.
+    
+    // Cálculo manual da declinação (mais preciso que a aproximação)
+    const jd = date.getTime() / 86400000 + 2440587.5;
+    const T = (jd - 2451545) / 36525;
+    const L0 = (280.46646 + T * (36000.76983 + T * 0.0003032)) % 360;
+    const M = 357.52911 + T * (35999.05029 - 0.0001537 * T);
+    const C = Math.sin(M * Math.PI / 180) * (1.914602 - T * (0.004817 + 0.000014 * T))
+            + Math.sin(2 * M * Math.PI / 180) * (0.019993 - 0.000101 * T)
+            + Math.sin(3 * M * Math.PI / 180) * 0.000289;
+    const trueLong = L0 + C;
+    const omega = 125.04 - 1934.136 * T;
+    const lambda = trueLong - 0.00569 - 0.00478 * Math.sin(omega * Math.PI / 180);
+    const epsilon = 23.439291 - 0.0130042 * T;
+    const decRad = Math.asin(Math.sin(epsilon * Math.PI / 180) * Math.sin(lambda * Math.PI / 180));
+    const decDeg = decRad * 180 / Math.PI;
+
     const sinDec = Math.sin(decRad);
     const cosDec = Math.cos(decRad);
-    const subsolarLon = 180 - utcHour * 15;
 
     for (let y = 0; y < H; y++) {
       for (let x = 0; x < W; x++) {
@@ -396,14 +399,14 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     solarShadow.setAttribute("href", shadowCanvas.toDataURL("image/png"));
 
     // Sol no ponto subsolar
-    const sunPos = proj([subsolarLon, decDeg]);
-    if (sunPos) {
-      sunIcon.setAttribute("cx", sunPos[0]);
-      sunIcon.setAttribute("cy", sunPos[1]);
+    const sunMapPos = proj([subsolarLon, decDeg]);
+    if (sunMapPos) {
+      sunIcon.setAttribute("cx", sunMapPos[0]);
+      sunIcon.setAttribute("cy", sunMapPos[1]);
     }
 
     // Lua
-    const moonAngle = ((utcHour - 1/12) / 24) * 2 * Math.PI;
+    const moonAngle = ((utcHours - 1/12) / 24) * 2 * Math.PI;
     const moonX = CX + 250 * Math.sin(moonAngle);
     const moonY = CY - 250 * Math.cos(moonAngle);
     moonIcon.setAttribute("cx", moonX);
@@ -419,9 +422,9 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 
   function update() {
     const h = parseFloat(timeSlider.value);
-    const d = new Date(dateInput.value + "T00:00:00Z");
+    const d = new Date(dateInput.value + "T" + String(h).padStart(2, '0') + ":00:00Z");
     timeDisplay.textContent = `${String(Math.floor(h)).padStart(2, "0")}:00 UTC`;
-    drawLight(h, d);
+    drawLight(d);
     drawStars(h);
   }
 
@@ -487,6 +490,9 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       drawClock();
       update();
       
+      // Atualiza a cada segundo para precisão de relógio
+      setInterval(update, 1000);
+      
     } catch (error) {
       console.error("Erro:", error);
       document.getElementById("stats").textContent = "Erro ao carregar.";
@@ -499,7 +505,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   const MIN_ZOOM = 1, MAX_ZOOM = 4;
 
   function applyTransform() {
-    // Gira apenas o grupo do mundo (países + luz + sombra + céu)
     worldGroup.setAttribute("transform", `translate(400 400) rotate(${rotation}) scale(${zoom}) translate(-400 -400)`);
   }
 
@@ -548,8 +553,9 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   if (btnNow) {
     btnNow.addEventListener("click", () => {
       const now = new Date();
-      const h = now.getUTCHours();
+      const h = now.getUTCHours() + now.getUTCMinutes() / 60 + now.getUTCSeconds() / 3600;
       timeSlider.value = h;
+      dateInput.value = now.toISOString().split('T')[0];
       update();
     });
   }
