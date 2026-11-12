@@ -55,7 +55,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 .moon-dot { fill: #e0e0e0; filter: drop-shadow(0 0 15px #fff); pointer-events: none; }
 .moon-shadow { fill: rgba(0, 0, 0, 0.8); pointer-events: none; }
 
-/* RELÓGIO DIGITAL (AGORA NO PAINEL LATERAL) */
+/* RELÓGIO DIGITAL */
 .clock-display {
   margin-top: 16px;
   padding: 12px 18px;
@@ -232,7 +232,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
         <input id="q" type="search" placeholder="Brasil, Japão, Egito…" autocomplete="off">
       </div>
       
-      <!-- RELÓGIO DIGITAL (MOVIDO PARA CÁ) -->
+      <!-- RELÓGIO DIGITAL -->
       <div class="clock-display">
         <div class="date" id="clockDate">--/--/----</div>
         <div class="time" id="clockTime">--:--:--</div>
@@ -471,23 +471,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   }
 
   // Relógio digital
-  function updateClock() {
-    const now = new Date();
-    const d = String(now.getDate()).padStart(2, '0');
-    const m = String(now.getMonth() + 1).padStart(2, '0');
-    const y = now.getFullYear();
-    clockDate.textContent = `${d}/${m}/${y}`;
-    
-    const hh = String(now.getHours()).padStart(2, '0');
-    const mm = String(now.getMinutes()).padStart(2, '0');
-    const ss = String(now.getSeconds()).padStart(2, '0');
-    clockTime.textContent = `${hh}:${mm}:${ss}`;
-    
-    clockLabel.textContent = localOffsetHours >= 0 ? `UTC+${localOffsetHours}` : `UTC${localOffsetHours}`;
-  }
-
-  // Relógio digital a partir de uma data específica
-  function setClockFromDate(date) {
+  function updateClock(date) {
     const d = String(date.getDate()).padStart(2, '0');
     const m = String(date.getMonth() + 1).padStart(2, '0');
     const y = date.getFullYear();
@@ -504,13 +488,16 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   function update() {
     const localHour = parseFloat(timeSlider.value);
     const utcHour = (localHour - localOffsetHours + 24) % 24;
-    const d = new Date(dateInput.value + "T" + String(Math.floor(utcHour)).padStart(2, '0') + ":" + String(Math.floor((utcHour % 1) * 60)).padStart(2, '0') + ":00Z");
+    
+    // Constrói a data baseada no dia selecionado + hora local
+    const baseDay = new Date(dateInput.value + "T00:00:00");
+    const d = new Date(baseDay.getTime() + (utcHour * 3600000));
     
     timeDisplay.textContent = `${String(Math.floor(localHour)).padStart(2, "0")}:${String(Math.floor((localHour % 1) * 60)).padStart(2, "0")} (Local)`;
     
     drawLight(d);
     drawStars(localHour);
-    setClockFromDate(d);
+    updateClock(d);
   }
 
   // Relógio na borda
@@ -677,7 +664,8 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     if (!dragStarted) return;
     
     // Cada 15 graus de rotação = 1 hora
-    const deltaDegrees = dx * 0.5;
+    // Invertemos o sinal do dx para o céu girar junto com o mouse
+    const deltaDegrees = -dx * 0.5;
     const deltaHours = deltaDegrees / 15;
     
     // Atualiza a hora com base na rotação
