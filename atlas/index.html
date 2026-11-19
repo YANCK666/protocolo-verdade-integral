@@ -1,292 +1,4 @@
-<!doctype html>
-<html lang="pt-BR">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Atlas Polar — MAPA LUCIFERIANO</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Young+Serif&display=swap">
-<style>
-:root {
-  --bg: #0b0710; --panel: #15101c; --soft: #221a2e; --ink: #f0e9fb; --muted: #a996c0;
-  --line: #3a2d4c; --sea: #110c18; --land: #2e2340; --accent: #c4a1f0; --sel: #e9b8ff;
-  --green: #4ade80; --hist: #8b5fc7; --star: #fffbe6; --const: #4da6ff;
-  --f-display: "Young Serif", Georgia, serif; 
-  --f-body: "Hanken Grotesk", system-ui, sans-serif;
-  --f-mono: "IBM Plex Mono", monospace;
-}
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5; }
-.wrap { max-width: 1400px; margin: 0 auto; padding: 20px 16px 40px; }
-
-.top { display: flex; flex-wrap: wrap; gap: 8px 32px; align-items: end; justify-content: space-between; margin-bottom: 20px; }
-.top > div { min-width: 0; flex: 1 1 420px; }
-h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw, 40px); margin-bottom: 6px; }
-.lede { color: var(--muted); margin-bottom: 20px; max-width: 62ch; }
-.stats { font-family: var(--f-mono); font-size: 13px; color: var(--muted); }
-
-.layout { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 28px; align-items: start; }
-.mapcol { position: sticky; top: 16px; min-width: 0; }
-.mapwrap { position: relative; width: min(100%, calc(100vh - 100px)); margin: 0 auto; user-select: none; touch-action: none; overflow: hidden; background: var(--bg); border-radius: 50%; }
-.mapwrap.fullscreen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; max-width: none; z-index: 1000; border-radius: 0; background: var(--bg); }
-#map { display: block; width: 100%; height: 100%; }
-
-.sea { fill: var(--sea); }
-.c { fill: var(--land); stroke: var(--bg); stroke-width: .7; cursor: pointer; transition: opacity .2s; }
-.c:hover { stroke: var(--ink); stroke-width: 1.4; }
-.c.sel { stroke: var(--sel); stroke-width: 2.6; }
-.c.ring { fill: #e8def6 !important; stroke: var(--line); stroke-width: 1; }
-
-/* GRADE ESTÁTICA */
-.grid-line { stroke: var(--green); stroke-width: 1.2; opacity: 0.4; pointer-events: none; }
-.grid-circle { fill: none; stroke: var(--green); stroke-width: 1; opacity: 0.3; pointer-events: none; }
-.ring { fill: none; stroke: var(--line); stroke-width: 2; pointer-events: none; }
-.pole { fill: var(--accent); pointer-events: none; filter: drop-shadow(0 0 6px var(--accent)); }
-
-/* FUSOS HORÁRIOS */
-.timezone-line { stroke: var(--accent); stroke-width: 0.5; opacity: 0.2; pointer-events: none; }
-
-/* ESTRELAS */
-.star { fill: var(--star); pointer-events: none; }
-.star-bright { fill: #ffffff; filter: drop-shadow(0 0 3px #fff); }
-.star-label { font-family: var(--f-mono); font-size: 9px; fill: #fff; paint-order: stroke; stroke: #000; stroke-width: 2px; pointer-events: none; }
-.constellation-line { stroke: var(--const); stroke-width: 1.5; opacity: 0.8; fill: none; pointer-events: none; }
-
-/* SOL E LUA */
-.sun-dot { fill: #ffcc00; filter: drop-shadow(0 0 20px #ffcc00); pointer-events: none; }
-.moon-dot { fill: #e0e0e0; filter: drop-shadow(0 0 15px #fff); pointer-events: none; }
-.moon-shadow { fill: rgba(0, 0, 0, 0.8); pointer-events: none; }
-
-/* CONTROLES DO MAPA */
-.map-controls {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  z-index: 50;
-}
-.map-controls button {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  border: 1px solid var(--line);
-  background: var(--panel);
-  color: var(--ink);
-  font-size: 20px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s;
-}
-.map-controls button:hover { background: var(--soft); border-color: var(--accent); }
-.map-controls button.active { background: var(--accent); color: var(--bg); }
-
-/* RELÓGIO DIGITAL */
-.clock-display {
-  margin-top: 16px;
-  padding: 12px 18px;
-  background: var(--soft);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  font-family: var(--f-mono);
-  color: var(--ink);
-  text-align: center;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-}
-.clock-display .date { font-size: 14px; color: var(--accent); margin-bottom: 4px; font-weight: 600; }
-.clock-display .time { font-size: 28px; font-weight: 700; color: var(--ink); letter-spacing: 0.05em; }
-.clock-display .label { font-size: 10px; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.1em; }
-
-/* TOOLTIP DE HORÁRIO */
-.tooltip {
-  position: absolute; pointer-events: none;
-  background: var(--panel); color: var(--ink);
-  border: 1px solid var(--line); border-radius: 6px;
-  padding: 4px 8px; font-family: var(--f-mono); font-size: 12px;
-  z-index: 100; display: none; white-space: nowrap;
-}
-
-.panel { min-width: 0; }
-.search label { display: block; font-size: 12px; font-family: var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
-.search input { width: 100%; font: inherit; padding: 11px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); }
-
-.layerbox { margin: 12px 0 0; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
-.layerhead { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; }
-.layerhead strong { font-family: var(--f-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
-.layerhead span { font-size: 11px; color: var(--muted); }
-.layergrid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-.layeritem { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); font-size: 12px; min-width: 0; }
-.layeritem input { accent-color: var(--accent); margin: 0; flex: 0 0 auto; }
-.layeritem .swatch { width: 10px; height: 10px; border-radius: 3px; background: var(--swatch, var(--accent)); flex: 0 0 auto; }
-
-.timeline, .time-control { margin-top: 12px; padding: 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); }
-.timeline h3 { font-family: var(--f-display); font-size: 18px; font-weight: 400; margin: 0 0 4px; }
-.timeline p { margin: 0; color: var(--muted); font-size: 12.5px; }
-.era-buttons { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
-.era-buttons button { border: 1px solid var(--line); border-radius: 999px; padding: 6px 10px; background: var(--soft); color: var(--ink); font: inherit; font-size: 12px; cursor: pointer; }
-.era-buttons button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--bg); }
-.yearline, .time-display { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin: 8px 0 2px; }
-.yearline output, .time-display { color: var(--accent); font-family: var(--f-mono); font-weight: 600; }
-.timeline input, .time-control input { width: 100%; accent-color: var(--accent); margin: 8px 0; }
-.info-box { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); display: none; }
-.footer-box { max-width: 1280px; margin: 0 auto 28px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
-
-@media (max-width: 979px) {
-  .layout { grid-template-columns: minmax(0, 1fr); gap: 18px; }
-  .mapcol { position: static; }
-  .mapwrap { width: 100%; }
-  .clock-display { margin-top: 12px; }
-}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <header class="top">
-    <div>
-      <h1>Atlas Polar</h1>
-      <p class="lede">Gire o céu com o mouse para viajar no tempo. Arraste para mover o mapa e use a roda do mouse (ou pinça no celular) para dar zoom.</p>
-    </div>
-    <p class="stats" id="stats">Carregando...</p>
-  </header>
-
-  <main class="layout">
-    <section class="mapcol">
-      <div class="mapwrap" id="mapwrap">
-        <div class="map-controls">
-          <button id="btnZoomIn" title="Aproximar">+</button>
-          <button id="btnZoomOut" title="Afastar">−</button>
-          <button id="btnFullscreen" title="Tela Cheia">⛶</button>
-        </div>
-
-        <svg id="map" viewBox="0 0 800 800">
-          <defs>
-            <clipPath id="mapclip"><circle cx="400" cy="400" r="372"/></clipPath>
-            <clipPath id="moonclip"><circle id="moonClipCircle" cx="0" cy="0" r="12"/></clipPath>
-          </defs>
-          
-          <g id="wholeMap" transform="translate(0,0) scale(1)">
-            <circle class="sea" cx="400" cy="400" r="372" />
-            
-            <g id="landGroup" clip-path="url(#mapclip)"></g>
-
-            <image id="solarLight" x="0" y="0" width="800" height="800" preserveAspectRatio="none" style="pointer-events:none" clip-path="url(#mapclip)" />
-            <image id="nightShadow" x="0" y="0" width="800" height="800" preserveAspectRatio="none" style="pointer-events:none" clip-path="url(#mapclip)" />
-
-            <g id="skyGroup" clip-path="url(#mapclip)">
-              <g id="constellations"></g>
-              <g id="stars"></g>
-              <g id="starLabels"></g>
-              <g id="sunLayer">
-                <circle id="sun" class="sun-dot" r="12" />
-              </g>
-              <g id="moonLayer">
-                <circle id="moon" class="moon-dot" r="12" />
-                <circle id="moonShadow" class="moon-shadow" r="12" clip-path="url(#moonclip)" />
-              </g>
-            </g>
-
-            <g id="staticGroup">
-              <g id="timezoneLayer"></g>
-
-              <g id="gridLayer">
-                <g id="gridCircles">
-                  <circle class="grid-circle" cx="400" cy="400" r="120" />
-                  <circle class="grid-circle" cx="400" cy="400" r="240" />
-                  <circle class="grid-circle" cx="400" cy="400" r="360" />
-                </g>
-                <g id="gridCross">
-                  <line class="grid-line" x1="400" y1="40" x2="400" y2="760" />
-                  <line class="grid-line" x1="40" y1="400" x2="760" y2="400" />
-                </g>
-                <g id="gridStar6">
-                  <polygon points="400,40 711.8,580 88.2,580" fill="none" class="grid-line" style="opacity:0.6;" />
-                  <polygon points="711.8,220 400,760 88.2,220" fill="none" class="grid-line" style="opacity:0.6;" />
-                </g>
-                <circle class="ring" cx="400" cy="400" r="370" />
-              </g>
-
-              <g id="clockLayer">
-                <circle cx="400" cy="400" r="385" fill="none" stroke="var(--line)" stroke-width="1.5" />
-                <g id="clockTicks"></g>
-              </g>
-
-              <circle class="pole" cx="400" cy="400" r="5" />
-              <text x="400" y="12" text-anchor="middle" fill="var(--accent)" font-size="12" font-family="var(--f-mono)" font-weight="bold">N</text>
-              <text x="400" y="795" text-anchor="middle" fill="var(--muted)" font-size="12" font-family="var(--f-mono)">S</text>
-            </g>
-          </g>
-        </svg>
-        <div id="timeTooltip" class="tooltip"></div>
-      </div>
-
-      <p style="text-align:center; margin-top:12px; font-size:13px; color:var(--muted);">
-        Centro = Polo Norte · Borda = Polo Sul<br>
-        Passe o mouse para ver o horário local. Ative a rotação para girar o céu.
-      </p>
-
-      <section class="layerbox">
-        <div class="layerhead"><strong>Camadas do Atlas</strong><span>ligar / desligar</span></div>
-        <div class="layergrid" id="layerControls">
-          <label class="layeritem"><input type="checkbox" data-layer="borders" checked><i class="swatch" style="--swatch:#9670c8"></i>Países</label>
-          <label class="layeritem"><input type="checkbox" data-layer="graticule" checked><i class="swatch" style="--swatch:#8993a8"></i>Lat/Long</label>
-          <label class="layeritem"><input type="checkbox" data-layer="flags" checked><i class="swatch" style="--swatch:#d4a83d"></i>Bandeiras</label>
-          <label class="layeritem"><input type="checkbox" data-layer="grid" checked><i class="swatch" style="--swatch:#4ade80"></i>Grade 12</label>
-          <label class="layeritem"><input type="checkbox" data-layer="star6" checked><i class="swatch" style="--swatch:#8cff48"></i>Estrela 6</label>
-          <label class="layeritem"><input type="checkbox" data-layer="stars" checked><i class="swatch" style="--swatch:#fffbe6"></i>Céu Estelar</label>
-          <label class="layeritem"><input type="checkbox" data-layer="light" checked><i class="swatch" style="--swatch:#ffcc00"></i>Sol</label>
-          <label class="layeritem"><input type="checkbox" data-layer="dark" checked><i class="swatch" style="--swatch:#000000"></i>Sombra (Noite)</label>
-          <label class="layeritem"><input type="checkbox" data-layer="moon" checked><i class="swatch" style="--swatch:#e0e0e0"></i>Lua</label>
-          <label class="layeritem"><input type="checkbox" data-layer="timezones" checked><i class="swatch" style="--swatch:#a996c0"></i>Fusos Horários</label>
-          <label class="layeritem"><input type="checkbox" data-layer="rotation"><i class="swatch" style="--swatch:#c4a1f0"></i>Rotação (Céu)</label>
-          <label class="layeritem"><input type="checkbox" data-layer="sunMove" checked><i class="swatch" style="--swatch:#ffaa00"></i>Movimento do Sol</label>
-        </div>
-        <button type="button" id="btnReset" style="margin-top:10px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--soft);color:var(--ink);font:inherit;font-size:12px;cursor:pointer;">↺ Restaurar</button>
-      </section>
-
-      <section class="time-control">
-        <label for="timeSlider">Hora Local (seu computador)</label>
-        <input id="timeSlider" type="range" min="0" max="23.99" value="12" step="0.01">
-        <div class="time-display" id="timeDisplay">12:00</div>
-        <button id="btnNow" style="margin-top:8px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--accent);color:var(--bg);font:inherit;font-size:12px;cursor:pointer;font-weight:600;width:100%;">⏱️ Sincronizar com o Agora</button>
-      </section>
-
-      <section class="time-control">
-        <label for="dateInput">Data</label>
-        <input id="dateInput" type="date" value="2026-11-07">
-      </section>
-    </section>
-
-    <section class="panel">
-      <div class="search">
-        <label for="q">Buscar país</label>
-        <input id="q" type="search" placeholder="Brasil, Japão, Egito…" autocomplete="off">
-      </div>
-      
-      <div class="clock-display">
-        <div class="date" id="clockDate">--/--/----</div>
-        <div class="time" id="clockTime">--:--:--</div>
-        <div class="label" id="clockLabel">LOCAL</div>
-      </div>
-
-      <div id="view" style="margin-top:22px;">
-        <h2 style="font-family:var(--f-display); font-weight:400; font-size:26px; margin-bottom:6px;">Escolha um país</h2>
-        <p style="color:var(--muted); margin-bottom:18px; max-width:56ch;">Clique no mapa ou use a busca.</p>
-      </div>
-      <div id="countryInfo" class="info-box"></div>
-    </section>
-  </main>
-  
-  <section class="footer-box">
-    <div class="layerhead"><strong>Estrutura expansível · macro → micro</strong><span>modelo de camadas</span></div>
-    <p style="margin:0;color:var(--muted);font-size:13px">Cada camada pode conter grupos, subcamadas, filtros e registros sem alterar a base do mapa.</p>
-  </section>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/suncalc@1.9.0/suncalc.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/astronomy-engine@2.1.19/astronomy.browser.min.js"></script>
 <script>
 (function () {
   "use strict";
@@ -305,15 +17,13 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   const sunMoveCheckbox = document.querySelector('[data-layer="sunMove"]');
   const btnReset = document.getElementById("btnReset");
   const btnNow = document.getElementById("btnNow");
-  const defs = document.querySelector("#map defs");
+  
   const starsGroup = document.getElementById("stars");
   const constGroup = document.getElementById("constellations");
   const labelsGroup = document.getElementById("starLabels");
   
   const solarLight = document.getElementById("solarLight");
   const solarShadow = document.getElementById("nightShadow");
-  const sunLayer = document.getElementById("sunLayer");
-  const moonLayer = document.getElementById("moonLayer");
   const sunIcon = document.getElementById("sun");
   const moonIcon = document.getElementById("moon");
   const moonShadow = document.getElementById("moonShadow");
@@ -327,7 +37,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   const clockTime = document.getElementById("clockTime");
   const clockLabel = document.getElementById("clockLabel");
 
-  // Canvas para luz/sombra
   const RES = 400;
   const lightCanvas = document.createElement("canvas");
   const shadowCanvas = document.createElement("canvas");
@@ -339,9 +48,8 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   const localOffsetHours = -new Date().getTimezoneOffset() / 60;
 
   let sunMoving = true;
-  let simulationTime = new Date(); // Tempo simulado (sempre atualizado)
+  let simulationTime = new Date();
 
-  // --- ESTADO DO MAPA ---
   let zoom = 1, panX = 0, panY = 0;
   const MIN_ZOOM = 1, MAX_ZOOM = 10;
 
@@ -349,46 +57,78 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     wholeMap.setAttribute("transform", `translate(${panX} ${panY}) translate(${CX} ${CY}) scale(${zoom}) translate(${-CX} ${-CY})`);
   }
 
-  // --- FUNÇÕES AUXILIARES ---
-  function getMoonPhase(date) {
-    const jd = date.getTime() / 86400000 + 2440587.5;
-    const T = (jd - 2451545) / 36525;
-    const D = (297.8501921 + 445267.1114034 * T) * Math.PI / 180;
-    const M = (357.5291092 + 35999.0502909 * T) * Math.PI / 180;
-    const Mp = (134.9633964 + 477198.8675055 * T) * Math.PI / 180;
-    const phaseAngle = Math.acos(Math.sin(M) * Math.sin(Mp) + Math.cos(M) * Math.cos(Mp) * Math.cos(D));
-    return (1 + Math.cos(phaseAngle)) / 2;
-  }
-
+  // --- CATÁLOGO DE ESTRELAS (Expandido) ---
+  // Coordenadas J2000 (RA em horas, Dec em graus)
   const STARS = [
-    { name: "Polaris", ra: 2.530, dec: 89.264, bright: true },
+    // Cruzeiro do Sul
     { name: "Acrux", ra: 12.443, dec: -63.099, bright: true },
-    { name: "Mimosa", ra: 12.795, dec: -59.689 },
-    { name: "Gacrux", ra: 12.519, dec: -57.113 },
-    { name: "Imai", ra: 12.252, dec: -58.749 },
-    { name: "Sirius", ra: 6.752, dec: -16.716, bright: true },
+    { name: "Mimosa", ra: 12.795, dec: -59.689, bright: true },
+    { name: "Gacrux", ra: 12.519, dec: -57.113, bright: true },
+    { name: "Imai", ra: 12.252, dec: -58.749, bright: true },
+    // Órion
     { name: "Betelgeuse", ra: 5.919, dec: 7.407, bright: true },
-    { name: "Rigel", ra: 5.242, dec: -8.202 },
-    { name: "Bellatrix", ra: 5.418, dec: 6.350 }
+    { name: "Rigel", ra: 5.242, dec: -8.202, bright: true },
+    { name: "Bellatrix", ra: 5.418, dec: 6.350, bright: true },
+    { name: "Alnitak", ra: 5.679, dec: -1.943 },
+    { name: "Alnilam", ra: 5.604, dec: -1.202 },
+    { name: "Mintaka", ra: 5.533, dec: -0.299 },
+    // Ursa Maior
+    { name: "Dubhe", ra: 11.062, dec: 61.751, bright: true },
+    { name: "Merak", ra: 11.031, dec: 56.382 },
+    { name: "Phecda", ra: 11.897, dec: 53.695 },
+    { name: "Megrez", ra: 12.257, dec: 57.033 },
+    { name: "Alioth", ra: 12.900, dec: 55.960 },
+    { name: "Mizar", ra: 13.399, dec: 54.925 },
+    { name: "Alkaid", ra: 13.792, dec: 49.313 },
+    // Polaris
+    { name: "Polaris", ra: 2.530, dec: 89.264, bright: true },
+    // Sirius
+    { name: "Sirius", ra: 6.752, dec: -16.716, bright: true }
   ];
 
   const CONSTELLATIONS = [
     ["Acrux", "Gacrux", "Mimosa", "Imai", "Acrux"],
-    ["Betelgeuse", "Bellatrix", "Rigel"]
+    ["Betelgeuse", "Bellatrix", "Rigel", "Alnitak", "Alnilam", "Mintaka", "Rigel"],
+    ["Dubhe", "Merak", "Phecda", "Megrez", "Dubhe", "Megrez", "Alioth", "Mizar", "Alkaid"]
   ];
 
-  function drawStars(hour) {
+  // Função para obter Tempo Sideral Local (LST) aproximado para rotação estelar
+  // Uma aproximação melhor seria usar Astronomy.SiderealTime, mas para visualização a rotação baseada em UTC é suficiente.
+  function getSiderealRotation(date) {
+    const jd = date.getTime() / 86400000 + 2440587.5;
+    const T = (jd - 2451545.0) / 36525.0;
+    let gmst = 280.46061837 + 360.98564736629 * (jd - 2451545.0) + 0.000387933 * T * T;
+    gmst = ((gmst % 360) + 360) % 360;
+    // A projeção polar tem o Polo Norte no centro. Para o céu girar corretamente,
+    // rotacionamos o grupo de estrelas pelo GMST.
+    return gmst;
+  }
+
+  function drawStars(date) {
     starsGroup.innerHTML = "";
     constGroup.innerHTML = "";
     labelsGroup.innerHTML = "";
 
-    const rotationAngle = (hour / 24) * 360;
+    // Rotação baseada no Tempo Sideral (mais preciso que a hora local)
+    const rotationDeg = getSiderealRotation(date);
     const starPositions = {};
 
     STARS.forEach(star => {
+      // Projeção Polar: RA é o ângulo, Dec define o raio
+      // O centro (Polo Norte) é Dec +90. A borda é Dec -90.
+      // O raio é proporcional a (90 - dec).
       const rho = R * (90 - star.dec) / 180;
-      const angle = ((star.ra * 15) + rotationAngle) * Math.PI / 180;
       
+      // Ângulo: RA em graus + rotação sideral. 
+      // Na projeção padrão, RA=0h fica para baixo (Sul) e aumenta no sentido anti-horário? 
+      // Vamos ajustar para que o céu gire naturalmente.
+      const angleDeg = (star.ra * 15) + rotationDeg;
+      const angle = angleDeg * Math.PI / 180;
+      
+      // Ajuste para o mapa: Leste é direita (x), Norte é cima (y).
+      // Projeção azimutal com centro no polo norte: RA 0h deve estar para baixo (ou para cima dependendo da convenção).
+      // Vamos usar: x = rho * sin(angle), y = -rho * cos(angle). Isso coloca angle=0 no topo (Norte).
+      // Para o céu, a rotação deve ser tal que as estrelas "girem" ao redor do polo.
       const x = CX + rho * Math.sin(angle);
       const y = CY - rho * Math.cos(angle);
 
@@ -398,16 +138,18 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
         const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
         circle.setAttribute("cx", x);
         circle.setAttribute("cy", y);
-        circle.setAttribute("r", star.bright ? 4 : 2);
+        circle.setAttribute("r", star.bright ? 3.5 : 2);
         circle.setAttribute("class", star.bright ? "star star-bright" : "star");
         starsGroup.appendChild(circle);
 
-        const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        label.setAttribute("x", x + 6);
-        label.setAttribute("y", y + 3);
-        label.setAttribute("class", "star-label");
-        label.textContent = star.name;
-        labelsGroup.appendChild(label);
+        if (star.bright) {
+          const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+          label.setAttribute("x", x + 6);
+          label.setAttribute("y", y + 3);
+          label.setAttribute("class", "star-label");
+          label.textContent = star.name;
+          labelsGroup.appendChild(label);
+        }
       }
     });
 
@@ -427,25 +169,35 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     const lightData = lctx.createImageData(W, H);
     const shadowData = sctx.createImageData(W, H);
 
-    const utcHours = date.getUTCHours() + date.getUTCMinutes() / 60 + date.getUTCSeconds() / 3600;
-    const subsolarLon = 180 - utcHours * 15;
-    
-    const jd = date.getTime() / 86400000 + 2440587.5;
-    const T = (jd - 2451545) / 36525;
-    const L0 = (280.46646 + T * (36000.76983 + T * 0.0003032)) % 360;
-    const M = 357.52911 + T * (35999.05029 - 0.0001537 * T);
-    const C = Math.sin(M * Math.PI / 180) * (1.914602 - T * (0.004817 + 0.000014 * T))
-            + Math.sin(2 * M * Math.PI / 180) * (0.019993 - 0.000101 * T)
-            + Math.sin(3 * M * Math.PI / 180) * 0.000289;
-    const trueLong = L0 + C;
-    const omega = 125.04 - 1934.136 * T;
-    const lambda = trueLong - 0.00569 - 0.00478 * Math.sin(omega * Math.PI / 180);
-    const epsilon = 23.439291 - 0.0130042 * T;
-    const decRad = Math.asin(Math.sin(epsilon * Math.PI / 180) * Math.sin(lambda * Math.PI / 180));
-    const decDeg = decRad * 180 / Math.PI;
+    // Usa Astronomy Engine para obter a posição do Sol (Geocêntrica, Equador da data)
+    const time = Astronomy.MakeTime(date);
+    const sunEq = Astronomy.Equator(Astronomy.Body.Sun, time, null, true, true);
+    const sunDec = sunEq.dec; // Graus
+    const sunRa = sunEq.ra * 15; // Converter horas para graus
 
-    const sinDec = Math.sin(decRad);
-    const cosDec = Math.cos(decRad);
+    // Para a luz solar, precisamos do ponto subsolar (latitude = declinação, longitude = baseada em RA + GMST)
+    // Uma aproximação robusta: O Sol está sobre a longitude onde o Tempo Solar Local é 12h.
+    // A longitude subsolar é aproximadamente: 180 - (UTC_hours * 15) + EquationOfTime_minutes / 4
+    // Vamos usar a posição do Sol calculada pela biblioteca para maior precisão.
+    // A longitude subsolar pode ser derivada do RA do Sol e do GMST:
+    // Longitude = RA_sun - GMST (em graus, normalizado)
+    const jd = date.getTime() / 86400000 + 2440587.5;
+    const T = (jd - 2451545.0) / 36525.0;
+    let gmst = 280.46061837 + 360.98564736629 * (jd - 2451545.0) + 0.000387933 * T * T;
+    gmst = ((gmst % 360) + 360) % 360;
+    
+    // Subsolar longitude: onde o Sol está no zênite. 
+    // A fórmula é: lon = 180 - (UTC_hours * 15) + EqTime (em graus)
+    // Como já temos o RA do Sol, podemos usar: lon_sub = RA_sun - GMST (se RA_sun estiver em graus)
+    // Mas isso dá a longitude do ponto onde o Sol está no meridiano. O ponto subsolar tem longitude = RA - GMST? 
+    // Na verdade, o Tempo Sideral Local (LST) = GMST + longitude. O Sol está no meridiano quando LST = RA_sun.
+    // Então longitude = RA_sun - GMST.
+    let subsolarLon = (sunRa - gmst) % 360;
+    if (subsolarLon > 180) subsolarLon -= 360;
+    if (subsolarLon < -180) subsolarLon += 360;
+
+    const sinDec = Math.sin(sunDec * Math.PI / 180);
+    const cosDec = Math.cos(sunDec * Math.PI / 180);
 
     for (let y = 0; y < H; y++) {
       for (let x = 0; x < W; x++) {
@@ -486,24 +238,53 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     solarLight.setAttribute("href", lightCanvas.toDataURL("image/png"));
     solarShadow.setAttribute("href", shadowCanvas.toDataURL("image/png"));
 
-    const sunMapPos = proj([subsolarLon, decDeg]);
-    if (sunMapPos) {
-      sunIcon.setAttribute("cx", sunMapPos[0]);
-      sunIcon.setAttribute("cy", sunMapPos[1]);
+    // Desenha o ícone do Sol na posição correta (RA/Dec convertidos para a projeção polar)
+    // Na projeção polar com centro no polo norte, a posição do Sol é:
+    const sunRho = R * (90 - sunDec) / 180;
+    const sunAngle = (sunRa + gmst) * Math.PI / 180; // Ajuste para a rotação do mapa
+    // Precisamos alinhar o ângulo com a rotação das estrelas. 
+    // Se as estrelas usam angleDeg = ra*15 + rotationDeg, o Sol deve usar o mesmo.
+    // Mas rotationDeg para estrelas foi baseado em GMST. Vamos usar a mesma lógica.
+    const sunAngleRad = ((sunRa) + gmst) * Math.PI / 180;
+    const sunX = CX + sunRho * Math.sin(sunAngleRad);
+    const sunY = CY - sunRho * Math.cos(sunAngleRad);
+
+    if (sunRho <= R) {
+      sunIcon.setAttribute("cx", sunX);
+      sunIcon.setAttribute("cy", sunY);
     }
 
-    const moonAngle = ((utcHours - 1/12) / 24) * 2 * Math.PI;
-    const moonX = CX + 250 * Math.sin(moonAngle);
-    const moonY = CY - 250 * Math.cos(moonAngle);
-    moonIcon.setAttribute("cx", moonX);
-    moonIcon.setAttribute("cy", moonY);
-    moonClipCircle.setAttribute("cx", moonX);
-    moonClipCircle.setAttribute("cy", moonY);
+    // --- LUA ---
+    const moonEq = Astronomy.Equator(Astronomy.Body.Moon, time, null, true, true);
+    const moonDec = moonEq.dec;
+    const moonRa = moonEq.ra * 15; // Graus
 
-    const phase = getMoonPhase(date);
-    const shadowOffset = (phase - 0.5) * 2 * 12;
-    moonShadow.setAttribute("cx", moonX + shadowOffset);
-    moonShadow.setAttribute("cy", moonY);
+    const moonRho = R * (90 - moonDec) / 180;
+    const moonAngleRad = ((moonRa) + gmst) * Math.PI / 180;
+    const moonX = CX + moonRho * Math.sin(moonAngleRad);
+    const moonY = CY - moonRho * Math.cos(moonAngleRad);
+
+    if (moonRho <= R) {
+      moonIcon.setAttribute("cx", moonX);
+      moonIcon.setAttribute("cy", moonY);
+      moonClipCircle.setAttribute("cx", moonX);
+      moonClipCircle.setAttribute("cy", moonY);
+
+      // Fase da Lua precisa
+      const illum = Astronomy.Illumination(Astronomy.Body.Moon, time);
+      const phase = illum.phase_fraction; // 0 = nova, 1 = cheia
+      
+      // Desenhar a sombra (simplificado para o círculo)
+      // O diâmetro da sombra depende da fase. Se fase = 0.5, sombra cobre metade.
+      // A posição da sombra: se fase > 0.5 (crescente/gibosa), sombra à esquerda (no hemisfério norte) ou direita (sul)?
+      // Para simplificar visualmente, vamos deslocar o círculo de sombra.
+      const shadowRadius = 12; // mesmo raio da lua
+      const shadowOffset = (phase * 2 - 1) * shadowRadius * 1.5; // Ajuste visual
+      
+      moonShadow.setAttribute("cx", moonX + shadowOffset);
+      moonShadow.setAttribute("cy", moonY);
+      moonShadow.setAttribute("r", shadowRadius);
+    }
   }
 
   function updateClock(date) {
@@ -521,7 +302,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   }
 
   function getSimulatedDate() {
-    // Usa a hora do slider + data do input
     const localHour = parseFloat(timeSlider.value);
     const baseDay = new Date(dateInput.value + "T00:00:00");
     return new Date(baseDay.getTime() + (localHour * 3600000));
@@ -531,7 +311,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     const date = getSimulatedDate();
     simulationTime = date;
     drawLight(date);
-    drawStars(parseFloat(timeSlider.value));
+    drawStars(date);
     updateClock(date);
     
     const localHour = parseFloat(timeSlider.value);
@@ -540,6 +320,8 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 
   function drawClock() {
     const ticksGroup = document.getElementById("clockTicks");
+    // Limpar ticks antigos se houver
+    ticksGroup.innerHTML = "";
     for (let i = 0; i < 24; i++) {
       const angle = (i / 24) * 2 * Math.PI;
       const textR = 393; 
@@ -658,7 +440,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       setupTooltip();
       update();
       
-      // Loop de atualização em tempo real (sempre ativo)
       setInterval(() => {
         if (sunMoving && !isRotating && !isPanning) {
           const now = new Date();
@@ -675,7 +456,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     }
   }
 
-  // --- INTERAÇÃO (Zoom, Pan, Rotação) ---
   let rotation = 0;
   let rotateEnabled = false;
   let isRotating = false;
@@ -887,11 +667,8 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     `;
   }
 
-  // Inicializa
   applyMapTransform();
   initMap();
 
 })();
 </script>
-</body>
-</html>
