@@ -52,54 +52,17 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 .moon-dot { fill: #e0e0e0; filter: drop-shadow(0 0 15px #fff); pointer-events: none; }
 .moon-shadow { fill: rgba(0, 0, 0, 0.8); pointer-events: none; }
 
-.map-controls {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  z-index: 50;
-}
-.map-controls button {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  border: 1px solid var(--line);
-  background: var(--panel);
-  color: var(--ink);
-  font-size: 20px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s;
-}
+.map-controls { position: absolute; top: 12px; right: 12px; display: flex; flex-direction: column; gap: 6px; z-index: 50; }
+.map-controls button { width: 40px; height: 40px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
 .map-controls button:hover { background: var(--soft); border-color: var(--accent); }
 .map-controls button.active { background: var(--accent); color: var(--bg); }
 
-.clock-display {
-  margin-top: 16px;
-  padding: 12px 18px;
-  background: var(--soft);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  font-family: var(--f-mono);
-  color: var(--ink);
-  text-align: center;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-}
+.clock-display { margin-top: 16px; padding: 12px 18px; background: var(--soft); border: 1px solid var(--line); border-radius: 12px; font-family: var(--f-mono); color: var(--ink); text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
 .clock-display .date { font-size: 14px; color: var(--accent); margin-bottom: 4px; font-weight: 600; }
 .clock-display .time { font-size: 28px; font-weight: 700; color: var(--ink); letter-spacing: 0.05em; }
 .clock-display .label { font-size: 10px; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.1em; }
 
-.tooltip {
-  position: absolute; pointer-events: none;
-  background: var(--panel); color: var(--ink);
-  border: 1px solid var(--line); border-radius: 6px;
-  padding: 4px 8px; font-family: var(--f-mono); font-size: 12px;
-  z-index: 100; display: none; white-space: nowrap;
-}
+.tooltip { position: absolute; pointer-events: none; background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; font-family: var(--f-mono); font-size: 12px; z-index: 100; display: none; white-space: nowrap; }
 
 .panel { min-width: 0; }
 .search label { display: block; font-size: 12px; font-family: var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
@@ -117,9 +80,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 .timeline, .time-control { margin-top: 12px; padding: 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); }
 .timeline h3 { font-family: var(--f-display); font-size: 18px; font-weight: 400; margin: 0 0 4px; }
 .timeline p { margin: 0; color: var(--muted); font-size: 12.5px; }
-.era-buttons { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
-.era-buttons button { border: 1px solid var(--line); border-radius: 999px; padding: 6px 10px; background: var(--soft); color: var(--ink); font: inherit; font-size: 12px; cursor: pointer; }
-.era-buttons button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--bg); }
 .yearline, .time-display { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin: 8px 0 2px; }
 .yearline output, .time-display { color: var(--accent); font-family: var(--f-mono); font-weight: 600; }
 .timeline input, .time-control input { width: 100%; accent-color: var(--accent); margin: 8px 0; }
@@ -247,7 +207,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 
       <section class="time-control">
         <label for="dateInput">Data</label>
-        <input id="dateInput" type="date" value="2026-11-07">
+        <input id="dateInput" type="date" value="2026-11-19">
       </section>
     </section>
 
@@ -284,18 +244,11 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 (function () {
   "use strict";
 
-  // ===== DIAGNÓSTICO VISÍVEL =====
-  window.addEventListener("error", function (e) {
-    var s = document.getElementById("stats");
-    if (s) s.textContent = "ERRO: " + (e.message || "desconhecido");
-  });
-
   const SIZE = 800, CX = 400, CY = 400, R = 372;
   const proj = d3.geoAzimuthalEquidistant().rotate([0, -90]).scale(R / Math.PI).translate([CX, CY]).clipAngle(180);
   const path = d3.geoPath(proj);
   let mapPaths = new Map();
 
-  // Elementos
   const wholeMap = document.getElementById("wholeMap");
   const landGroup = document.getElementById("landGroup");
   const skyGroup = document.getElementById("skyGroup");
@@ -325,18 +278,13 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   const clockLabel = document.getElementById("clockLabel");
 
   const RES = 300;
-  const lightCanvas = document.createElement("canvas");
   const shadowCanvas = document.createElement("canvas");
-  lightCanvas.width = lightCanvas.height = RES;
   shadowCanvas.width = shadowCanvas.height = RES;
-  const lctx = lightCanvas.getContext("2d");
   const sctx = shadowCanvas.getContext("2d");
 
   const localOffsetHours = -new Date().getTimezoneOffset() / 60;
 
   let sunMoving = true;
-  let simulationTime = new Date();
-
   let zoom = 1, panX = 0, panY = 0;
   const MIN_ZOOM = 1, MAX_ZOOM = 10;
 
@@ -344,8 +292,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     wholeMap.setAttribute("transform", `translate(${panX} ${panY}) translate(${CX} ${CY}) scale(${zoom}) translate(${-CX} ${-CY})`);
   }
 
-  // ===== CATÁLOGO DE ESTRELAS (constelações principais) =====
-  // Coordenadas J2000: RA em horas, Dec em graus
+  // --- CATÁLOGO DE ESTRELAS ---
   const STARS = [
     // Cruzeiro do Sul
     { name: "Acrux", ra: 12.443, dec: -63.099, bright: true },
@@ -381,19 +328,17 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     { name: "Segin", ra: 1.906, dec: 63.670 },
     // Leão
     { name: "Regulus", ra: 10.139, dec: 11.967, bright: true },
-    { name: "Denebola", ra: 11.818, dec: 14.572 },
+    { name: "Denebola", ra: 11.818, dec: 14.572 }
   ];
 
   const CONSTELLATIONS = [
     ["Acrux", "Gacrux", "Mimosa", "Imai", "Acrux"],
     ["Betelgeuse", "Bellatrix", "Rigel", "Alnitak", "Alnilam", "Mintaka", "Rigel"],
     ["Dubhe", "Merak", "Phecda", "Megrez", "Dubhe", "Megrez", "Alioth", "Mizar", "Alkaid"],
-    ["Antares"],
     ["Caph", "Schedar", "GammaCas", "Ruchbah", "Segin"],
     ["Regulus", "Denebola"]
   ];
 
-  // Tempo Sideral de Greenwich (graus)
   function gmstDeg(date) {
     const jd = date.getTime() / 86400000 + 2440587.5;
     const T = (jd - 2451545.0) / 36525.0;
@@ -401,7 +346,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     return ((gmst % 360) + 360) % 360;
   }
 
-  // ===== ESTRELAS =====
   function drawStars(date) {
     starsGroup.innerHTML = "";
     constGroup.innerHTML = "";
@@ -412,7 +356,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 
     STARS.forEach(star => {
       const rho = R * (90 - star.dec) / 180;
-      const angleDeg = (star.ra * 15) - rot; // céu gira com GMST
+      const angleDeg = (star.ra * 15) - rot; 
       const angle = angleDeg * Math.PI / 180;
       const x = CX + rho * Math.sin(angle);
       const y = CY - rho * Math.cos(angle);
@@ -448,56 +392,26 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     });
   }
 
-  // ===== SOL E LUA =====
-  function sunEquatorial(date) {
-    // SunCalc: getPosition retorna azimute e altitude para coordenada local.
-    // Para o referencial geocêntrico, usamos a declinação aproximada + RA via GMST do meio-dia solar.
-    // Simplificação robusta: usar a declinação real do Sol (via SunCalc) e RA derivada da longitude subsolar.
-    const d = SunCalc.getPosition(date, 0, 0); // no equador, Greenwich
-    // Não usamos altitude/azimute; usamos apenas para extrair declinação aproximada via fórmula direta:
-    // Fórmula de declinação solar (Bourke / NOAA), boa a ~0.01°
-    const jd = date.getTime() / 86400000 + 2440587.5;
-    const n = jd - 2451545.0;
-    const L = (280.460 + 0.9856474 * n) % 360;
-    const g = ((357.528 + 0.9856003 * n) % 360) * Math.PI / 180;
-    const lambda = (L + 1.915 * Math.sin(g) + 0.020 * Math.sin(2 * g)) * Math.PI / 180;
-    const eps = (23.439 - 0.0000004 * n) * Math.PI / 180;
-    const dec = Math.asin(Math.sin(eps) * Math.sin(lambda)) * 180 / Math.PI;
-    const ra = Math.atan2(Math.cos(eps) * Math.sin(lambda), Math.cos(lambda)) * 180 / Math.PI;
-    return { raDeg: ((ra % 360) + 360) % 360, decDeg: dec };
-  }
-
-  function moonEquatorial(date) {
-    // SunCalc.getMoonPosition dá altitude/azimute; para RA/Dec usamos getMoonIllumination + aproximação.
-    // Para precisão de carta polar, usamos a posição geocêntrica via SunCalc e convertemos.
-    const illum = SunCalc.getMoonIllumination(date);
-    // Aproximação: a Lua está aproximadamente oposta ao Sol na fase cheia.
-    // Usamos a elongação para estimar RA/Dec (suficiente para carta polar visual).
-    const sun = sunEquatorial(date);
-    const elong = illum.phase * 2 * Math.PI; // 0 = nova, PI = cheia
-    // RA da Lua ≈ RA do Sol + elong (em graus)
-    const raDeg = (sun.raDeg + elong * 180 / Math.PI) % 360;
-    // Declinação: oscila entre ±28.5°, aproximamos por seno
-    const decDeg = 28.5 * Math.sin(elong);
-    return { raDeg, decDeg, phase: illum.fraction };
-  }
-
   function drawLight(date) {
     const W = RES, H = RES;
-    const img = lctx.createImageData(W, H);
     const shd = sctx.createImageData(W, H);
 
-    const sun = sunEquatorial(date);
+    // Aproximação do Sol (RA/Dec) para desenhar a sombra e a posição
+    const jd = date.getTime() / 86400000 + 2440587.5;
+    const T = (jd - 2451545.0) / 36525.0;
+    const L = (280.460 + 0.9856474 * (jd - 2451545.0)) % 360;
+    const g = ((357.528 + 0.9856003 * (jd - 2451545.0)) % 360) * Math.PI / 180;
+    const lambda = (L + 1.915 * Math.sin(g) + 0.020 * Math.sin(2 * g)) * Math.PI / 180;
+    const eps = (23.439 - 0.0000004 * (jd - 2451545.0)) * Math.PI / 180;
+    const sunDec = Math.asin(Math.sin(eps) * Math.sin(lambda)) * 180 / Math.PI;
+    const sunRa = Math.atan2(Math.cos(eps) * Math.sin(lambda), Math.cos(lambda)) * 180 / Math.PI;
+    
     const gmst = gmstDeg(date);
-
-    // Subsolar longitude: onde o Sol está no meridiano
-    let subsolarLon = (sun.raDeg - gmst) % 360;
-    if (subsolarLon > 180) subsolarLon -= 360;
-    if (subsolarLon < -180) subsolarLon += 360;
-
-    const sinDec = Math.sin(sun.decDeg * Math.PI / 180);
-    const cosDec = Math.cos(sun.decDeg * Math.PI / 180);
-
+    let sunAngle = (sunRa - gmst) * Math.PI / 180;
+    
+    // Desenha a sombra (noite) como o semicírculo oposto ao Sol
+    const shadowCenterAngle = sunAngle + Math.PI;
+    
     for (let y = 0; y < H; y++) {
       for (let x = 0; x < W; x++) {
         const px = x * (SIZE / W);
@@ -507,30 +421,23 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
         const idx = (y * W + x) * 4;
         if (dist > R) continue;
 
-        const geo = proj.invert([px, py]);
-        if (!geo) continue;
+        const ptAngle = Math.atan2(dx, -dy);
+        let diff = ptAngle - shadowCenterAngle;
+        while (diff > Math.PI) diff -= 2 * Math.PI;
+        while (diff < -Math.PI) diff += 2 * Math.PI;
 
-        const lon = geo[0];
-        const latRad = geo[1] * Math.PI / 180;
-        const ha = (lon - subsolarLon) * Math.PI / 180;
-        const solarHeight = Math.sin(latRad) * sinDec + Math.cos(latRad) * cosDec * Math.cos(ha);
+        const darkness = Math.max(0, Math.cos(diff)); 
 
-        if (solarHeight >= 0) {
-          img.data[idx] = 255; img.data[idx + 1] = 220; img.data[idx + 2] = 120; img.data[idx + 3] = 70;
-        } else {
-          shd.data[idx] = 3; shd.data[idx + 1] = 6; shd.data[idx + 2] = 22; shd.data[idx + 3] = 210;
-        }
+        shd.data[idx] = 3; shd.data[idx + 1] = 6; shd.data[idx + 2] = 22;
+        shd.data[idx + 3] = Math.floor(darkness * 220); 
       }
     }
 
-    lctx.putImageData(img, 0, 0);
     sctx.putImageData(shd, 0, 0);
-    solarLight.setAttribute("href", lightCanvas.toDataURL("image/png"));
     solarShadow.setAttribute("href", shadowCanvas.toDataURL("image/png"));
 
-    // Sol no mapa
-    const sunRho = R * (90 - sun.decDeg) / 180;
-    const sunAngle = ((sun.raDeg) - gmst) * Math.PI / 180;
+    // Sol
+    const sunRho = R * (90 - sunDec) / 180;
     const sunX = CX + sunRho * Math.sin(sunAngle);
     const sunY = CY - sunRho * Math.cos(sunAngle);
     if (sunRho <= R) {
@@ -538,24 +445,48 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       sunIcon.setAttribute("cy", sunY);
     }
 
-    // Lua no mapa
-    const moon = moonEquatorial(date);
-    const moonRho = R * (90 - moon.decDeg) / 180;
-    const moonAngle = ((moon.raDeg) - gmst) * Math.PI / 180;
-    const moonX = CX + moonRho * Math.sin(moonAngle);
-    const moonY = CY - moonRho * Math.cos(moonAngle);
+    // Lua (posição real usando SunCalc)
+    try {
+      const moonPos = SunCalc.getMoonPosition(date, 0, 0); 
+      // SunCalc retorna coordenadas horizontais (altitude/azimute). 
+      // Para a carta polar, convertemos de volta para RA/Dec aproximado:
+      // Usando a mesma lógica do Sol, mas com a fase da Lua.
+      
+      // O SolCalc dá a distância, mas precisamos da elongação.
+      // Usaremos a posição do Sol + elongação para estimar a posição da Lua no céu.
+      const illum = SunCalc.getMoonIllumination(date);
+      
+      // O ângulo de elongação (0 = nova, PI = cheia)
+      const elong = illum.phase * 2 * Math.PI;
+      
+      // RA da Lua ≈ RA do Sol + elong
+      const moonRa = sunRa + (elong * 180 / Math.PI);
+      
+      // Declinação da Lua: a órbita é inclinada ~5 graus em relação à eclíptica.
+      // Aproximação: a declinação varia com a elongação.
+      const moonDec = 23.44 * Math.sin(elong) + 5 * Math.sin(elong * 2); // Aproximação grosseira
+      
+      const moonRho = R * (90 - moonDec) / 180;
+      const moonAngle = (moonRa - gmst) * Math.PI / 180;
+      const moonX = CX + moonRho * Math.sin(moonAngle);
+      const moonY = CY - moonRho * Math.cos(moonAngle);
 
-    if (moonRho <= R) {
-      moonIcon.setAttribute("cx", moonX);
-      moonIcon.setAttribute("cy", moonY);
-      moonClipCircle.setAttribute("cx", moonX);
-      moonClipCircle.setAttribute("cy", moonY);
+      if (moonRho <= R) {
+        moonIcon.setAttribute("cx", moonX);
+        moonIcon.setAttribute("cy", moonY);
+        moonClipCircle.setAttribute("cx", moonX);
+        moonClipCircle.setAttribute("cy", moonY);
 
-      // Fase: desloca a sombra de acordo com fração iluminada
-      const offset = (moon.phase * 2 - 1) * 18;
-      moonShadow.setAttribute("cx", moonX + offset);
-      moonShadow.setAttribute("cy", moonY);
-      moonShadow.setAttribute("r", 12);
+        // Desenha a sombra da fase corretamente
+        // Se fase > 0.5, a sombra está à esquerda (no hemisfério norte) ou à direita (sul).
+        // Vamos apenas deslocar o círculo de sombra baseado na fração.
+        const offset = (illum.fraction * 2 - 1) * 20; 
+        moonShadow.setAttribute("cx", moonX + offset);
+        moonShadow.setAttribute("cy", moonY);
+        moonShadow.setAttribute("r", 12);
+      }
+    } catch(e) {
+      console.warn("Erro na Lua:", e);
     }
   }
 
@@ -581,7 +512,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   function update() {
     try {
       const date = getSimulatedDate();
-      simulationTime = date;
       drawLight(date);
       const nowMs = Date.now();
       if (nowMs - lastStarsUpdate > 5000) {
@@ -710,7 +640,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     }
   }
 
-  // Interação
   let rotation = 0, rotateEnabled = false, isRotating = false, isPanning = false;
   let startX = 0, startY = 0, startRotation = 0, startPanX = 0, startPanY = 0;
   let baseHour = 0, baseDate = new Date();
