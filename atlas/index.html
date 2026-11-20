@@ -344,7 +344,8 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 
   const localOffsetHours = -new Date().getTimezoneOffset() / 60;
 
-  let sunMoving = true;
+  // Variável que controla se o tempo está correndo sozinho
+  let isRealTime = true;
   let zoom = 1, panX = 0, panY = 0;
   const MIN_ZOOM = 1, MAX_ZOOM = 10;
 
@@ -352,7 +353,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     wholeMap.setAttribute("transform", `translate(${panX} ${panY}) translate(${CX} ${CY}) scale(${zoom}) translate(${-CX} ${-CY})`);
   }
 
-  // Função para atualizar os dias do select
   function updateDaysInSelect() {
     const y = parseInt(inputYear.value) || 2026;
     const m = parseInt(inputMonth.value) || 1;
@@ -367,7 +367,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       if (i === currentDay) opt.selected = true;
       inputDay.appendChild(opt);
     }
-    // Se o dia atual for maior que o máximo do mês, ajusta
     if (currentDay > daysInMonth) {
       inputDay.value = daysInMonth;
     }
@@ -524,7 +523,10 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     }
 
     try {
+      const moonPos = SunCalc.getMoonPosition(date, 0, 0);
       const illum = SunCalc.getMoonIllumination(date);
+      
+      // A posição da Lua no céu (RA/Dec estimada via elongação)
       const elong = illum.phase * 2 * Math.PI;
       const moonRa = sunRa + (elong * 180 / Math.PI);
       const moonDec = 23.44 * Math.sin(elong) + 5 * Math.sin(elong * 2);
@@ -539,9 +541,23 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
         moonIcon.setAttribute("cy", moonY);
         moonClipCircle.setAttribute("cx", moonX);
         moonClipCircle.setAttribute("cy", moonY);
-        const offset = (illum.fraction * 2 - 1) * 20; 
-        moonShadow.setAttribute("cx", moonX + offset);
-        moonShadow.setAttribute("cy", moonY);
+
+        // O segredo: A sombra da Lua deve ser desenhada apontando para o Sol.
+        // Calculamos o ângulo do vetor Lua -> Sol.
+        const angleToSun = Math.atan2(sunY - moonY, sunX - moonX);
+        
+        // Calculamos a fase real (0 = nova, 1 = cheia)
+        const phase = illum.fraction;
+        
+        // Deslocamos o círculo de sombra no sentido oposto ao Sol.
+        // Quanto mais cheia, mais longe a sombra é jogada.
+        const shadowDistance = (1 - phase) * 24; 
+        
+        const shadowX = moonX - Math.cos(angleToSun) * shadowDistance;
+        const shadowY = moonY - Math.sin(angleToSun) * shadowDistance;
+        
+        moonShadow.setAttribute("cx", shadowX);
+        moonShadow.setAttribute("cy", shadowY);
         moonShadow.setAttribute("r", 12);
       }
     } catch(e) {}
@@ -710,8 +726,9 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       drawTimezones();
       setupTooltip();
       update();
+      
       setInterval(() => {
-        if (sunMoving && !isRotating && !isPanning) {
+        if (isRealTime && !isRotating && !isPanning) {
           const now = new Date();
           inputYear.value = now.getFullYear();
           inputMonth.value = now.getMonth() + 1;
@@ -721,6 +738,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
           update();
         }
       }, 1000);
+      
     } catch (error) {
       console.error("Erro:", error);
       document.getElementById("stats").textContent = "Erro ao carregar mapa: " + error.message;
@@ -740,6 +758,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   mapWrap.addEventListener("pointerdown", (e) => {
     if (e.button !== 0 && e.pointerType === "mouse") return;
     if (rotateEnabled) {
+      isRealTime = false; // Desliga o tempo real ao girar
       isRotating = true; mapWrap.setPointerCapture(e.pointerId);
       startX = e.clientX; startY = e.clientY; startRotation = rotation;
       baseHour = parseFloat(timeSlider.value); 
@@ -765,26 +784,20 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     }
     if (isRotating) {
       const dx = e.clientX - startX;
-      // Arrastar para a esquerda (dx negativo) avança o tempo
-      // 360 graus = 24 horas -> 15 graus por hora. 
-      // Como a tela é 800px, a sensibilidade é ajustada.
       const deltaDegrees = -dx * 0.5; 
       const deltaHours = deltaDegrees / 15;
       
       let totalHours = baseHour + deltaHours;
       
-      // Calcula o deslocamento de dias
       const dayOffset = Math.floor(totalHours / 24);
       const newDate = new Date(baseDate.getTime() + (dayOffset * 86400000));
       
-      // Atualiza a UI
       inputYear.value = newDate.getFullYear();
       inputMonth.value = newDate.getMonth() + 1;
       updateDaysInSelect();
       inputDay.value = newDate.getDate();
       timeSlider.value = ((totalHours % 24) + 24) % 24;
 
-      // A rotação visual do céu acompanha o tempo
       rotation = startRotation + deltaDegrees;
       skyGroup.setAttribute("transform", `translate(${CX} ${CY}) rotate(${rotation}) translate(${-CX} ${-CY})`);
       update();
@@ -822,10 +835,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     rotationCheckbox.checked = false; rotateEnabled = false;
     mapWrap.style.cursor = "default"; rotation = 0;
     skyGroup.setAttribute("transform", "translate(400 400) rotate(0) translate(-400 -400)");
-    update();
-  });
-
-  if (btnNow) btnNow.addEventListener("click", () => {
+    isRealTime = true; // Restaura o tempo real
     const now = new Date();
     inputYear.value = now.getFullYear();
     inputMonth.value = now.getMonth() + 1;
@@ -835,13 +845,28 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     update();
   });
 
-  timeSlider.addEventListener("input", update);
+  if (btnNow) btnNow.addEventListener("click", () => {
+    isRealTime = true; // Restaura o tempo real
+    const now = new Date();
+    inputYear.value = now.getFullYear();
+    inputMonth.value = now.getMonth() + 1;
+    updateDaysInSelect();
+    inputDay.value = now.getDate();
+    timeSlider.value = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
+    update();
+  });
+
+  timeSlider.addEventListener("input", () => {
+    isRealTime = false;
+    update();
+  });
   
-  inputYear.addEventListener("change", () => { updateDaysInSelect(); update(); });
-  inputMonth.addEventListener("change", () => { updateDaysInSelect(); update(); });
-  inputDay.addEventListener("change", update);
+  inputYear.addEventListener("change", () => { isRealTime = false; updateDaysInSelect(); update(); });
+  inputMonth.addEventListener("change", () => { isRealTime = false; updateDaysInSelect(); update(); });
+  inputDay.addEventListener("change", () => { isRealTime = false; update(); });
 
   function adjustDate(days) {
+    isRealTime = false;
     let date = getSimulatedDate();
     date.setDate(date.getDate() + days);
     inputYear.value = date.getFullYear();
@@ -857,8 +882,8 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   btnNextYear.addEventListener("click", () => adjustDate(365));
 
   sunMoveCheckbox.addEventListener("change", () => {
-    sunMoving = sunMoveCheckbox.checked;
-    if (sunMoving) {
+    isRealTime = sunMoveCheckbox.checked;
+    if (isRealTime) {
       const now = new Date();
       inputYear.value = now.getFullYear();
       inputMonth.value = now.getMonth() + 1;
