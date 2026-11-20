@@ -396,7 +396,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     const W = RES, H = RES;
     const shd = sctx.createImageData(W, H);
 
-    // Aproximação do Sol (RA/Dec) para desenhar a sombra e a posição
+    // Cálculo do Sol (RA/Dec) para a data/hora selecionada
     const jd = date.getTime() / 86400000 + 2440587.5;
     const T = (jd - 2451545.0) / 36525.0;
     const L = (280.460 + 0.9856474 * (jd - 2451545.0)) % 360;
@@ -409,9 +409,9 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     const gmst = gmstDeg(date);
     let sunAngle = (sunRa - gmst) * Math.PI / 180;
     
-    // Desenha a sombra (noite) como o semicírculo oposto ao Sol
+    // A sombra é o ponto exato oposto ao Sol (Antissolar)
     const shadowCenterAngle = sunAngle + Math.PI;
-    
+
     for (let y = 0; y < H; y++) {
       for (let x = 0; x < W; x++) {
         const px = x * (SIZE / W);
@@ -421,13 +421,19 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
         const idx = (y * W + x) * 4;
         if (dist > R) continue;
 
-        const ptAngle = Math.atan2(dx, -dy);
+        // O ângulo do pixel atual em relação ao centro
+        const ptAngle = Math.atan2(dx, -dy); // 0 = topo, PI/2 = direita
+        
+        // Calcula a diferença angular para o centro da sombra
         let diff = ptAngle - shadowCenterAngle;
         while (diff > Math.PI) diff -= 2 * Math.PI;
         while (diff < -Math.PI) diff += 2 * Math.PI;
 
-        const darkness = Math.max(0, Math.cos(diff)); 
-
+        // A sombra cobre metade do mapa (no lado oposto ao Sol).
+        // O gradiente é suave para não ficar com "cara" de desenho.
+        let darkness = Math.max(0, Math.cos(diff)); 
+        
+        // Aplica a cor da sombra
         shd.data[idx] = 3; shd.data[idx + 1] = 6; shd.data[idx + 2] = 22;
         shd.data[idx + 3] = Math.floor(darkness * 220); 
       }
@@ -436,7 +442,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     sctx.putImageData(shd, 0, 0);
     solarShadow.setAttribute("href", shadowCanvas.toDataURL("image/png"));
 
-    // Sol
+    // Posição do Sol no mapa
     const sunRho = R * (90 - sunDec) / 180;
     const sunX = CX + sunRho * Math.sin(sunAngle);
     const sunY = CY - sunRho * Math.cos(sunAngle);
@@ -445,26 +451,13 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       sunIcon.setAttribute("cy", sunY);
     }
 
-    // Lua (posição real usando SunCalc)
+    // Posição da Lua (aproximação orbital e fase)
     try {
-      const moonPos = SunCalc.getMoonPosition(date, 0, 0); 
-      // SunCalc retorna coordenadas horizontais (altitude/azimute). 
-      // Para a carta polar, convertemos de volta para RA/Dec aproximado:
-      // Usando a mesma lógica do Sol, mas com a fase da Lua.
-      
-      // O SolCalc dá a distância, mas precisamos da elongação.
-      // Usaremos a posição do Sol + elongação para estimar a posição da Lua no céu.
+      const moonPos = SunCalc.getMoonPosition(date, 0, 0);
       const illum = SunCalc.getMoonIllumination(date);
-      
-      // O ângulo de elongação (0 = nova, PI = cheia)
       const elong = illum.phase * 2 * Math.PI;
-      
-      // RA da Lua ≈ RA do Sol + elong
       const moonRa = sunRa + (elong * 180 / Math.PI);
-      
-      // Declinação da Lua: a órbita é inclinada ~5 graus em relação à eclíptica.
-      // Aproximação: a declinação varia com a elongação.
-      const moonDec = 23.44 * Math.sin(elong) + 5 * Math.sin(elong * 2); // Aproximação grosseira
+      const moonDec = 23.44 * Math.sin(elong) + 5 * Math.sin(elong * 2);
       
       const moonRho = R * (90 - moonDec) / 180;
       const moonAngle = (moonRa - gmst) * Math.PI / 180;
@@ -477,9 +470,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
         moonClipCircle.setAttribute("cx", moonX);
         moonClipCircle.setAttribute("cy", moonY);
 
-        // Desenha a sombra da fase corretamente
-        // Se fase > 0.5, a sombra está à esquerda (no hemisfério norte) ou à direita (sul).
-        // Vamos apenas deslocar o círculo de sombra baseado na fração.
         const offset = (illum.fraction * 2 - 1) * 20; 
         moonShadow.setAttribute("cx", moonX + offset);
         moonShadow.setAttribute("cy", moonY);
