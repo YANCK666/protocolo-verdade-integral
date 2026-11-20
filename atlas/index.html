@@ -86,7 +86,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 .info-box { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); display: none; }
 .footer-box { max-width: 1280px; margin: 0 auto 28px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
 
-/* PAINEL DE TEMPO E LEITURA */
 .time-machine { display: flex; gap: 8px; align-items: end; }
 .time-machine .field { flex: 1; display: flex; flex-direction: column; }
 .time-machine label { font-size: 11px; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .05em; }
@@ -231,7 +230,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
           </div>
           <div class="field">
             <label for="inputDay">Dia</label>
-            <input id="inputDay" type="number" value="19" min="1" max="31">
+            <select id="inputDay"></select>
           </div>
         </div>
 
@@ -351,6 +350,27 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 
   function applyMapTransform() {
     wholeMap.setAttribute("transform", `translate(${panX} ${panY}) translate(${CX} ${CY}) scale(${zoom}) translate(${-CX} ${-CY})`);
+  }
+
+  // Função para atualizar os dias do select
+  function updateDaysInSelect() {
+    const y = parseInt(inputYear.value) || 2026;
+    const m = parseInt(inputMonth.value) || 1;
+    const daysInMonth = new Date(y, m, 0).getDate();
+    const currentDay = parseInt(inputDay.value) || 1;
+    
+    inputDay.innerHTML = "";
+    for (let i = 1; i <= daysInMonth; i++) {
+      const opt = document.createElement("option");
+      opt.value = i;
+      opt.textContent = i;
+      if (i === currentDay) opt.selected = true;
+      inputDay.appendChild(opt);
+    }
+    // Se o dia atual for maior que o máximo do mês, ajusta
+    if (currentDay > daysInMonth) {
+      inputDay.value = daysInMonth;
+    }
   }
 
   // --- CATÁLOGO DE ESTRELAS ---
@@ -527,10 +547,8 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     } catch(e) {}
   }
 
-  // --- LEITURA DO TZOLKIN E ZODÍACO ---
   function updateReadouts(date) {
-    // Tzolkin
-    const refDate = new Date(Date.UTC(2000, 0, 1)); // 1 Jan 2000 = 4 Ahau (GMT correlation)
+    const refDate = new Date(Date.UTC(2000, 0, 1));
     const diffDays = Math.floor((date - refDate) / 86400000);
     const kin = ((diffDays % 260) + 260) % 260;
     const number = (kin % 13) + 1;
@@ -538,7 +556,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     const sign = signs[kin % 20];
     readTzolkin.textContent = `${number} ${sign}`;
 
-    // Sol Tropical
     const jd = date.getTime() / 86400000 + 2440587.5;
     const T = (jd - 2451545.0) / 36525.0;
     const L = (280.460 + 0.9856474 * (jd - 2451545.0)) % 360;
@@ -569,7 +586,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     const m = parseInt(inputMonth.value) - 1;
     const d = parseInt(inputDay.value) || 1;
     
-    // Cria a data no fuso local do navegador
     const baseDay = new Date(y, m, d, 0, 0, 0);
     return new Date(baseDay.getTime() + (localHour * 3600000));
   }
@@ -668,6 +684,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   }
 
   async function initMap() {
+    updateDaysInSelect();
     try {
       const topo = await d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json");
       const features = topojson.feature(topo, topo.objects.countries).features;
@@ -698,6 +715,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
           const now = new Date();
           inputYear.value = now.getFullYear();
           inputMonth.value = now.getMonth() + 1;
+          updateDaysInSelect();
           inputDay.value = now.getDate();
           timeSlider.value = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
           update();
@@ -724,7 +742,8 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     if (rotateEnabled) {
       isRotating = true; mapWrap.setPointerCapture(e.pointerId);
       startX = e.clientX; startY = e.clientY; startRotation = rotation;
-      baseHour = parseFloat(timeSlider.value); baseDate = getSimulatedDate();
+      baseHour = parseFloat(timeSlider.value); 
+      baseDate = getSimulatedDate();
       mapWrap.style.cursor = "grabbing";
     } else {
       isPanning = true; mapWrap.setPointerCapture(e.pointerId);
@@ -746,18 +765,26 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     }
     if (isRotating) {
       const dx = e.clientX - startX;
-      const deltaDegrees = -dx * 0.5;
+      // Arrastar para a esquerda (dx negativo) avança o tempo
+      // 360 graus = 24 horas -> 15 graus por hora. 
+      // Como a tela é 800px, a sensibilidade é ajustada.
+      const deltaDegrees = -dx * 0.5; 
       const deltaHours = deltaDegrees / 15;
+      
       let totalHours = baseHour + deltaHours;
       
+      // Calcula o deslocamento de dias
       const dayOffset = Math.floor(totalHours / 24);
       const newDate = new Date(baseDate.getTime() + (dayOffset * 86400000));
       
+      // Atualiza a UI
       inputYear.value = newDate.getFullYear();
       inputMonth.value = newDate.getMonth() + 1;
+      updateDaysInSelect();
       inputDay.value = newDate.getDate();
       timeSlider.value = ((totalHours % 24) + 24) % 24;
 
+      // A rotação visual do céu acompanha o tempo
       rotation = startRotation + deltaDegrees;
       skyGroup.setAttribute("transform", `translate(${CX} ${CY}) rotate(${rotation}) translate(${-CX} ${-CY})`);
       update();
@@ -802,6 +829,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     const now = new Date();
     inputYear.value = now.getFullYear();
     inputMonth.value = now.getMonth() + 1;
+    updateDaysInSelect();
     inputDay.value = now.getDate();
     timeSlider.value = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
     update();
@@ -809,14 +837,16 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 
   timeSlider.addEventListener("input", update);
   
-  // Navegação e input de data
-  [inputYear, inputMonth, inputDay].forEach(el => el.addEventListener("change", update));
+  inputYear.addEventListener("change", () => { updateDaysInSelect(); update(); });
+  inputMonth.addEventListener("change", () => { updateDaysInSelect(); update(); });
+  inputDay.addEventListener("change", update);
 
   function adjustDate(days) {
     let date = getSimulatedDate();
     date.setDate(date.getDate() + days);
     inputYear.value = date.getFullYear();
     inputMonth.value = date.getMonth() + 1;
+    updateDaysInSelect();
     inputDay.value = date.getDate();
     update();
   }
@@ -832,6 +862,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       const now = new Date();
       inputYear.value = now.getFullYear();
       inputMonth.value = now.getMonth() + 1;
+      updateDaysInSelect();
       inputDay.value = now.getDate();
       timeSlider.value = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
       update();
