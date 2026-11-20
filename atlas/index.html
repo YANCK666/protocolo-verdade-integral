@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Atlas Polar — MAPA LUCIFERIANO</title>
+<title>Atlas Polar — Relógio Celeste Infinito</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Young+Serif&display=swap">
 <style>
 :root {
@@ -86,6 +86,21 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 .info-box { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); display: none; }
 .footer-box { max-width: 1280px; margin: 0 auto 28px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
 
+/* PAINEL DE TEMPO E LEITURA */
+.time-machine { display: flex; gap: 8px; align-items: end; }
+.time-machine .field { flex: 1; display: flex; flex-direction: column; }
+.time-machine label { font-size: 11px; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .05em; }
+.time-machine input, .time-machine select { width: 100%; font: inherit; padding: 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); font-size: 14px; }
+.nav-buttons { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 10px; }
+.nav-buttons button { border: 1px solid var(--line); border-radius: 6px; background: var(--soft); color: var(--ink); font: inherit; font-size: 11px; padding: 6px 2px; cursor: pointer; transition: background 0.2s; }
+.nav-buttons button:hover { background: var(--accent); color: var(--bg); }
+
+.readout-box { margin-top: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); font-size: 13px; }
+.readout-box .row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.readout-box .row:last-child { border-bottom: none; }
+.readout-box .label { color: var(--muted); }
+.readout-box .value { font-family: var(--f-mono); font-weight: 600; color: var(--accent); }
+
 @media (max-width: 979px) {
   .layout { grid-template-columns: minmax(0, 1fr); gap: 18px; }
   .mapcol { position: static; }
@@ -99,7 +114,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   <header class="top">
     <div>
       <h1>Atlas Polar</h1>
-      <p class="lede">Gire o céu com o mouse para viajar no tempo. Arraste para mover o mapa e use a roda do mouse (ou pinça no celular) para dar zoom.</p>
+      <p class="lede">Relógio celeste de precisão infinita. Navegue pelo tempo passado e futuro.</p>
     </div>
     <p class="stats" id="stats">Carregando...</p>
   </header>
@@ -199,16 +214,51 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       </section>
 
       <section class="time-control">
-        <label for="timeSlider">Hora Local (seu computador)</label>
-        <input id="timeSlider" type="range" min="0" max="23.99" value="12" step="0.01">
+        <div class="layerhead"><strong>Máquina do Tempo</strong><span>∞</span></div>
+        <div class="time-machine">
+          <div class="field">
+            <label for="inputYear">Ano</label>
+            <input id="inputYear" type="number" value="2026" min="-9999" max="9999">
+          </div>
+          <div class="field">
+            <label for="inputMonth">Mês</label>
+            <select id="inputMonth">
+              <option value="1">Jan</option><option value="2">Fev</option><option value="3">Mar</option>
+              <option value="4">Abr</option><option value="5">Mai</option><option value="6">Jun</option>
+              <option value="7">Jul</option><option value="8">Ago</option><option value="9">Set</option>
+              <option value="10">Out</option><option value="11">Nov</option><option value="12">Dez</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="inputDay">Dia</label>
+            <input id="inputDay" type="number" value="19" min="1" max="31">
+          </div>
+        </div>
+
         <div class="time-display" id="timeDisplay">12:00</div>
-        <button id="btnNow" style="margin-top:8px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--accent);color:var(--bg);font:inherit;font-size:12px;cursor:pointer;font-weight:600;width:100%;">⏱️ Sincronizar com o Agora</button>
+        <input id="timeSlider" type="range" min="0" max="23.99" value="12" step="0.01">
+
+        <div class="nav-buttons">
+          <button id="btnPrevYear" title="Ano Anterior">-1 Ano</button>
+          <button id="btnPrevMonth" title="Mês Anterior">-1 Mês</button>
+          <button id="btnNextMonth" title="Próximo Mês">+1 Mês</button>
+          <button id="btnNextYear" title="Próximo Ano">+1 Ano</button>
+        </div>
+
+        <button id="btnNow" style="margin-top:10px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--accent);color:var(--bg);font:inherit;font-size:12px;cursor:pointer;font-weight:600;width:100%;">⏱️ Sincronizar com o Agora</button>
       </section>
 
-      <section class="time-control">
-        <label for="dateInput">Data</label>
-        <input id="dateInput" type="date" value="2026-11-19">
+      <section class="readout-box">
+        <div class="row">
+          <span class="label">Tzolkin (Maia)</span>
+          <span class="value" id="readTzolkin">--</span>
+        </div>
+        <div class="row">
+          <span class="label">Sol Tropical (Astrol.)</span>
+          <span class="value" id="readAstro">--</span>
+        </div>
       </section>
+
     </section>
 
     <section class="panel">
@@ -268,14 +318,25 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   const moonIcon = document.getElementById("moon");
   const moonShadow = document.getElementById("moonShadow");
   const moonClipCircle = document.getElementById("moonClipCircle");
+  
   const timeSlider = document.getElementById("timeSlider");
   const timeDisplay = document.getElementById("timeDisplay");
-  const dateInput = document.getElementById("dateInput");
   const timeTooltip = document.getElementById("timeTooltip");
   
   const clockDate = document.getElementById("clockDate");
   const clockTime = document.getElementById("clockTime");
   const clockLabel = document.getElementById("clockLabel");
+
+  const inputYear = document.getElementById("inputYear");
+  const inputMonth = document.getElementById("inputMonth");
+  const inputDay = document.getElementById("inputDay");
+  const btnPrevYear = document.getElementById("btnPrevYear");
+  const btnPrevMonth = document.getElementById("btnPrevMonth");
+  const btnNextMonth = document.getElementById("btnNextMonth");
+  const btnNextYear = document.getElementById("btnNextYear");
+
+  const readTzolkin = document.getElementById("readTzolkin");
+  const readAstro = document.getElementById("readAstro");
 
   const RES = 300;
   const shadowCanvas = document.createElement("canvas");
@@ -294,19 +355,16 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 
   // --- CATÁLOGO DE ESTRELAS ---
   const STARS = [
-    // Cruzeiro do Sul
     { name: "Acrux", ra: 12.443, dec: -63.099, bright: true },
     { name: "Mimosa", ra: 12.795, dec: -59.689, bright: true },
     { name: "Gacrux", ra: 12.519, dec: -57.113, bright: true },
     { name: "Imai", ra: 12.252, dec: -58.749, bright: true },
-    // Órion
     { name: "Betelgeuse", ra: 5.919, dec: 7.407, bright: true },
     { name: "Rigel", ra: 5.242, dec: -8.202, bright: true },
     { name: "Bellatrix", ra: 5.418, dec: 6.350 },
     { name: "Alnitak", ra: 5.679, dec: -1.943 },
     { name: "Alnilam", ra: 5.604, dec: -1.202 },
     { name: "Mintaka", ra: 5.533, dec: -0.299 },
-    // Ursa Maior
     { name: "Dubhe", ra: 11.062, dec: 61.751, bright: true },
     { name: "Merak", ra: 11.031, dec: 56.382 },
     { name: "Phecda", ra: 11.897, dec: 53.695 },
@@ -314,19 +372,14 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     { name: "Alioth", ra: 12.900, dec: 55.960 },
     { name: "Mizar", ra: 13.399, dec: 54.925 },
     { name: "Alkaid", ra: 13.792, dec: 49.313 },
-    // Polaris
     { name: "Polaris", ra: 2.530, dec: 89.264, bright: true },
-    // Sirius
     { name: "Sirius", ra: 6.752, dec: -16.716, bright: true },
-    // Escorpião
     { name: "Antares", ra: 16.490, dec: -26.432, bright: true },
-    // Cassiopeia
     { name: "Schedar", ra: 0.675, dec: 56.537 },
     { name: "Caph", ra: 0.153, dec: 59.150 },
     { name: "GammaCas", ra: 0.945, dec: 60.717 },
     { name: "Ruchbah", ra: 1.430, dec: 60.235 },
     { name: "Segin", ra: 1.906, dec: 63.670 },
-    // Leão
     { name: "Regulus", ra: 10.139, dec: 11.967, bright: true },
     { name: "Denebola", ra: 11.818, dec: 14.572 }
   ];
@@ -396,7 +449,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     const W = RES, H = RES;
     const shd = sctx.createImageData(W, H);
 
-    // Cálculo do Sol (RA/Dec) para a data/hora selecionada
     const jd = date.getTime() / 86400000 + 2440587.5;
     const T = (jd - 2451545.0) / 36525.0;
     const L = (280.460 + 0.9856474 * (jd - 2451545.0)) % 360;
@@ -407,10 +459,12 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     const sunRa = Math.atan2(Math.cos(eps) * Math.sin(lambda), Math.cos(lambda)) * 180 / Math.PI;
     
     const gmst = gmstDeg(date);
-    let sunAngle = (sunRa - gmst) * Math.PI / 180;
-    
-    // A sombra é o ponto exato oposto ao Sol (Antissolar)
-    const shadowCenterAngle = sunAngle + Math.PI;
+    let subsolarLon = (sunRa - gmst) % 360;
+    if (subsolarLon > 180) subsolarLon -= 360;
+    if (subsolarLon < -180) subsolarLon += 360;
+
+    const sinDec = Math.sin(sunDec * Math.PI / 180);
+    const cosDec = Math.cos(sunDec * Math.PI / 180);
 
     for (let y = 0; y < H; y++) {
       for (let x = 0; x < W; x++) {
@@ -421,29 +475,27 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
         const idx = (y * W + x) * 4;
         if (dist > R) continue;
 
-        // O ângulo do pixel atual em relação ao centro
-        const ptAngle = Math.atan2(dx, -dy); // 0 = topo, PI/2 = direita
-        
-        // Calcula a diferença angular para o centro da sombra
-        let diff = ptAngle - shadowCenterAngle;
-        while (diff > Math.PI) diff -= 2 * Math.PI;
-        while (diff < -Math.PI) diff += 2 * Math.PI;
+        const geo = proj.invert([px, py]);
+        if (!geo) continue;
 
-        // A sombra cobre metade do mapa (no lado oposto ao Sol).
-        // O gradiente é suave para não ficar com "cara" de desenho.
-        let darkness = Math.max(0, Math.cos(diff)); 
-        
-        // Aplica a cor da sombra
-        shd.data[idx] = 3; shd.data[idx + 1] = 6; shd.data[idx + 2] = 22;
-        shd.data[idx + 3] = Math.floor(darkness * 220); 
+        const lon = geo[0];
+        const latRad = geo[1] * Math.PI / 180;
+        const ha = (lon - subsolarLon) * Math.PI / 180;
+        const solarHeight = Math.sin(latRad) * sinDec + Math.cos(latRad) * cosDec * Math.cos(ha);
+
+        if (solarHeight < 0) {
+          let darkness = Math.min(1, -solarHeight * 5);
+          shd.data[idx] = 3; shd.data[idx + 1] = 6; shd.data[idx + 2] = 22;
+          shd.data[idx + 3] = Math.floor(darkness * 220); 
+        }
       }
     }
 
     sctx.putImageData(shd, 0, 0);
     solarShadow.setAttribute("href", shadowCanvas.toDataURL("image/png"));
 
-    // Posição do Sol no mapa
     const sunRho = R * (90 - sunDec) / 180;
+    const sunAngle = (sunRa - gmst) * Math.PI / 180;
     const sunX = CX + sunRho * Math.sin(sunAngle);
     const sunY = CY - sunRho * Math.cos(sunAngle);
     if (sunRho <= R) {
@@ -451,9 +503,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       sunIcon.setAttribute("cy", sunY);
     }
 
-    // Posição da Lua (aproximação orbital e fase)
     try {
-      const moonPos = SunCalc.getMoonPosition(date, 0, 0);
       const illum = SunCalc.getMoonIllumination(date);
       const elong = illum.phase * 2 * Math.PI;
       const moonRa = sunRa + (elong * 180 / Math.PI);
@@ -469,15 +519,36 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
         moonIcon.setAttribute("cy", moonY);
         moonClipCircle.setAttribute("cx", moonX);
         moonClipCircle.setAttribute("cy", moonY);
-
         const offset = (illum.fraction * 2 - 1) * 20; 
         moonShadow.setAttribute("cx", moonX + offset);
         moonShadow.setAttribute("cy", moonY);
         moonShadow.setAttribute("r", 12);
       }
-    } catch(e) {
-      console.warn("Erro na Lua:", e);
-    }
+    } catch(e) {}
+  }
+
+  // --- LEITURA DO TZOLKIN E ZODÍACO ---
+  function updateReadouts(date) {
+    // Tzolkin
+    const refDate = new Date(Date.UTC(2000, 0, 1)); // 1 Jan 2000 = 4 Ahau (GMT correlation)
+    const diffDays = Math.floor((date - refDate) / 86400000);
+    const kin = ((diffDays % 260) + 260) % 260;
+    const number = (kin % 13) + 1;
+    const signs = ["Imix", "Ik'", "Ak'bal", "K'an", "Chikchan", "Kimi", "Manik'", "Lamat", "Muluk", "Ok", "Chuwen", "Eb", "Ben", "Ix", "Men", "Kib'", "Kaban", "Etz'nab", "Kawak", "Ahau"];
+    const sign = signs[kin % 20];
+    readTzolkin.textContent = `${number} ${sign}`;
+
+    // Sol Tropical
+    const jd = date.getTime() / 86400000 + 2440587.5;
+    const T = (jd - 2451545.0) / 36525.0;
+    const L = (280.460 + 0.9856474 * (jd - 2451545.0)) % 360;
+    const g = ((357.528 + 0.9856003 * (jd - 2451545.0)) % 360) * Math.PI / 180;
+    const lambda = (L + 1.915 * Math.sin(g) + 0.020 * Math.sin(2 * g)) * Math.PI / 180;
+    const lon = (lambda * 180 / Math.PI) % 360;
+    const signsAstro = ["Áries", "Touro", "Gêmeos", "Câncer", "Leão", "Virgem", "Libra", "Escorpião", "Sagitário", "Capricórnio", "Aquário", "Peixes"];
+    const signIndex = Math.floor(lon / 30);
+    const degree = (lon % 30).toFixed(2);
+    readAstro.textContent = `${signsAstro[signIndex]} ${degree}°`;
   }
 
   function updateClock(date) {
@@ -494,7 +565,12 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 
   function getSimulatedDate() {
     const localHour = parseFloat(timeSlider.value);
-    const baseDay = new Date(dateInput.value + "T00:00:00");
+    const y = parseInt(inputYear.value) || 2026;
+    const m = parseInt(inputMonth.value) - 1;
+    const d = parseInt(inputDay.value) || 1;
+    
+    // Cria a data no fuso local do navegador
+    const baseDay = new Date(y, m, d, 0, 0, 0);
     return new Date(baseDay.getTime() + (localHour * 3600000));
   }
 
@@ -503,6 +579,8 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     try {
       const date = getSimulatedDate();
       drawLight(date);
+      updateReadouts(date);
+      
       const nowMs = Date.now();
       if (nowMs - lastStarsUpdate > 5000) {
         drawStars(date);
@@ -618,9 +696,10 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       setInterval(() => {
         if (sunMoving && !isRotating && !isPanning) {
           const now = new Date();
-          const localHour = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
-          timeSlider.value = localHour;
-          dateInput.value = now.toISOString().split('T')[0];
+          inputYear.value = now.getFullYear();
+          inputMonth.value = now.getMonth() + 1;
+          inputDay.value = now.getDate();
+          timeSlider.value = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
           update();
         }
       }, 1000);
@@ -645,7 +724,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     if (rotateEnabled) {
       isRotating = true; mapWrap.setPointerCapture(e.pointerId);
       startX = e.clientX; startY = e.clientY; startRotation = rotation;
-      baseHour = parseFloat(timeSlider.value); baseDate = new Date(dateInput.value + "T00:00:00");
+      baseHour = parseFloat(timeSlider.value); baseDate = getSimulatedDate();
       mapWrap.style.cursor = "grabbing";
     } else {
       isPanning = true; mapWrap.setPointerCapture(e.pointerId);
@@ -670,9 +749,15 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       const deltaDegrees = -dx * 0.5;
       const deltaHours = deltaDegrees / 15;
       let totalHours = baseHour + deltaHours;
-      timeSlider.value = ((totalHours % 24) + 24) % 24;
+      
       const dayOffset = Math.floor(totalHours / 24);
-      dateInput.value = new Date(baseDate.getTime() + dayOffset * 86400000).toISOString().split('T')[0];
+      const newDate = new Date(baseDate.getTime() + (dayOffset * 86400000));
+      
+      inputYear.value = newDate.getFullYear();
+      inputMonth.value = newDate.getMonth() + 1;
+      inputDay.value = newDate.getDate();
+      timeSlider.value = ((totalHours % 24) + 24) % 24;
+
       rotation = startRotation + deltaDegrees;
       skyGroup.setAttribute("transform", `translate(${CX} ${CY}) rotate(${rotation}) translate(${-CX} ${-CY})`);
       update();
@@ -715,20 +800,40 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 
   if (btnNow) btnNow.addEventListener("click", () => {
     const now = new Date();
+    inputYear.value = now.getFullYear();
+    inputMonth.value = now.getMonth() + 1;
+    inputDay.value = now.getDate();
     timeSlider.value = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
-    dateInput.value = now.toISOString().split('T')[0];
     update();
   });
 
   timeSlider.addEventListener("input", update);
-  dateInput.addEventListener("change", update);
+  
+  // Navegação e input de data
+  [inputYear, inputMonth, inputDay].forEach(el => el.addEventListener("change", update));
+
+  function adjustDate(days) {
+    let date = getSimulatedDate();
+    date.setDate(date.getDate() + days);
+    inputYear.value = date.getFullYear();
+    inputMonth.value = date.getMonth() + 1;
+    inputDay.value = date.getDate();
+    update();
+  }
+
+  btnPrevYear.addEventListener("click", () => adjustDate(-365));
+  btnPrevMonth.addEventListener("click", () => adjustDate(-30));
+  btnNextMonth.addEventListener("click", () => adjustDate(30));
+  btnNextYear.addEventListener("click", () => adjustDate(365));
 
   sunMoveCheckbox.addEventListener("change", () => {
     sunMoving = sunMoveCheckbox.checked;
     if (sunMoving) {
       const now = new Date();
+      inputYear.value = now.getFullYear();
+      inputMonth.value = now.getMonth() + 1;
+      inputDay.value = now.getDate();
       timeSlider.value = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
-      dateInput.value = now.toISOString().split('T')[0];
       update();
     }
   });
