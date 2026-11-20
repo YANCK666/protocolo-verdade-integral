@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Atlas Polar — Relógio Celeste Infinito</title>
+<title>Atlas Polar — Relógio Celeste</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Young+Serif&display=swap">
 <style>
 :root {
@@ -113,7 +113,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   <header class="top">
     <div>
       <h1>Atlas Polar</h1>
-      <p class="lede">Relógio celeste de precisão infinita. Navegue pelo tempo passado e futuro.</p>
+      <p class="lede">Relógio celeste de precisão. Navegue pelo tempo passado e futuro.</p>
     </div>
     <p class="stats" id="stats">Carregando...</p>
   </header>
@@ -190,7 +190,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 
       <p style="text-align:center; margin-top:12px; font-size:13px; color:var(--muted);">
         Centro = Polo Norte · Borda = Polo Sul<br>
-        Passe o mouse para ver o horário local. Ative a rotação para girar o céu.
+        Arraste o mouse com "Rotação" ativado para viajar no tempo.
       </p>
 
       <section class="layerbox">
@@ -198,7 +198,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
         <div class="layergrid" id="layerControls">
           <label class="layeritem"><input type="checkbox" data-layer="borders" checked><i class="swatch" style="--swatch:#9670c8"></i>Países</label>
           <label class="layeritem"><input type="checkbox" data-layer="graticule" checked><i class="swatch" style="--swatch:#8993a8"></i>Lat/Long</label>
-          <label class="layeritem"><input type="checkbox" data-layer="flags" checked><i class="swatch" style="--swatch:#d4a83d"></i>Bandeiras</label>
           <label class="layeritem"><input type="checkbox" data-layer="grid" checked><i class="swatch" style="--swatch:#4ade80"></i>Grade 12</label>
           <label class="layeritem"><input type="checkbox" data-layer="star6" checked><i class="swatch" style="--swatch:#8cff48"></i>Estrela 6</label>
           <label class="layeritem"><input type="checkbox" data-layer="stars" checked><i class="swatch" style="--swatch:#fffbe6"></i>Céu Estelar</label>
@@ -207,7 +206,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
           <label class="layeritem"><input type="checkbox" data-layer="moon" checked><i class="swatch" style="--swatch:#e0e0e0"></i>Lua</label>
           <label class="layeritem"><input type="checkbox" data-layer="timezones" checked><i class="swatch" style="--swatch:#a996c0"></i>Fusos Horários</label>
           <label class="layeritem"><input type="checkbox" data-layer="rotation"><i class="swatch" style="--swatch:#c4a1f0"></i>Rotação (Céu)</label>
-          <label class="layeritem"><input type="checkbox" data-layer="sunMove" checked><i class="swatch" style="--swatch:#ffaa00"></i>Movimento do Sol</label>
+          <label class="layeritem"><input type="checkbox" data-layer="sunMove" checked><i class="swatch" style="--swatch:#ffaa00"></i>Tempo Real</label>
         </div>
         <button type="button" id="btnReset" style="margin-top:10px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--soft);color:var(--ink);font:inherit;font-size:12px;cursor:pointer;">↺ Restaurar</button>
       </section>
@@ -344,7 +343,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 
   const localOffsetHours = -new Date().getTimezoneOffset() / 60;
 
-  // Variável que controla se o tempo está correndo sozinho
   let isRealTime = true;
   let zoom = 1, panX = 0, panY = 0;
   const MIN_ZOOM = 1, MAX_ZOOM = 10;
@@ -478,13 +476,10 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     const sunRa = Math.atan2(Math.cos(eps) * Math.sin(lambda), Math.cos(lambda)) * 180 / Math.PI;
     
     const gmst = gmstDeg(date);
-    let subsolarLon = (sunRa - gmst) % 360;
-    if (subsolarLon > 180) subsolarLon -= 360;
-    if (subsolarLon < -180) subsolarLon += 360;
-
-    const sinDec = Math.sin(sunDec * Math.PI / 180);
-    const cosDec = Math.cos(sunDec * Math.PI / 180);
-
+    const sunAngle = (sunRa - gmst) * Math.PI / 180;
+    
+    // A sombra é desenhada como um gradiente radial oposto ao Sol
+    // Para isso, calculamos o ângulo do ponto no mapa e a distância do centro
     for (let y = 0; y < H; y++) {
       for (let x = 0; x < W; x++) {
         const px = x * (SIZE / W);
@@ -494,19 +489,25 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
         const idx = (y * W + x) * 4;
         if (dist > R) continue;
 
-        const geo = proj.invert([px, py]);
-        if (!geo) continue;
+        // Ângulo do pixel no mapa (0 = topo, PI/2 = direita)
+        const ptAngle = Math.atan2(dx, -dy);
+        
+        // O gradiente de sombra é máximo no ângulo oposto ao Sol
+        // e mínimo no mesmo ângulo do Sol
+        let diff = ptAngle - sunAngle;
+        while (diff > Math.PI) diff -= 2 * Math.PI;
+        while (diff < -Math.PI) diff += 2 * Math.PI;
 
-        const lon = geo[0];
-        const latRad = geo[1] * Math.PI / 180;
-        const ha = (lon - subsolarLon) * Math.PI / 180;
-        const solarHeight = Math.sin(latRad) * sinDec + Math.cos(latRad) * cosDec * Math.cos(ha);
-
-        if (solarHeight < 0) {
-          let darkness = Math.min(1, -solarHeight * 5);
-          shd.data[idx] = 3; shd.data[idx + 1] = 6; shd.data[idx + 2] = 22;
-          shd.data[idx + 3] = Math.floor(darkness * 220); 
-        }
+        // A sombra é o "cosseno" da diferença. Onde o ângulo é oposto ao Sol, diff = PI, cos(PI) = -1.
+        // Queremos que a sombra seja máxima lá. Então invertemos o cosseno e normalizamos.
+        // Opacidade máxima (220) no lado oposto, zero no lado do Sol.
+        const shadowIntensity = (1 - Math.cos(diff)) / 2; 
+        
+        // Multiplicamos pela distância do centro para fazer o efeito de "vinheta" que você gostou
+        const radialFade = Math.min(1, dist / R); 
+        
+        shd.data[idx] = 3; shd.data[idx + 1] = 6; shd.data[idx + 2] = 22;
+        shd.data[idx + 3] = Math.floor(shadowIntensity * radialFade * 220);
       }
     }
 
@@ -514,7 +515,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     solarShadow.setAttribute("href", shadowCanvas.toDataURL("image/png"));
 
     const sunRho = R * (90 - sunDec) / 180;
-    const sunAngle = (sunRa - gmst) * Math.PI / 180;
     const sunX = CX + sunRho * Math.sin(sunAngle);
     const sunY = CY - sunRho * Math.cos(sunAngle);
     if (sunRho <= R) {
@@ -523,10 +523,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     }
 
     try {
-      const moonPos = SunCalc.getMoonPosition(date, 0, 0);
       const illum = SunCalc.getMoonIllumination(date);
-      
-      // A posição da Lua no céu (RA/Dec estimada via elongação)
       const elong = illum.phase * 2 * Math.PI;
       const moonRa = sunRa + (elong * 180 / Math.PI);
       const moonDec = 23.44 * Math.sin(elong) + 5 * Math.sin(elong * 2);
@@ -542,17 +539,9 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
         moonClipCircle.setAttribute("cx", moonX);
         moonClipCircle.setAttribute("cy", moonY);
 
-        // O segredo: A sombra da Lua deve ser desenhada apontando para o Sol.
-        // Calculamos o ângulo do vetor Lua -> Sol.
         const angleToSun = Math.atan2(sunY - moonY, sunX - moonX);
-        
-        // Calculamos a fase real (0 = nova, 1 = cheia)
         const phase = illum.fraction;
-        
-        // Deslocamos o círculo de sombra no sentido oposto ao Sol.
-        // Quanto mais cheia, mais longe a sombra é jogada.
         const shadowDistance = (1 - phase) * 24; 
-        
         const shadowX = moonX - Math.cos(angleToSun) * shadowDistance;
         const shadowY = moonY - Math.sin(angleToSun) * shadowDistance;
         
@@ -758,7 +747,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   mapWrap.addEventListener("pointerdown", (e) => {
     if (e.button !== 0 && e.pointerType === "mouse") return;
     if (rotateEnabled) {
-      isRealTime = false; // Desliga o tempo real ao girar
+      isRealTime = false;
       isRotating = true; mapWrap.setPointerCapture(e.pointerId);
       startX = e.clientX; startY = e.clientY; startRotation = rotation;
       baseHour = parseFloat(timeSlider.value); 
@@ -835,7 +824,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     rotationCheckbox.checked = false; rotateEnabled = false;
     mapWrap.style.cursor = "default"; rotation = 0;
     skyGroup.setAttribute("transform", "translate(400 400) rotate(0) translate(-400 -400)");
-    isRealTime = true; // Restaura o tempo real
+    isRealTime = true;
     const now = new Date();
     inputYear.value = now.getFullYear();
     inputMonth.value = now.getMonth() + 1;
@@ -846,7 +835,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   });
 
   if (btnNow) btnNow.addEventListener("click", () => {
-    isRealTime = true; // Restaura o tempo real
+    isRealTime = true;
     const now = new Date();
     inputYear.value = now.getFullYear();
     inputMonth.value = now.getMonth() + 1;
