@@ -10,7 +10,7 @@
   --bg: #0b0710; --panel: #15101c; --soft: #221a2e; --ink: #f0e9fb; --muted: #a996c0;
   --line: #3a2d4c; --sea: #110c18; --land: #2e2340; --accent: #c4a1f0; --sel: #e9b8ff;
   --green: #4ade80; --hist: #8b5fc7; --star: #fffbe6; --const: #4da6ff;
-  --f-display: "Young Serif", Georgia, serif; 
+  --f-display: "Young Serif", Georgia, serif;
   --f-body: "Hanken Grotesk", system-ui, sans-serif;
   --f-mono: "IBM Plex Mono", monospace;
 }
@@ -37,7 +37,9 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 .c.ring { fill: #e8def6 !important; stroke: var(--line); stroke-width: 1; }
 
 .grid-line { stroke: var(--green); stroke-width: 1.2; opacity: 0.4; pointer-events: none; }
-.grid-circle { fill: none; stroke: var(--green); stroke-width: 1; opacity: 0.3; pointer-events: none; }
+.tropic-cancer { fill: none; stroke: #e74c3c; stroke-width: 1.8; opacity: 0.85; pointer-events: none; }
+.tropic-equator { fill: none; stroke: #f1c40f; stroke-width: 1.8; opacity: 0.85; pointer-events: none; }
+.tropic-capricorn { fill: none; stroke: #3498db; stroke-width: 1.8; opacity: 0.85; pointer-events: none; }
 .ring { fill: none; stroke: var(--line); stroke-width: 2; pointer-events: none; }
 .pole { fill: var(--accent); pointer-events: none; filter: drop-shadow(0 0 6px var(--accent)); }
 
@@ -62,11 +64,20 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 .clock-display .time { font-size: 28px; font-weight: 700; color: var(--ink); letter-spacing: 0.05em; }
 .clock-display .label { font-size: 10px; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.1em; }
 
-.tooltip { position: absolute; pointer-events: none; background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; font-family: var(--f-mono); font-size: 12px; z-index: 100; display: none; white-space: nowrap; }
+.tooltip { position: absolute; pointer-events: none; background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; font-family: var(--f-mono); font-size: 12px; z-index: 100; display: none; white-space: nowrap; box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
+.tooltip img { width: 20px; height: 14px; vertical-align: middle; margin-right: 6px; border-radius: 2px; }
 
 .panel { min-width: 0; }
 .search label { display: block; font-size: 12px; font-family: var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
 .search input { width: 100%; font: inherit; padding: 11px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); }
+
+.lang-toggle { display: flex; gap: 6px; margin-bottom: 14px; }
+.lang-toggle button {
+  flex: 1; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line);
+  background: var(--bg); color: var(--muted); font: inherit; font-size: 12px; cursor: pointer;
+  transition: all 0.2s;
+}
+.lang-toggle button.active { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 600; }
 
 .layerbox { margin: 12px 0 0; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
 .layerhead { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; }
@@ -77,9 +88,14 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 .layeritem input { accent-color: var(--accent); margin: 0; flex: 0 0 auto; }
 .layeritem .swatch { width: 10px; height: 10px; border-radius: 3px; background: var(--swatch, var(--accent)); flex: 0 0 auto; }
 
+.shadow-mode { display: flex; gap: 6px; margin-top: 10px; }
+.shadow-mode button {
+  flex: 1; padding: 7px 8px; border-radius: 8px; border: 1px solid var(--line);
+  background: var(--bg); color: var(--muted); font: inherit; font-size: 11px; cursor: pointer;
+}
+.shadow-mode button.active { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 600; }
+
 .timeline, .time-control { margin-top: 12px; padding: 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); }
-.timeline h3 { font-family: var(--f-display); font-size: 18px; font-weight: 400; margin: 0 0 4px; }
-.timeline p { margin: 0; color: var(--muted); font-size: 12.5px; }
 .yearline, .time-display { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin: 8px 0 2px; }
 .yearline output, .time-display { color: var(--accent); font-family: var(--f-mono); font-weight: 600; }
 .timeline input, .time-control input { width: 100%; accent-color: var(--accent); margin: 8px 0; }
@@ -100,7 +116,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 .readout-box .label { color: var(--muted); }
 .readout-box .value { font-family: var(--f-mono); font-weight: 600; color: var(--accent); }
 
-/* --- Botão e Modal de Termos de Uso --- */
+/* Modal Termos */
 .terms-btn {
   position: fixed; bottom: 20px; right: 20px; z-index: 1100;
   width: 48px; height: 48px; border-radius: 50%;
@@ -144,8 +160,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   border: 1px solid var(--line); background: var(--soft);
   color: var(--ink); font-size: 18px; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  transition: background 0.2s, border-color 0.2s;
-  line-height: 1;
+  transition: background 0.2s, border-color 0.2s; line-height: 1;
 }
 .modal-close:hover { background: var(--accent); color: var(--bg); border-color: var(--accent); }
 .modal-body {
@@ -213,10 +228,10 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
             
             <g id="landGroup" clip-path="url(#mapclip)"></g>
 
-            <image id="solarLight" x="0" y="0" width="800" height="800" preserveAspectRatio="none" style="pointer-events:none" clip-path="url(#mapclip)" />
-            <image id="nightShadow" x="0" y="0" width="800" height="800" preserveAspectRatio="none" style="pointer-events:none" clip-path="url(#mapclip)" />
-
+            <!-- Céu (estrelas + Sol + Lua + sombra) — tudo dentro da mesma engrenagem -->
             <g id="skyGroup" clip-path="url(#mapclip)">
+              <image id="solarLight" x="0" y="0" width="800" height="800" preserveAspectRatio="none" style="pointer-events:none" />
+              <image id="nightShadow" x="0" y="0" width="800" height="800" preserveAspectRatio="none" style="pointer-events:none" />
               <g id="constellations"></g>
               <g id="stars"></g>
               <g id="starLabels"></g>
@@ -233,19 +248,28 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
               <g id="timezoneLayer"></g>
 
               <g id="gridLayer">
-                <g id="gridCircles">
-                  <circle class="grid-circle" cx="400" cy="400" r="120" />
-                  <circle class="grid-circle" cx="400" cy="400" r="240" />
-                  <circle class="grid-circle" cx="400" cy="400" r="360" />
+                <!-- Trópicos (fixos) -->
+                <g id="tropicsGroup">
+                  <!-- Câncer 23.44°N → rho = R*(90-23.44)/180 ≈ 137.3 -->
+                  <circle class="tropic-cancer" cx="400" cy="400" r="137.3" />
+                  <!-- Equador → rho = R/2 = 186 -->
+                  <circle class="tropic-equator" cx="400" cy="400" r="186" />
+                  <!-- Capricórnio 23.44°S → rho = R*(90+23.44)/180 ≈ 234.7 -->
+                  <circle class="tropic-capricorn" cx="400" cy="400" r="234.7" />
                 </g>
-                <g id="gridCross">
-                  <line class="grid-line" x1="400" y1="40" x2="400" y2="760" />
-                  <line class="grid-line" x1="40" y1="400" x2="760" y2="400" />
+
+                <!-- Visual (cruz + estrela 6) -->
+                <g id="visualGroup">
+                  <g id="gridCross">
+                    <line class="grid-line" x1="400" y1="40" x2="400" y2="760" />
+                    <line class="grid-line" x1="40" y1="400" x2="760" y2="400" />
+                  </g>
+                  <g id="gridStar6">
+                    <polygon points="400,40 711.8,580 88.2,580" fill="none" class="grid-line" style="opacity:0.6;" />
+                    <polygon points="711.8,220 400,760 88.2,220" fill="none" class="grid-line" style="opacity:0.6;" />
+                  </g>
                 </g>
-                <g id="gridStar6">
-                  <polygon points="400,40 711.8,580 88.2,580" fill="none" class="grid-line" style="opacity:0.6;" />
-                  <polygon points="711.8,220 400,760 88.2,220" fill="none" class="grid-line" style="opacity:0.6;" />
-                </g>
+
                 <circle class="ring" cx="400" cy="400" r="370" />
               </g>
 
@@ -265,25 +289,30 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 
       <p style="text-align:center; margin-top:12px; font-size:13px; color:var(--muted);">
         Centro = Polo Norte · Borda = Polo Sul<br>
-        Arraste o mouse com "Rotação" ativado para viajar no tempo.
+        Destrave o Relógio para viajar no tempo com o mouse.
       </p>
 
       <section class="layerbox">
         <div class="layerhead"><strong>Camadas do Atlas</strong><span>ligar / desligar</span></div>
         <div class="layergrid" id="layerControls">
           <label class="layeritem"><input type="checkbox" data-layer="borders" checked><i class="swatch" style="--swatch:#9670c8"></i>Países</label>
-          <label class="layeritem"><input type="checkbox" data-layer="graticule" checked><i class="swatch" style="--swatch:#8993a8"></i>Lat/Long</label>
-          <label class="layeritem"><input type="checkbox" data-layer="grid" checked><i class="swatch" style="--swatch:#4ade80"></i>Grade 12</label>
-          <label class="layeritem"><input type="checkbox" data-layer="star6" checked><i class="swatch" style="--swatch:#8cff48"></i>Estrela 6</label>
+          <label class="layeritem"><input type="checkbox" data-layer="tropics" checked><i class="swatch" style="--swatch:#e74c3c"></i>Trópicos</label>
+          <label class="layeritem"><input type="checkbox" data-layer="visual"><i class="swatch" style="--swatch:#8cff48"></i>Visual</label>
           <label class="layeritem"><input type="checkbox" data-layer="stars" checked><i class="swatch" style="--swatch:#fffbe6"></i>Céu Estelar</label>
           <label class="layeritem"><input type="checkbox" data-layer="light" checked><i class="swatch" style="--swatch:#ffcc00"></i>Sol</label>
-          <label class="layeritem"><input type="checkbox" data-layer="dark" checked><i class="swatch" style="--swatch:#000000"></i>Sombra (Noite)</label>
+          <label class="layeritem"><input type="checkbox" data-layer="dark" checked><i class="swatch" style="--swatch:#000000"></i>Sombra</label>
           <label class="layeritem"><input type="checkbox" data-layer="moon" checked><i class="swatch" style="--swatch:#e0e0e0"></i>Lua</label>
-          <label class="layeritem"><input type="checkbox" data-layer="timezones" checked><i class="swatch" style="--swatch:#a996c0"></i>Fusos Horários</label>
-          <label class="layeritem"><input type="checkbox" data-layer="rotation"><i class="swatch" style="--swatch:#c4a1f0"></i>Rotação (Céu)</label>
+          <label class="layeritem"><input type="checkbox" data-layer="timezones" checked><i class="swatch" style="--swatch:#a996c0"></i>Fusos</label>
+          <label class="layeritem"><input type="checkbox" data-layer="rotation"><i class="swatch" style="--swatch:#c4a1f0"></i>Destravar Relógio</label>
           <label class="layeritem"><input type="checkbox" data-layer="sunMove" checked><i class="swatch" style="--swatch:#ffaa00"></i>Tempo Real</label>
         </div>
-        <button type="button" id="btnReset" style="margin-top:10px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--soft);color:var(--ink);font:inherit;font-size:12px;cursor:pointer;">↺ Restaurar</button>
+
+        <div class="shadow-mode">
+          <button type="button" id="shadowSimple" class="active">Sombra Simples</button>
+          <button type="button" id="shadowTech">Sombra Técnica</button>
+        </div>
+
+        <button type="button" id="btnReset" style="margin-top:10px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--soft);color:var(--ink);font:inherit;font-size:12px;cursor:pointer;width:100%;">↺ Restaurar</button>
       </section>
 
       <section class="time-control">
@@ -327,14 +356,18 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
           <span class="value" id="readTzolkin">--</span>
         </div>
         <div class="row">
-          <span class="label">Sol Tropical (Astrol.)</span>
+          <span class="label">Sol Tropical</span>
           <span class="value" id="readAstro">--</span>
         </div>
       </section>
-
     </section>
 
     <section class="panel">
+      <div class="lang-toggle">
+        <button type="button" id="langBR" class="active">Brasil</button>
+        <button type="button" id="langWorld">Mundial</button>
+      </div>
+
       <div class="search">
         <label for="q">Buscar país</label>
         <input id="q" type="search" placeholder="Brasil, Japão, Egito…" autocomplete="off">
@@ -360,10 +393,8 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   </section>
 </div>
 
-<!-- Botão flutuante de Termos de Uso -->
 <button class="terms-btn" id="termsBtn" title="Termos de Uso" aria-label="Abrir Termos de Uso">§</button>
 
-<!-- Modal de Termos de Uso -->
 <div class="modal-overlay" id="termsModal" role="dialog" aria-modal="true" aria-labelledby="termsTitle">
   <div class="modal-box">
     <div class="modal-header">
@@ -455,6 +486,8 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   let isRealTime = true;
   let zoom = 1, panX = 0, panY = 0;
   const MIN_ZOOM = 1, MAX_ZOOM = 10;
+  let shadowMode = "simple"; // "simple" | "tech"
+  let langMode = "br"; // "br" | "world"
 
   function applyMapTransform() {
     wholeMap.setAttribute("transform", `translate(${panX} ${panY}) translate(${CX} ${CY}) scale(${zoom}) translate(${-CX} ${-CY})`);
@@ -576,7 +609,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     const shd = sctx.createImageData(W, H);
 
     const jd = date.getTime() / 86400000 + 2440587.5;
-    const T = (jd - 2451545.0) / 36525.0;
     const L = (280.460 + 0.9856474 * (jd - 2451545.0)) % 360;
     const g = ((357.528 + 0.9856003 * (jd - 2451545.0)) % 360) * Math.PI / 180;
     const lambda = (L + 1.915 * Math.sin(g) + 0.020 * Math.sin(2 * g)) * Math.PI / 180;
@@ -602,17 +634,28 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
         while (diff > Math.PI) diff -= 2 * Math.PI;
         while (diff < -Math.PI) diff += 2 * Math.PI;
 
-        const shadowIntensity = (1 - Math.cos(diff)) / 2; 
+        let shadowIntensity;
+        if (shadowMode === "simple") {
+          shadowIntensity = (1 - Math.cos(diff)) / 2;
+        } else {
+          // Técnica: mais faixas de crepúsculo
+          const absDiff = Math.abs(diff);
+          if (absDiff < 1.4) shadowIntensity = 0.05 + 0.25 * (absDiff / 1.4);
+          else if (absDiff < 1.8) shadowIntensity = 0.3 + 0.35 * ((absDiff - 1.4) / 0.4);
+          else shadowIntensity = 0.65 + 0.35 * Math.min(1, (absDiff - 1.8) / 1.0);
+        }
+
         const radialFade = Math.min(1, dist / R); 
         
         shd.data[idx] = 3; shd.data[idx + 1] = 6; shd.data[idx + 2] = 22;
-        shd.data[idx + 3] = Math.floor(shadowIntensity * radialFade * 220);
+        shd.data[idx + 3] = Math.floor(shadowIntensity * radialFade * 230);
       }
     }
 
     sctx.putImageData(shd, 0, 0);
     solarShadow.setAttribute("href", shadowCanvas.toDataURL("image/png"));
 
+    // Sol
     const sunRho = R * (90 - sunDec) / 180;
     const sunX = CX + sunRho * Math.sin(sunAngle);
     const sunY = CY - sunRho * Math.cos(sunAngle);
@@ -621,11 +664,13 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       sunIcon.setAttribute("cy", sunY);
     }
 
+    // Lua — versão melhorada
     try {
       const illum = SunCalc.getMoonIllumination(date);
+      // Aproximação melhorada da posição (mantém compatibilidade com a lib carregada)
       const elong = illum.phase * 2 * Math.PI;
-      const moonRa = sunRa + (elong * 180 / Math.PI);
-      const moonDec = 23.44 * Math.sin(elong) + 5 * Math.sin(elong * 2);
+      const moonRa = (sunRa + (elong * 180 / Math.PI) + 360) % 360;
+      const moonDec = 23.44 * Math.sin(elong) + 5.1 * Math.sin(elong * 2);
       
       const moonRho = R * (90 - moonDec) / 180;
       const moonAngle = (moonRa - gmst) * Math.PI / 180;
@@ -661,13 +706,12 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     readTzolkin.textContent = `${number} ${sign}`;
 
     const jd = date.getTime() / 86400000 + 2440587.5;
-    const T = (jd - 2451545.0) / 36525.0;
     const L = (280.460 + 0.9856474 * (jd - 2451545.0)) % 360;
     const g = ((357.528 + 0.9856003 * (jd - 2451545.0)) % 360) * Math.PI / 180;
     const lambda = (L + 1.915 * Math.sin(g) + 0.020 * Math.sin(2 * g)) * Math.PI / 180;
     const lon = (lambda * 180 / Math.PI) % 360;
     const signsAstro = ["Áries", "Touro", "Gêmeos", "Câncer", "Leão", "Virgem", "Libra", "Escorpião", "Sagitário", "Capricórnio", "Aquário", "Peixes"];
-    const signIndex = Math.floor(lon / 30);
+    const signIndex = Math.floor(((lon % 360) + 360) % 360 / 30);
     const degree = (lon % 30).toFixed(2);
     readAstro.textContent = `${signsAstro[signIndex]} ${degree}°`;
   }
@@ -773,13 +817,25 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       const invertedY = (rawY - panY - CY) / zoom + CY;
       const geo = proj.invert([invertedX, invertedY]);
       if (!geo) { timeTooltip.style.display = "none"; return; }
+
       const lon = geo[0];
+      const lat = geo[1];
       const offsetHours = Math.round(lon / 15);
       const utcHour = parseFloat(timeSlider.value) - localOffsetHours;
       const localHour = (utcHour + offsetHours + 24) % 24;
       const h = Math.floor(localHour);
       const m = Math.floor((localHour - h) * 60);
-      timeTooltip.textContent = `Fuso ~${offsetHours >= 0 ? '+' : ''}${offsetHours} UTC | Local: ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+
+      // Hora solar aproximada (longitude/15)
+      const solarHour = ((utcHour + lon / 15) + 24) % 24;
+      const sh = Math.floor(solarHour);
+      const sm = Math.floor((solarHour - sh) * 60);
+
+      timeTooltip.innerHTML = `
+        <div>${lat.toFixed(1)}°, ${lon.toFixed(1)}°</div>
+        <div>Solar ≈ ${String(sh).padStart(2,'0')}:${String(sm).padStart(2,'0')}</div>
+        <div style="opacity:0.7;font-size:11px">Fuso ~${offsetHours >= 0 ? '+' : ''}${offsetHours}</div>
+      `;
       timeTooltip.style.display = "block";
       timeTooltip.style.left = (e.clientX - rect.left + 15) + "px";
       timeTooltip.style.top = (e.clientY - rect.top + 15) + "px";
@@ -982,17 +1038,43 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     }
   });
 
+  // Camadas
   document.getElementById("layerControls").addEventListener("change", (e) => {
     const key = e.target.dataset.layer, on = e.target.checked;
     if (key === "borders") landGroup.style.display = on ? "" : "none";
-    else if (key === "graticule") document.getElementById("gridCircles").style.display = on ? "" : "none";
-    else if (key === "grid") document.getElementById("gridCross").style.display = on ? "" : "none";
-    else if (key === "star6") document.getElementById("gridStar6").style.display = on ? "" : "none";
+    else if (key === "tropics") document.getElementById("tropicsGroup").style.display = on ? "" : "none";
+    else if (key === "visual") document.getElementById("visualGroup").style.display = on ? "" : "none";
     else if (key === "stars") { starsGroup.style.display = on ? "" : "none"; constGroup.style.display = on ? "" : "none"; labelsGroup.style.display = on ? "" : "none"; }
-    else if (key === "light") { solarLight.style.display = on ? "" : "none"; sunLayer.style.display = on ? "" : "none"; }
+    else if (key === "light") { solarLight.style.display = on ? "" : "none"; document.getElementById("sunLayer").style.display = on ? "" : "none"; }
     else if (key === "dark") solarShadow.style.display = on ? "" : "none";
-    else if (key === "moon") moonLayer.style.display = on ? "" : "none";
+    else if (key === "moon") document.getElementById("moonLayer").style.display = on ? "" : "none";
     else if (key === "timezones") document.getElementById("timezoneLayer").style.display = on ? "" : "none";
+  });
+
+  // Sombra Simples / Técnica
+  document.getElementById("shadowSimple").addEventListener("click", () => {
+    shadowMode = "simple";
+    document.getElementById("shadowSimple").classList.add("active");
+    document.getElementById("shadowTech").classList.remove("active");
+    update();
+  });
+  document.getElementById("shadowTech").addEventListener("click", () => {
+    shadowMode = "tech";
+    document.getElementById("shadowTech").classList.add("active");
+    document.getElementById("shadowSimple").classList.remove("active");
+    update();
+  });
+
+  // Idioma
+  document.getElementById("langBR").addEventListener("click", () => {
+    langMode = "br";
+    document.getElementById("langBR").classList.add("active");
+    document.getElementById("langWorld").classList.remove("active");
+  });
+  document.getElementById("langWorld").addEventListener("click", () => {
+    langMode = "world";
+    document.getElementById("langWorld").classList.add("active");
+    document.getElementById("langBR").classList.remove("active");
   });
 
   document.getElementById("q").addEventListener("input", (e) => {
@@ -1018,7 +1100,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     box.innerHTML = `${backBtn}<h2 style="font-family:var(--f-display); font-size:24px; margin-bottom:8px;">${nome}</h2>`;
   }
 
-  // --- Termos de Uso (modal) ---
+  // --- Termos de Uso ---
   const termsBtn = document.getElementById("termsBtn");
   const termsModal = document.getElementById("termsModal");
   const termsClose = document.getElementById("termsClose");
@@ -1030,6 +1112,9 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   termsAccept.addEventListener("click", closeTerms);
   termsModal.addEventListener("click", (e) => { if (e.target === termsModal) closeTerms(); });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeTerms(); });
+
+  // Inicialização das camadas Visual (começa desligada)
+  document.getElementById("visualGroup").style.display = "none";
 
   applyMapTransform();
   initMap();
