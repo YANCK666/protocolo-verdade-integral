@@ -162,7 +162,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   // 1. CARREGA O MAPA LOCAL
   async function initMap() {
     try {
-      const topo = await d3.json("mapa.json");
+      const topo = await d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json");
       const features = topojson.feature(topo, topo.objects.countries).features;
       const g = d3.select("#landGroup");
       
