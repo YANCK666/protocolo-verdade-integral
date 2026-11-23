@@ -23,7 +23,7 @@
   .moon-shadow { fill: #000; }
   .pole { fill: #c4a1f0; }
   .panel { background: #15101c; padding: 20px; border-radius: 12px; border: 1px solid #3a2d4c; }
-  .clock-display { font-size: 24px; font-weight: bold; margin-bottom: 20px; color: #c4a1f0; }
+  .clock-display { font-size: 24px; font-weight: bold; margin-bottom: 20px; color: #c4a1f0; text-align: center; }
   .btn { width: 100%; padding: 10px; background: #221a2e; color: #f0e9fb; border: 1px solid #3a2d4c; border-radius: 6px; cursor: pointer; margin-top: 10px; }
   input[type="range"] { width: 100%; margin-top: 20px; accent-color: #c4a1f0; }
   .lock-toggle { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; cursor: pointer; font-size: 14px; }
@@ -41,46 +41,40 @@
       
       <circle class="sea" cx="400" cy="400" r="372" />
       
-      <!-- TERRA (FIXA) -->
       <g id="landGroup" clip-path="url(#mapclip)"></g>
 
-      <!-- CÉU (GIRA COM O SOL) -->
       <g id="skyGroup" clip-path="url(#mapclip)" pointer-events="none">
         <circle id="sun" class="sun-dot" r="12" />
         <circle id="moon" class="moon-dot" r="12" />
         <circle id="moonShadow" class="moon-shadow" r="12" clip-path="url(#moonclip)" />
       </g>
 
-      <!-- SOMBRA -->
       <image id="nightShadow" x="0" y="0" width="800" height="800" preserveAspectRatio="none" clip-path="url(#mapclip)" />
 
-      <!-- GRADE E TRÓPICOS -->
       <circle class="tropic-north" cx="400" cy="400" r="137.5" />
       <circle class="tropic-equator" cx="400" cy="400" r="186" />
       <circle class="tropic-south" cx="400" cy="400" r="234.5" />
       <circle class="pole" cx="400" cy="400" r="5" />
       
-      <!-- ANEL DE 24H -->
       <g id="clockGroup">
         <circle cx="400" cy="400" r="385" fill="none" stroke="#3a2d4c" stroke-width="1.5" />
         <g id="clockTicks"></g>
       </g>
     </svg>
-    <div id="timeTooltip" style="position: absolute; pointer-events: none; background: #15101c; border: 1px solid #3a2d4c; padding: 8px; border-radius: 6px; display: none; z-index: 100; font-size: 12px;"></div>
   </div>
 
   <div class="panel">
-    <div class="clock-display" id="clockDisplay">--:--</div>
+    <div class="clock-display" id="clockDisplay">--/--/---- --:--</div>
     
-    <!-- OPÇÃO DE TRAVAR/DESTRAVAR -->
     <label class="lock-toggle">
       <input type="checkbox" id="lockToggle" checked> Travar Relógio (para consulta)
     </label>
 
-    <div style="display:flex; gap:10px;">
-      <input type="number" id="inputYear" value="2026" style="width:80px; background:#0b0710; color:#fff; border:1px solid #3a2d4c; padding:5px;">
-      <input type="number" id="inputMonth" value="11" style="width:50px; background:#0b0710; color:#fff; border:1px solid #3a2d4c; padding:5px;">
-      <input type="number" id="inputDay" value="23" style="width:50px; background:#0b0710; color:#fff; border:1px solid #3a2d4c; padding:5px;">
+    <!-- Data de referência que será atualizada pelo JS -->
+    <div style="display:flex; gap:10px; pointer-events: none;">
+      <input type="number" id="inputYear" value="2026" style="width:80px; background:#0b0710; color:#555; border:1px solid #3a2d4c; padding:5px;">
+      <input type="number" id="inputMonth" value="11" style="width:50px; background:#0b0710; color:#555; border:1px solid #3a2d4c; padding:5px;">
+      <input type="number" id="inputDay" value="23" style="width:50px; background:#0b0710; color:#555; border:1px solid #3a2d4c; padding:5px;">
     </div>
     <input type="range" id="timeSlider" min="0" max="23.99" value="12" step="0.01">
     <button class="btn" id="btnNow">Sincronizar com o Agora</button>
@@ -145,9 +139,10 @@ shadowCanvas.width = shadowCanvas.height = 300;
 const sctx = shadowCanvas.getContext("2d");
 let shadowGrid = null;
 
+// Variáveis para o arrasto infinito
 let isRotating = false;
 let startX = 0;
-let startTime = 12;
+let baseDate = new Date();
 
 async function init() {
   try {
@@ -156,7 +151,7 @@ async function init() {
     d3.select("#landGroup").selectAll("path").data(features).join("path").attr("class", "c").attr("d", path);
     
     drawClockTicks();
-    update();
+    syncNow(); // Inicia no tempo atual
     setInterval(() => { if(document.getElementById("btnNow").dataset.live === "true") syncNow(); }, 1000);
   } catch(e) {
     document.getElementById("clockDisplay").textContent = "Erro no mapa";
@@ -179,16 +174,18 @@ function drawClockTicks() {
   }
 }
 
+// Lê a data e hora atual do estado (baseado nos inputs e no slider)
 function getDate() {
   return new Date(
-    document.getElementById("inputYear").value, 
-    document.getElementById("inputMonth").value - 1, 
-    document.getElementById("inputDay").value, 
-    Math.floor(document.getElementById("timeSlider").value), 
-    (document.getElementById("timeSlider").value % 1) * 60
+    parseInt(document.getElementById("inputYear").value), 
+    parseInt(document.getElementById("inputMonth").value) - 1, 
+    parseInt(document.getElementById("inputDay").value), 
+    Math.floor(parseFloat(document.getElementById("timeSlider").value)), 
+    (parseFloat(document.getElementById("timeSlider").value) % 1) * 60
   );
 }
 
+// Atualiza toda a engrenagem
 function update() {
   const date = getDate();
   const sun = Astro.sunEquatorial(date);
@@ -219,7 +216,13 @@ function update() {
 
   drawShadow(date, sun, sunLon);
 
-  document.getElementById("clockDisplay").textContent = date.toLocaleTimeString().slice(0,5);
+  // Atualiza o relógio grande com DATA e HORA
+  const d = String(date.getDate()).padStart(2, '0');
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const y = date.getFullYear();
+  const hh = String(date.getHours()).padStart(2, '0');
+  const mm = String(date.getMinutes()).padStart(2, '0');
+  document.getElementById("clockDisplay").textContent = `${d}/${m}/${y} ${hh}:${mm}`;
 }
 
 function drawShadow(date, sun, sunLon) {
@@ -263,38 +266,46 @@ function drawShadow(date, sun, sunLon) {
   solarShadow.setAttribute("href", shadowCanvas.toDataURL("image/png"));
 }
 
-// --- CONTROLES DE TEMPO E ARRASTAR ---
+// --- CONTROLES DE TEMPO ---
 document.getElementById("timeSlider").addEventListener("input", () => {
   document.getElementById("btnNow").dataset.live = "false";
   update();
 });
-document.getElementById("inputYear").addEventListener("change", update);
-document.getElementById("inputMonth").addEventListener("change", update);
-document.getElementById("inputDay").addEventListener("change", update);
 
 document.getElementById("lockToggle").addEventListener("change", (e) => {
   if (e.target.checked) mapWrap.classList.add("locked");
   else mapWrap.classList.remove("locked");
 });
 
+// --- ARRASTO INFINITO ---
 mapWrap.addEventListener("pointerdown", (e) => {
-  if (document.getElementById("lockToggle").checked) return; // Se travado, não faz nada
+  if (document.getElementById("lockToggle").checked) return; 
   isRotating = true;
   startX = e.clientX;
-  startTime = parseFloat(document.getElementById("timeSlider").value);
+  baseDate = getDate(); // Guarda a data/hora exata de onde começou o arrasto
   mapWrap.setPointerCapture(e.pointerId);
 });
 
 mapWrap.addEventListener("pointermove", (e) => {
   if (!isRotating) return;
+  
   const dx = e.clientX - startX;
-  // Arrastar 30 pixels = 1 hora (720 px = 24 horas)
-  let newTime = startTime - (dx / 30);
   
-  // Loop de 24 horas
-  newTime = ((newTime % 24) + 24) % 24;
+  // A matemática do infinito: 30 pixels = 1 hora (720 = 24h)
+  const deltaHours = -dx / 30; 
   
-  document.getElementById("timeSlider").value = newTime;
+  // Cria uma nova data baseada no arrasto (pode avançar ou voltar dias inteiros)
+  const newDate = new Date(baseDate.getTime() + deltaHours * 3600000);
+  
+  // Atualiza as caixinhas de data e hora com o novo valor
+  document.getElementById("inputYear").value = newDate.getFullYear();
+  document.getElementById("inputMonth").value = newDate.getMonth() + 1;
+  document.getElementById("inputDay").value = newDate.getDate();
+  
+  // A hora do slider é o resto da divisão por 24
+  const h = newDate.getHours() + newDate.getMinutes() / 60 + newDate.getSeconds() / 3600;
+  document.getElementById("timeSlider").value = h;
+  
   document.getElementById("btnNow").dataset.live = "false";
   update();
 });
@@ -312,7 +323,7 @@ function syncNow() {
   document.getElementById("inputYear").value = d.getFullYear();
   document.getElementById("inputMonth").value = d.getMonth() + 1;
   document.getElementById("inputDay").value = d.getDate();
-  document.getElementById("timeSlider").value = d.getHours() + d.getMinutes() / 60;
+  document.getElementById("timeSlider").value = d.getHours() + d.getMinutes() / 60 + d.getSeconds() / 3600;
   update();
 }
 
