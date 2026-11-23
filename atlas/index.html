@@ -9,7 +9,7 @@
 :root {
   --bg: #0b0710; --panel: #15101c; --soft: #221a2e; --ink: #f0e9fb; --muted: #a996c0;
   --line: #3a2d4c; --sea: #110c18; --land: #2e2340; --accent: #c4a1f0; --sel: #e9b8ff;
-  --green: #4ade80; --hist: #8b5fc7; --star: #fffbe6; --const: #4da6ff;
+  --green: #4ade80; --star: #fffbe6; --const: #4da6ff;
   --f-display: "Young Serif", Georgia, serif; 
   --f-body: "Hanken Grotesk", system-ui, sans-serif;
   --f-mono: "IBM Plex Mono", monospace;
@@ -68,13 +68,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 .layeritem input { accent-color: var(--accent); margin: 0; flex: 0 0 auto; }
 .layeritem .swatch { width: 10px; height: 10px; border-radius: 3px; background: var(--swatch, var(--accent)); flex: 0 0 auto; }
 .timeline, .time-control { margin-top: 12px; padding: 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); }
-.timeline h3 { font-family: var(--f-display); font-size: 18px; font-weight: 400; margin: 0 0 4px; }
-.timeline p { margin: 0; color: var(--muted); font-size: 12.5px; }
-.yearline, .time-display { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin: 8px 0 2px; }
-.yearline output, .time-display { color: var(--accent); font-family: var(--f-mono); font-weight: 600; }
-.timeline input, .time-control input { width: 100%; accent-color: var(--accent); margin: 8px 0; }
-.info-box { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); display: none; }
-.footer-box { max-width: 1280px; margin: 0 auto 28px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
 .time-machine { display: flex; gap: 8px; align-items: end; }
 .time-machine .field { flex: 1; display: flex; flex-direction: column; }
 .time-machine label { font-size: 11px; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .05em; }
@@ -333,6 +326,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 <script src="astronomia.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+
 <script>
 (function () {
   "use strict";
@@ -402,61 +396,10 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 
   const UI_TEXT = {
     pt: { search:"Buscar país", choose:"Escolha um país", chooseHelp:"Clique no mapa ou use a busca.", countries:"Países", latlong:"Lat/Long", tropics:"Trópicos", visual:"Visual", stars:"Céu Estelar", sun:"Sol", night:"Sombra (Noite)", moon:"Lua", zones:"Fusos Horários", lock:"Travar Relógio", realTime:"Tempo Real", reset:"↺ Restaurar", terms:"Termos de Uso", agree:"Entendi e concordo", back:"← Todos os países", local:"LOCAL", shadow:"Sombra:", solarTime:"hora solar", simple:"SIMPLES", technical:"TÉCNICA", placeholder:"Brasil, Japão, Egito…" },
-    en: { search:"Search country", choose:"Choose a country", chooseHelp:"Click the map or use search.", countries:"Countries", latlong:"Lat/Long", tropics:"Tropics", visual:"Visual", stars:"Star field", sun:"Sun", night:"Night shadow", moon:"Moon", zones:"Time zones", lock:"Lock Clock", realTime:"Live Time", reset:"↺ Reset", terms:"Terms of Use", agree:"I understand and agree", back:"← All countries", local:"LOCAL", shadow:"Shadow:", solarTime:"solar time", simple:"SIMPLE", technical:"TECHNICAL", placeholder:"Brazil, Japan, Egypt…" },
-    es: { search:"Buscar país", choose:"Elige un país", chooseHelp:"Haz clic en el mapa o usa la búsqueda.", countries:"Países", latlong:"Lat/Long", tropics:"Trópicos", visual:"Visual", stars:"Cielo estrellado", sun:"Sol", night:"Sombra (noche)", moon:"Luna", zones:"Husos horarios", lock:"Bloquear reloj", realTime:"Tiempo real", reset:"↺ Restaurar", terms:"Términos de uso", agree:"Entiendo y acepto", back:"← Todos los países", local:"LOCAL", shadow:"Sombra:", solarTime:"hora solar", simple:"SIMPLE", technical:"TÉCNICA", placeholder:"Brasil, Japón, Egipto…" }
+    en: { search:"Search country", choose:"Choose a country", chooseHelp:"Click the map or use search.", countries:"Countries", latlong:"Lat/Long", tropics:"Tropics", visual:"Visual", stars:"Star field", sun:"Sun", night:"Night shadow", moon:"Moon", zones:"Time zones", lock:"Lock Clock", realTime:"Live Time", reset:"↺ Reset", terms:"Terms of Use", agree:"I understand and agree", back:"← All countries", local:"LOCAL", shadow:"Shadow:", solarTime:"solar time", simple:"SIMPLE", technical:"TECHNICAL", placeholder:"Brazil, Japan, Egypt…" }
   };
 
-  function uiLanguage() {
-    if (localeMode === "br") return "pt";
-    const lang = (worldLocale || "en").slice(0,2).toLowerCase();
-    return UI_TEXT[lang] ? lang : "en";
-  }
-  function countryIso(feature) {
-    const key = String(feature?.id ?? "").padStart(3, "0");
-    return window.Dados.iso[key] || null;
-  }
-  function countryName(feature) {
-    const iso = countryIso(feature);
-    const fallback = feature?.properties?.name || "";
-    if (!iso) return fallback;
-    try {
-      const names = new Intl.DisplayNames([activeDisplayLocale], { type:"region" });
-      return names.of(iso.toUpperCase()) || fallback;
-    } catch (_) { return fallback; }
-  }
-  function flagMarkup(feature, className="country-flag") {
-    const iso = countryIso(feature);
-    return iso ? `<img class="${className}" src="https://flagcdn.com/w40/${iso}.png" alt="" loading="lazy">` : "";
-  }
-  function applyLocale() {
-    const lang = uiLanguage();
-    const t = UI_TEXT[lang] || UI_TEXT.en;
-    activeDisplayLocale = localeMode === "br" ? "pt-BR" : worldLocale;
-    document.documentElement.lang = activeDisplayLocale;
-    document.getElementById("searchLabel").textContent = t.search;
-    document.getElementById("q").placeholder = t.placeholder;
-    document.getElementById("shadowSimple").textContent = t.simple;
-    document.getElementById("shadowTechnical").textContent = t.technical;
-    document.getElementById("chooseCountryTitle").textContent = t.choose;
-    document.getElementById("chooseCountryHelp").textContent = t.chooseHelp;
-    const labels = document.querySelectorAll("#layerControls .layeritem");
-    const keys = ["countries","latlong","tropics","visual","stars","sun","night","moon","zones","lock","realTime"];
-    labels.forEach((el,i) => { const input=el.querySelector("input"); const swatch=el.querySelector("i"); el.textContent=""; if (swatch) el.appendChild(swatch); el.appendChild(input); el.appendChild(document.createTextNode(t[keys[i]] || "")); });
-    document.getElementById("btnReset").textContent = t.reset;
-    document.getElementById("termsBtn").title = t.terms;
-    document.getElementById("termsBtn").setAttribute("aria-label", t.terms);
-    document.getElementById("termsTitle").textContent = `${t.terms} & Princípios`;
-    document.getElementById("termsAccept").textContent = t.agree;
-    document.getElementById("clockLabel").textContent = t.local;
-    document.querySelector(".shadow-control strong").textContent = t.shadow;
-    document.getElementById("localeBrazil").classList.toggle("active", localeMode === "br");
-    document.getElementById("localeWorld").classList.toggle("active", localeMode === "world");
-    document.getElementById("localeBrazil").setAttribute("aria-pressed", String(localeMode === "br"));
-    document.getElementById("localeWorld").setAttribute("aria-pressed", String(localeMode === "world"));
-    if (selectedCountryFeature) showInfo(selectedCountryFeature);
-  }
   let selectedCountryFeature = null;
-
   let isRealTime = true;
   let zoom = 1, panX = 0, panY = 0;
   let clockLocked = true;
@@ -811,7 +754,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   let rotateEnabled = false, isRotating = false, isPanning = false;
   let startX = 0, startY = 0, startPanX = 0, startPanY = 0;
   let baseDate = new Date();
-  let initialPinchDistance = 0, initialPinchZoom = 1;
 
   clockLockCheckbox.addEventListener("change", () => {
     clockLocked = clockLockCheckbox.checked;
@@ -1015,3 +957,5 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   initMap();
 })();
 </script>
+</body>
+</html>
