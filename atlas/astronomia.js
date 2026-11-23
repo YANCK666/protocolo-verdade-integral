@@ -1,10 +1,6 @@
-// ==========================================
-// ARQUIVO: astronomia.js
-// Motor de cálculos celestes do Atlas Polar
-// ==========================================
-
 const Astro = (function () {
-  function normaliza(graus) { return ((graus % 360) + 360) % 360; }
+  "use strict";
+  function normaliza(g) { return ((g % 360) + 360) % 360; }
   
   function gastDeg(date) {
     const jd = date.getTime() / 86400000 + 2440587.5;
@@ -20,13 +16,16 @@ const Astro = (function () {
     const C = (1.914602 - T * (0.004817 + 0.000014 * T)) * Math.sin(M) + (0.019993 - 0.000101 * T) * Math.sin(2 * M) + 0.000289 * Math.sin(3 * M);
     const omega = (125.04 - 1934.136 * T) * Math.PI / 180;
     const lambda = (L0 + C - 0.00569 - 0.00478 * Math.sin(omega)) * Math.PI / 180;
-    const eps = (23.439291 - 0.0130042 * T) * Math.PI / 180;
+    const seconds = 21.448 - T * (46.815 + T * (0.00059 - T * 0.001813));
+    const eps0 = 23 + (26 + seconds / 60) / 60;
+    const eps = (eps0 + 0.00256 * Math.cos(omega)) * Math.PI / 180;
     const dec = Math.asin(Math.sin(eps) * Math.sin(lambda));
     const ra = Math.atan2(Math.cos(eps) * Math.sin(lambda), Math.cos(lambda));
     return { ra: normaliza(ra * 180 / Math.PI), dec: dec * 180 / Math.PI };
   }
-  
+
   function moonEquatorial(date) {
+    // Aproximação lunar para manter o funcionamento sem dependências externas
     const jd = date.getTime() / 86400000 + 2440587.5;
     const T = (jd - 2451545.0) / 36525.0;
     const L = normaliza(218.316 + 481267.881 * T);
@@ -39,12 +38,7 @@ const Astro = (function () {
     const ra = Math.atan2(Math.sin(lambda) * Math.cos(eps) - Math.tan(beta) * Math.sin(eps), Math.cos(lambda));
     return { ra: normaliza(ra * 180 / Math.PI), dec: dec * 180 / Math.PI };
   }
-  
-  function moonPhase(date) {
-    const s = sunEquatorial(date), m = moonEquatorial(date);
-    return normaliza(m.ra - s.ra) / 360;
-  }
-  
+
   function equationOfTimeMinutes(date) {
     const start = new Date(date.getFullYear(), 0, 0);
     const day = Math.floor((date - start) / 86400000);
@@ -53,5 +47,5 @@ const Astro = (function () {
     return 229.18 * (0.000075 + 0.001868 * Math.cos(gamma) - 0.032077 * Math.sin(gamma) - 0.014615 * Math.cos(2 * gamma) - 0.040849 * Math.sin(2 * gamma));
   }
 
-  return { gastDeg, sunEquatorial, moonEquatorial, moonPhase, equationOfTimeMinutes };
+  return { gastDeg, sunEquatorial, moonEquatorial, equationOfTimeMinutes };
 })();
