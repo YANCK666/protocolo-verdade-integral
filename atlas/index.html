@@ -238,6 +238,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
               <g id="constellations"></g>
               <g id="stars"></g>
               <g id="starLabels"></g>
+              <g id="planetLayer"></g>
               <g id="sunLayer">
                 <circle id="sun" class="sun-dot" r="12" />
               </g>
@@ -361,6 +362,21 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
         <button id="btnNow" style="margin-top:10px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--accent);color:var(--bg);font:inherit;font-size:12px;cursor:pointer;font-weight:600;width:100%;">⏱️ Sincronizar com o Agora</button>
       </section>
 
+      <section class="layerbox" id="astronomyPanel">
+        <div class="layerhead"><strong>Motor Astronômico</strong><span id="astroStatus">Verificando biblioteca…</span></div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Todos os corpos seguem a Máquina do Tempo. Posições observadas usam latitude e longitude; pontos no disco são projeções equatoriais aproximadas, não trajetórias locais no céu.</p>
+        <div class="time-machine">
+          <div class="field"><label for="observerLat">Latitude (°)</label><input id="observerLat" type="number" min="-90" max="90" step="any" value="0"></div>
+          <div class="field"><label for="observerLon">Longitude (°)</label><input id="observerLon" type="number" min="-180" max="180" step="any" value="0"></div>
+        </div>
+        <div class="layergrid" style="margin-top:10px" id="planetControls">
+          <label class="layeritem"><input type="checkbox" id="showPlanets" checked> Planetas</label>
+          <label class="layeritem"><input type="checkbox" id="showPlanetNames" checked> Nomes</label>
+        </div>
+        <div id="astroResults" class="readout-box" style="font-family:var(--f-mono);font-size:11px;max-height:240px;overflow:auto">Aguardando cálculos.</div>
+        <div id="astroAudit" style="font-size:11px;color:var(--muted);margin-top:8px"></div>
+      </section>
+
       <section class="readout-box">
         <div class="row">
           <span class="label">Tzolkin (Maia)</span>
@@ -441,6 +457,8 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/suncalc@1.9.0/suncalc.js"></script>
+<!-- Para funcionamento offline, baixe a distribuição browser do Astronomy Engine como astronomy.browser.min.js na pasta /atlas/. -->
+<script src="https://cdn.jsdelivr.net/npm/astronomy-engine@2.1.19/astronomy.browser.min.js" onload="window.dispatchEvent(new Event('atlas-astronomy-ready'))" onerror="this.onerror=null;this.onload=function(){window.dispatchEvent(new Event('atlas-astronomy-ready'))};this.src='./astronomy.browser.min.js'"></script>
 <script>
 (function () {
   "use strict";
@@ -895,11 +913,86 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     return new Date(baseDay.getTime() + (localHour * 3600000));
   }
 
+  // Motor adicional: nunca interrompe a renderização SunCalc em caso de falha.
+  const PLANET_BODIES = ["Mercury","Venus","Mars","Jupiter","Saturn","Uranus","Neptune","Pluto"];
+  const PLANET_NAMES = {Mercury:"Mercúrio",Venus:"Vênus",Mars:"Marte",Jupiter:"Júpiter",Saturn:"Saturno",Uranus:"Urano",Neptune:"Netuno",Pluto:"Plutão"};
+  const planetLayer = document.getElementById("planetLayer");
+  const astroResults = document.getElementById("astroResults");
+  const astroStatus = document.getElementById("astroStatus");
+  const astroAudit = document.getElementById("astroAudit");
+  let lastAstroKey = "";
+  function updateAstronomy(date) {
+    const lib = window.Astronomy;
+    if (!lib || typeof lib.Equator !== "function" || typeof lib.Horizon !== "function") {
+      astroStatus.textContent = "Biblioteca indisponível";
+      astroResults.textContent = "SunCalc preservado. Coloque astronomy.browser.min.js ao lado do index.html, ou conecte-se à internet para carregar a biblioteca.";
+      planetLayer.replaceChildren();
+      return;
+    }
+    astroStatus.textContent = "Astronomy Engine ativo";
+    const lat = Number(document.getElementById("observerLat").value);
+    const lon = Number(document.getElementById("observerLon").value);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat)>90 || Math.abs(lon)>180) {
+      astroResults.textContent = "Latitude ou longitude fora do intervalo permitido.";
+      return;
+    }
+    const show = document.getElementById("showPlanets").checked;
+    const names = document.getElementById("showPlanetNames").checked;
+    const key = [date.getTime(),lat,lon,show,names].join("|");
+    if (key === lastAstroKey) return;
+    lastAstroKey = key;
+    planetLayer.replaceChildren();
+    const observer = new lib.Observer(lat,lon,0);
+    const reference = new lib.Observer(0,0,0);
+    const lines = [];
+    let solarDifference = null;
+    for (const body of ["Sun","Moon",...PLANET_BODIES]) {
+      try {
+        const eq = lib.Equator(body,date,observer,true,true);
+        const hz = lib.Horizon(date,observer,eq.ra,eq.dec,"normal");
+        const label = PLANET_NAMES[body] || (body === "Sun" ? "Sol" : "Lua");
+        lines.push(`${label}: alt ${hz.altitude.toFixed(2)}° · az ${hz.azimuth.toFixed(2)}° · AR ${eq.ra.toFixed(4)} h · Dec ${eq.dec.toFixed(3)}°`);
+        if (body === "Sun") {
+          const old = sunEquatorial(date);
+          const deltaRA = Math.abs((((eq.ra*15-old.ra)+540)%360)-180);
+          solarDifference = `Comparação solar (AR): diferença ${deltaRA.toFixed(3)}° entre Astronomy Engine e cálculo anterior; não é validação independente.`;
+        }
+        if (!show || !PLANET_BODIES.includes(body)) continue;
+        // Referência equatorial em Greenwich: ponto projetado NÃO é azimute local.
+        const referenceEq = lib.Equator(body,date,reference,true,true);
+        const pt = equatorialToMap(referenceEq.ra*15,referenceEq.dec,date);
+        if (!pt || Math.hypot(pt.x-CX,pt.y-CY)>R) continue;
+        const ns="http://www.w3.org/2000/svg";
+        const dot=document.createElementNS(ns,"circle");
+        dot.setAttribute("cx",pt.x);dot.setAttribute("cy",pt.y);dot.setAttribute("r",4);
+        dot.setAttribute("fill","#ff9b69");dot.setAttribute("stroke","#211528");dot.setAttribute("stroke-width","1");
+        const title=document.createElementNS(ns,"title");title.textContent=lines[lines.length-1];dot.appendChild(title);
+        planetLayer.appendChild(dot);
+        if(names){const txt=document.createElementNS(ns,"text");txt.setAttribute("x",pt.x+6);txt.setAttribute("y",pt.y-5);txt.setAttribute("class","star-label");txt.textContent=label;planetLayer.appendChild(txt);}
+      } catch(err) { lines.push(`${body}: indisponível (${err.message})`); }
+    }
+    astroResults.textContent = lines.join("\n");
+    astroResults.style.whiteSpace="pre-wrap";
+    astroAudit.textContent = (solarDifference || "") + " Datas remotas exigem validação externa (JPL Horizons). Calendário astronômico usa ano 0 = 1 a.C.";
+  }
+  // Recalcula quando a biblioteca termina de carregar (inclusive no fallback).
+  window.addEventListener("atlas-astronomy-ready", () => {
+    lastAstroKey = "";
+    updateAstronomy(getSimulatedDate());
+  });
+  window.addEventListener("load", () => {
+    if (window.Astronomy) { lastAstroKey = ""; updateAstronomy(getSimulatedDate()); }
+  });
+  for(const id of ["observerLat","observerLon","showPlanets","showPlanetNames"]){
+    document.getElementById(id).addEventListener("input",()=>{lastAstroKey="";updateAstronomy(getSimulatedDate());});
+  }
+
   function update() {
     try {
       const date = getSimulatedDate();
       drawLight(date);
       drawStars(date);
+      updateAstronomy(date);
       updateReadouts(date);
       updateClock(date);
       const yyyy = date.getFullYear();
