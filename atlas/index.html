@@ -393,66 +393,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   const sctx = shadowCanvas.getContext("2d");
 
   const localOffsetHours = -new Date().getTimezoneOffset() / 60;
-    const UI_TEXT = {
-    pt: { search:"Buscar país", choose:"Escolha um país", chooseHelp:"Clique no mapa ou use a busca.", countries:"Países", latlong:"Lat/Long", tropics:"Trópicos", visual:"Visual", stars:"Céu Estelar", sun:"Sol", night:"Sombra (Noite)", moon:"Lua", zones:"Fusos Horários", lock:"Travar Relógio", realTime:"Tempo Real", reset:"↺ Restaurar", terms:"Termos de Uso", agree:"Entendi e concordo", back:"← Todos os países", local:"LOCAL", shadow:"Sombra:", solarTime:"hora solar", simple:"SIMPLES", technical:"TÉCNICA", placeholder:"Brasil, Japão, Egito…" },
-    en: { search:"Search country", choose:"Choose a country", chooseHelp:"Click the map or use search.", countries:"Countries", latlong:"Lat/Long", tropics:"Tropics", visual:"Visual", stars:"Star field", sun:"Sun", night:"Night shadow", moon:"Moon", zones:"Time zones", lock:"Lock Clock", realTime:"Live Time", reset:"↺ Reset", terms:"Terms of Use", agree:"I understand and agree", back:"← All countries", local:"LOCAL", shadow:"Shadow:", solarTime:"solar time", simple:"SIMPLE", technical:"TECHNICAL", placeholder:"Brazil, Japan, Egypt…" }
-  };
-
-  let localeMode = "br";
-  let worldLocale = navigator.language || "en";
-  let activeDisplayLocale = "pt-BR";
-
-  function uiLanguage() {
-    if (localeMode === "br") return "pt";
-    const lang = (worldLocale || "en").slice(0,2).toLowerCase();
-    return UI_TEXT[lang] ? lang : "en";
-  }
-
-  function applyLocale() {
-    const lang = uiLanguage();
-    const t = UI_TEXT[lang] || UI_TEXT.en;
-    activeDisplayLocale = localeMode === "br" ? "pt-BR" : worldLocale;
-    document.documentElement.lang = activeDisplayLocale;
-    document.getElementById("searchLabel").textContent = t.search;
-    document.getElementById("q").placeholder = t.placeholder;
-    document.getElementById("shadowSimple").textContent = t.simple;
-    document.getElementById("shadowTechnical").textContent = t.technical;
-    document.getElementById("chooseCountryTitle").textContent = t.choose;
-    document.getElementById("chooseCountryHelp").textContent = t.chooseHelp;
-    const labels = document.querySelectorAll("#layerControls .layeritem");
-    const keys = ["countries","latlong","tropics","visual","stars","sun","night","moon","zones","lock","realTime"];
-    labels.forEach((el,i) => { const input=el.querySelector("input"); const swatch=el.querySelector("i"); el.textContent=""; if (swatch) el.appendChild(swatch); el.appendChild(input); el.appendChild(document.createTextNode(t[keys[i]] || "")); });
-    document.getElementById("btnReset").textContent = t.reset;
-    document.getElementById("termsBtn").title = t.terms;
-    document.getElementById("termsBtn").setAttribute("aria-label", t.terms);
-    document.getElementById("termsTitle").textContent = `${t.terms} & Princípios`;
-    document.getElementById("termsAccept").textContent = t.agree;
-    document.getElementById("clockLabel").textContent = t.local;
-    document.querySelector(".shadow-control strong").textContent = t.shadow;
-    document.getElementById("localeBrazil").classList.toggle("active", localeMode === "br");
-    document.getElementById("localeWorld").classList.toggle("active", localeMode === "world");
-    document.getElementById("localeBrazil").setAttribute("aria-pressed", String(localeMode === "br"));
-    document.getElementById("localeWorld").setAttribute("aria-pressed", String(localeMode === "world"));
-    if (selectedCountryFeature) showInfo(selectedCountryFeature);
-  }
-
-  function countryIso(feature) {
-    const key = String(feature?.id ?? "").padStart(3, "0");
-    return window.Dados.iso[key] || null;
-  }
-  function countryName(feature) {
-    const iso = countryIso(feature);
-    const fallback = feature?.properties?.name || "";
-    if (!iso) return fallback;
-    try {
-      const names = new Intl.DisplayNames([activeDisplayLocale], { type:"region" });
-      return names.of(iso.toUpperCase()) || fallback;
-    } catch (_) { return fallback; }
-  }
-  function flagMarkup(feature, className="country-flag") {
-    const iso = countryIso(feature);
-    return iso ? `<img class="${className}" src="https://flagcdn.com/w40/${iso}.png" alt="" loading="lazy">` : "";
-  }
 
   const UI_TEXT = {
     pt: { search:"Buscar país", choose:"Escolha um país", chooseHelp:"Clique no mapa ou use a busca.", countries:"Países", latlong:"Lat/Long", tropics:"Trópicos", visual:"Visual", stars:"Céu Estelar", sun:"Sol", night:"Sombra (Noite)", moon:"Lua", zones:"Fusos Horários", lock:"Travar Relógio", realTime:"Tempo Real", reset:"↺ Restaurar", terms:"Termos de Uso", agree:"Entendi e concordo", back:"← Todos os países", local:"LOCAL", shadow:"Sombra:", solarTime:"hora solar", simple:"SIMPLES", technical:"TÉCNICA", placeholder:"Brasil, Japão, Egito…" },
@@ -465,6 +405,9 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   let clockLocked = true;
   let shadowMode = "simple";
   let countryFeatures = [];
+  let localeMode = "br";
+  let worldLocale = navigator.language || "en";
+  let activeDisplayLocale = "pt-BR";
   const MIN_ZOOM = 1, MAX_ZOOM = 10;
 
   function applyMapTransform() {
