@@ -263,7 +263,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   let baseDate = new Date();
   let activeDisplayLocale = "pt-BR";
 
-  async function init() {
+  const topo = await d3.json("./mapa.json");
     try {
       const topo = await d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json");
       countryFeatures = topojson.feature(topo, topo.objects.countries).features;
