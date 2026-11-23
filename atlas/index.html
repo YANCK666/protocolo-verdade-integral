@@ -243,6 +243,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
               </g>
               <g id="moonLayer">
                 <circle id="moon" class="moon-dot" r="12" />
+                <path id="moonPhase" fill="#f4f1df" stroke="none" pointer-events="none" />
                 <circle id="moonShadow" class="moon-shadow" r="12" clip-path="url(#moonclip)" />
               </g>
             </g>
@@ -826,24 +827,19 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
          // iluminada é dada por SunCalc, sem deslocar círculos arbitrariamente.
          const phase = illum.phase; // 0 nova, 0.25 crescente, 0.5 cheia, 0.75 minguante
          const radius = 12;
-         const litRight = phase < 0.5;
+         const waxing = phase < 0.5;
          const terminator = Math.cos(phase * 2 * Math.PI);
-         const left = [], right = [];
-         for (let i = 0; i <= 48; i++) {
-           const y = -radius + 2 * radius * i / 48;
+         const boundary = [], limbSide = [];
+         for (let i = 0; i <= 64; i++) {
+           const y = -radius + 2 * radius * i / 64;
            const limb = Math.sqrt(Math.max(0, radius * radius - y * y));
-           const xTerm = terminator * limb;
-           if (litRight) { left.push([xTerm, y]); right.push([limb, y]); }
-           else { left.push([-limb, y]); right.push([xTerm, y]); }
+           const xTerm = (waxing ? terminator : -terminator) * limb;
+           boundary.push([xTerm, y]);
+           limbSide.push([waxing ? limb : -limb, y]);
          }
-         const outline = [...left, ...right.reverse()];
+         const outline = [...boundary, ...limbSide.reverse()];
          moonPhase.setAttribute("d", "M" + outline.map(p => p.join(",")).join("L") + "Z");
-         // Rotação visual da iluminação em direção ao Sol no plano do mapa.
-         const sunAngle = sunPoint
-           ? Math.atan2(sunPoint.y - moonPoint.y, sunPoint.x - moonPoint.x) * 180 / Math.PI
-           : 0;
-         const orientation = sunAngle + (litRight ? 0 : 180);
-         moonPhase.setAttribute("transform", `translate(${moonPoint.x} ${moonPoint.y}) rotate(${orientation})`);
+         moonPhase.setAttribute("transform", `translate(${moonPoint.x} ${moonPoint.y})`);
        } else {
          moonIcon.style.display = "none";
          moonPhase.style.display = "none";
