@@ -5,10 +5,13 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Atlas Polar — Relógio Celeste</title>
 <style>
-  body { background: #0b0710; color: #f0e9fb; font-family: sans-serif; margin: 0; padding: 20px; overflow-x: hidden; }
+  body { background: #0b0710; color: #f0e9fb; font-family: sans-serif; margin: 0; padding: 20px; overflow-x: hidden; user-select: none; }
   h1 { font-family: serif; font-weight: 400; margin: 0 0 5px 0; }
   .layout { display: grid; grid-template-columns: 1fr 300px; gap: 30px; max-width: 1200px; margin: 0 auto; align-items: start; }
-  .map-container { position: relative; width: 100%; max-width: 800px; aspect-ratio: 1; background: #110c18; border-radius: 50%; }
+  .map-container { position: relative; width: 100%; max-width: 800px; aspect-ratio: 1; background: #110c18; border-radius: 50%; cursor: grab; }
+  .map-container:active { cursor: grabbing; }
+  .map-container.locked { cursor: default; }
+  .map-container.locked:active { cursor: default; }
   svg { width: 100%; height: 100%; display: block; }
   .sea { fill: #110c18; }
   .c { fill: #2e2340; stroke: #0b0710; stroke-width: 1; }
@@ -23,12 +26,13 @@
   .clock-display { font-size: 24px; font-weight: bold; margin-bottom: 20px; color: #c4a1f0; }
   .btn { width: 100%; padding: 10px; background: #221a2e; color: #f0e9fb; border: 1px solid #3a2d4c; border-radius: 6px; cursor: pointer; margin-top: 10px; }
   input[type="range"] { width: 100%; margin-top: 20px; accent-color: #c4a1f0; }
+  .lock-toggle { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; cursor: pointer; font-size: 14px; }
 </style>
 </head>
 <body>
 
 <div class="layout">
-  <div class="map-container">
+  <div class="map-container" id="mapwrap">
     <svg id="map" viewBox="0 0 800 800">
       <defs>
         <clipPath id="mapclip"><circle cx="400" cy="400" r="372"/></clipPath>
@@ -42,14 +46,12 @@
 
       <!-- CÉU (GIRA COM O SOL) -->
       <g id="skyGroup" clip-path="url(#mapclip)" pointer-events="none">
-        <!-- Estrelas fixas (opcional, pode adicionar depois) -->
-        <g id="starsGroup"></g>
         <circle id="sun" class="sun-dot" r="12" />
         <circle id="moon" class="moon-dot" r="12" />
         <circle id="moonShadow" class="moon-shadow" r="12" clip-path="url(#moonclip)" />
       </g>
 
-      <!-- SOMBRA (FIXA NA TERRA, DESENHADA POR CIMA) -->
+      <!-- SOMBRA -->
       <image id="nightShadow" x="0" y="0" width="800" height="800" preserveAspectRatio="none" clip-path="url(#mapclip)" />
 
       <!-- GRADE E TRÓPICOS -->
@@ -58,16 +60,23 @@
       <circle class="tropic-south" cx="400" cy="400" r="234.5" />
       <circle class="pole" cx="400" cy="400" r="5" />
       
-      <!-- ANEL DE 24H (GIRA COM O SOL) -->
+      <!-- ANEL DE 24H -->
       <g id="clockGroup">
         <circle cx="400" cy="400" r="385" fill="none" stroke="#3a2d4c" stroke-width="1.5" />
         <g id="clockTicks"></g>
       </g>
     </svg>
+    <div id="timeTooltip" style="position: absolute; pointer-events: none; background: #15101c; border: 1px solid #3a2d4c; padding: 8px; border-radius: 6px; display: none; z-index: 100; font-size: 12px;"></div>
   </div>
 
   <div class="panel">
     <div class="clock-display" id="clockDisplay">--:--</div>
+    
+    <!-- OPÇÃO DE TRAVAR/DESTRAVAR -->
+    <label class="lock-toggle">
+      <input type="checkbox" id="lockToggle" checked> Travar Relógio (para consulta)
+    </label>
+
     <div style="display:flex; gap:10px;">
       <input type="number" id="inputYear" value="2026" style="width:80px; background:#0b0710; color:#fff; border:1px solid #3a2d4c; padding:5px;">
       <input type="number" id="inputMonth" value="11" style="width:50px; background:#0b0710; color:#fff; border:1px solid #3a2d4c; padding:5px;">
@@ -78,14 +87,10 @@
   </div>
 </div>
 
-<!-- BIBLIOTECAS -->
 <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
 
 <script>
-// ==========================================
-// 1. MATEMÁTICA ASTRONÔMICA (O CÉU)
-// ==========================================
 const Astro = (function () {
   function normaliza(graus) { return ((graus % 360) + 360) % 360; }
   function gastDeg(date) {
@@ -126,13 +131,11 @@ const Astro = (function () {
   return { gastDeg, sunEquatorial, moonEquatorial, moonPhase };
 })();
 
-// ==========================================
-// 2. O MAPA E A PROJEÇÃO
-// ==========================================
 const SIZE = 800, CX = 400, CY = 400, R = 372;
 const proj = d3.geoAzimuthalEquidistant().rotate([0, -90]).scale(R / Math.PI).translate([CX, CY]).clipAngle(180);
 const path = d3.geoPath(proj);
 
+const mapWrap = document.getElementById("mapwrap");
 const skyGroup = document.getElementById("skyGroup");
 const clockGroup = document.getElementById("clockGroup");
 const sunIcon = document.getElementById("sun");
@@ -142,9 +145,12 @@ shadowCanvas.width = shadowCanvas.height = 300;
 const sctx = shadowCanvas.getContext("2d");
 let shadowGrid = null;
 
+let isRotating = false;
+let startX = 0;
+let startTime = 12;
+
 async function init() {
   try {
-    // Puxa o mapa direto da internet (já que o local está vazio)
     const topo = await d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json");
     const features = topojson.feature(topo, topo.objects.countries).features;
     d3.select("#landGroup").selectAll("path").data(features).join("path").attr("class", "c").attr("d", path);
@@ -190,36 +196,29 @@ function update() {
   const phase = Astro.moonPhase(date);
   const sidereal = Astro.gastDeg(date);
 
-  // O ÂNGULO DO CÉU: Faz o Sol ficar no topo (12h)
   const sunLon = ((sun.ra - sidereal + 540) % 360) - 180;
   const angle = -sunLon; 
 
-  // Gira o céu e o anel JUNTOS
   skyGroup.setAttribute("transform", `rotate(${angle} 400 400)`);
   clockGroup.setAttribute("transform", `rotate(${angle} 400 400)`);
 
-  // Posiciona o Sol (ele sempre estará no topo na tela)
   const sunX = CX + (R * (90 - sun.dec) / 180) * Math.sin(sun.ra * Math.PI / 180);
   const sunY = CY - (R * (90 - sun.dec) / 180) * Math.cos(sun.ra * Math.PI / 180);
   sunIcon.setAttribute("cx", sunX); sunIcon.setAttribute("cy", sunY);
 
-  // Posiciona a Lua
   const moonX = CX + (R * (90 - moon.dec) / 180) * Math.sin(moon.ra * Math.PI / 180);
   const moonY = CY - (R * (90 - moon.dec) / 180) * Math.cos(moon.ra * Math.PI / 180);
   document.getElementById("moon").setAttribute("cx", moonX); document.getElementById("moon").setAttribute("cy", moonY);
   document.getElementById("moonClipCircle").setAttribute("cx", moonX); document.getElementById("moonClipCircle").setAttribute("cy", moonY);
 
-  // Sombra da Lua (Fase)
   const moonShadow = document.getElementById("moonShadow");
   const angleToSun = Math.atan2(sunY - moonY, sunX - moonX);
   const dist = (1 - phase) * 24;
   moonShadow.setAttribute("cx", moonX - Math.cos(angleToSun) * dist);
   moonShadow.setAttribute("cy", moonY - Math.sin(angleToSun) * dist);
 
-  // Desenha a Sombra da Terra (Dia/Noite)
   drawShadow(date, sun, sunLon);
 
-  // Atualiza Relógio
   document.getElementById("clockDisplay").textContent = date.toLocaleTimeString().slice(0,5);
 }
 
@@ -250,15 +249,13 @@ function drawShadow(date, sun, sunLon) {
       
       let alpha = 0;
       if (elev < 0) {
-        if (elev >= -6) alpha = 60;       // Crepúsculo
-        else if (elev >= -12) alpha = 120; // Noite
-        else alpha = 190;                  // Noite profunda
+        if (elev >= -6) alpha = 60;
+        else if (elev >= -12) alpha = 120;
+        else alpha = 190;
       }
       
       const idx = (y * 300 + x) * 4;
-      imgData.data[idx] = 3;
-      imgData.data[idx+1] = 6;
-      imgData.data[idx+2] = 22;
+      imgData.data[idx] = 3; imgData.data[idx+1] = 6; imgData.data[idx+2] = 22;
       imgData.data[idx+3] = alpha;
     }
   }
@@ -266,7 +263,7 @@ function drawShadow(date, sun, sunLon) {
   solarShadow.setAttribute("href", shadowCanvas.toDataURL("image/png"));
 }
 
-// Eventos
+// --- CONTROLES DE TEMPO E ARRASTAR ---
 document.getElementById("timeSlider").addEventListener("input", () => {
   document.getElementById("btnNow").dataset.live = "false";
   update();
@@ -274,6 +271,37 @@ document.getElementById("timeSlider").addEventListener("input", () => {
 document.getElementById("inputYear").addEventListener("change", update);
 document.getElementById("inputMonth").addEventListener("change", update);
 document.getElementById("inputDay").addEventListener("change", update);
+
+document.getElementById("lockToggle").addEventListener("change", (e) => {
+  if (e.target.checked) mapWrap.classList.add("locked");
+  else mapWrap.classList.remove("locked");
+});
+
+mapWrap.addEventListener("pointerdown", (e) => {
+  if (document.getElementById("lockToggle").checked) return; // Se travado, não faz nada
+  isRotating = true;
+  startX = e.clientX;
+  startTime = parseFloat(document.getElementById("timeSlider").value);
+  mapWrap.setPointerCapture(e.pointerId);
+});
+
+mapWrap.addEventListener("pointermove", (e) => {
+  if (!isRotating) return;
+  const dx = e.clientX - startX;
+  // Arrastar 30 pixels = 1 hora (720 px = 24 horas)
+  let newTime = startTime - (dx / 30);
+  
+  // Loop de 24 horas
+  newTime = ((newTime % 24) + 24) % 24;
+  
+  document.getElementById("timeSlider").value = newTime;
+  document.getElementById("btnNow").dataset.live = "false";
+  update();
+});
+
+mapWrap.addEventListener("pointerup", () => { isRotating = false; });
+mapWrap.addEventListener("pointercancel", () => { isRotating = false; });
+
 document.getElementById("btnNow").addEventListener("click", () => {
   document.getElementById("btnNow").dataset.live = "true";
   syncNow();
