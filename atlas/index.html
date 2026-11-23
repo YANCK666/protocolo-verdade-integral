@@ -336,8 +336,19 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
           </div>
         </div>
 
+        <div class="time-machine" style="margin-top:12px;">
+          <div class="field">
+            <label for="inputFullDate">Data completa</label>
+            <input id="inputFullDate" type="date" aria-label="Selecionar data completa">
+          </div>
+          <div class="field">
+            <label for="inputExactTime">Hora exata (HH:MM:SS)</label>
+            <input id="inputExactTime" type="time" step="1" value="12:00:00" aria-label="Definir hora exata">
+          </div>
+        </div>
+        <p style="font-size:11px;color:var(--muted);margin-top:6px;">Para anos anteriores a 0001, utilize o campo Ano acima. Horário local do navegador.</p>
         <div class="time-display" id="timeDisplay">12:00</div>
-        <input id="timeSlider" type="range" min="0" max="23.99" value="12" step="0.01">
+        <input id="timeSlider" type="range" min="0" max="23.9997222222" value="12" step="any">
 
         <div class="nav-buttons">
           <button id="btnPrevYear" title="Ano Anterior">-1 Ano</button>
@@ -457,8 +468,13 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   const moonIcon = document.getElementById("moon");
   const moonShadow = document.getElementById("moonShadow");
   const moonClipCircle = document.getElementById("moonClipCircle");
+  const moonPhase = document.getElementById("moonPhase");
+  const sunLayer = document.getElementById("sunLayer");
+  const moonLayer = document.getElementById("moonLayer");
   
   const timeSlider = document.getElementById("timeSlider");
+  const inputFullDate = document.getElementById("inputFullDate");
+  const inputExactTime = document.getElementById("inputExactTime");
   const timeDisplay = document.getElementById("timeDisplay");
   const timeTooltip = document.getElementById("timeTooltip");
   
@@ -571,19 +587,23 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
   function updateDaysInSelect() {
     const y = parseInt(inputYear.value) || 2026;
     const m = parseInt(inputMonth.value) || 1;
-    const daysInMonth = new Date(y, m, 0).getDate();
+    const daysInMonth = new Date(0, m, 0).getDate();
+    // setFullYear evita o tratamento especial de anos 0 a 99 pelo construtor Date.
+    const calendarDate = new Date(0);
+    calendarDate.setFullYear(y, m, 0);
+    const actualDays = calendarDate.getDate();
     const currentDay = parseInt(inputDay.value) || 1;
     
     inputDay.innerHTML = "";
-    for (let i = 1; i <= daysInMonth; i++) {
+    for (let i = 1; i <= actualDays; i++) {
       const opt = document.createElement("option");
       opt.value = i;
       opt.textContent = i;
       if (i === currentDay) opt.selected = true;
       inputDay.appendChild(opt);
     }
-    if (currentDay > daysInMonth) {
-      inputDay.value = daysInMonth;
+    if (currentDay > actualDays) {
+      inputDay.value = actualDays;
     }
   }
 
@@ -794,24 +814,42 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       const illum = SunCalc.getMoonIllumination(date);
       const moon = moonEquatorial(date, sidereal);
       const moonPoint = equatorialToMap(moon.ra, moon.dec, date);
-      if (moonPoint && sunPoint) {
-        moonIcon.style.display = "";
-        moonShadow.style.display = "";
-        moonIcon.setAttribute("cx", moonPoint.x);
-        moonIcon.setAttribute("cy", moonPoint.y);
-        moonIcon.style.display = "";
-        moonClipCircle.setAttribute("cx", moonPoint.x);
-        moonClipCircle.setAttribute("cy", moonPoint.y);
-        const angleToSun = Math.atan2(sunPoint.y - moonPoint.y, sunPoint.x - moonPoint.x);
-        const shadowDistance = (1 - illum.fraction) * 24;
-        moonShadow.setAttribute("cx", moonPoint.x - Math.cos(angleToSun) * shadowDistance);
-        moonShadow.setAttribute("cy", moonPoint.y - Math.sin(angleToSun) * shadowDistance);
-        moonShadow.setAttribute("r", 12);
-      } else {
-        moonIcon.style.display = "none";
-        moonShadow.style.display = "none";
-      }
-    } catch (e) {
+             if (moonPoint) {
+         moonIcon.style.display = "";
+         moonPhase.style.display = "";
+         moonShadow.style.display = "none";
+         moonIcon.setAttribute("cx", moonPoint.x);
+         moonIcon.setAttribute("cy", moonPoint.y);
+         moonIcon.setAttribute("fill", "#272433");
+         moonIcon.setAttribute("filter", "none");
+         // O terminador é uma elipse projetada no disco lunar: a fração
+         // iluminada é dada por SunCalc, sem deslocar círculos arbitrariamente.
+         const phase = illum.phase; // 0 nova, 0.25 crescente, 0.5 cheia, 0.75 minguante
+         const radius = 12;
+         const litRight = phase < 0.5;
+         const terminator = Math.cos(phase * 2 * Math.PI);
+         const left = [], right = [];
+         for (let i = 0; i <= 48; i++) {
+           const y = -radius + 2 * radius * i / 48;
+           const limb = Math.sqrt(Math.max(0, radius * radius - y * y));
+           const xTerm = terminator * limb;
+           if (litRight) { left.push([xTerm, y]); right.push([limb, y]); }
+           else { left.push([-limb, y]); right.push([xTerm, y]); }
+         }
+         const outline = [...left, ...right.reverse()];
+         moonPhase.setAttribute("d", "M" + outline.map(p => p.join(",")).join("L") + "Z");
+         // Rotação visual da iluminação em direção ao Sol no plano do mapa.
+         const sunAngle = sunPoint
+           ? Math.atan2(sunPoint.y - moonPoint.y, sunPoint.x - moonPoint.x) * 180 / Math.PI
+           : 0;
+         const orientation = sunAngle + (litRight ? 0 : 180);
+         moonPhase.setAttribute("transform", `translate(${moonPoint.x} ${moonPoint.y}) rotate(${orientation})`);
+       } else {
+         moonIcon.style.display = "none";
+         moonPhase.style.display = "none";
+         moonShadow.style.display = "none";
+       }
+} catch (e) {
       console.warn("Não foi possível calcular a posição lunar:", e);
     }
   }
@@ -855,7 +893,9 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     const m = parseInt(inputMonth.value) - 1;
     const d = parseInt(inputDay.value) || 1;
     
-    const baseDay = new Date(y, m, d, 0, 0, 0);
+    const baseDay = new Date(0);
+    baseDay.setFullYear(y, m, d);
+    baseDay.setHours(0, 0, 0, 0);
     return new Date(baseDay.getTime() + (localHour * 3600000));
   }
 
@@ -866,8 +906,12 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
       drawStars(date);
       updateReadouts(date);
       updateClock(date);
-      const lh = parseFloat(timeSlider.value);
-      timeDisplay.textContent = `${String(Math.floor(lh)).padStart(2, "0")}:${String(Math.floor((lh % 1) * 60)).padStart(2, "0")} (Local)`;
+      const yyyy = date.getFullYear();
+      const pad = n => String(n).padStart(2, "0");
+      inputFullDate.value = yyyy >= 1 && yyyy <= 9999
+        ? `${String(yyyy).padStart(4, "0")}-${pad(date.getMonth()+1)}-${pad(date.getDate())}` : "";
+      inputExactTime.value = `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+      timeDisplay.textContent = `${inputExactTime.value} (Local)`;
     } catch (err) {
       console.error("Erro no update:", err);
       document.getElementById("stats").textContent = "Erro no update: " + err.message;
@@ -993,7 +1037,9 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 
       // O mapa.json fica na mesma pasta deste index.html (pasta /atlas/).
       try {
-        topo = await d3.json("./mapa.json", { cache: "no-cache" });
+        const response = await fetch("./mapa.json", { cache: "no-cache" });
+         if (!response.ok) throw new Error(`HTTP ${response.status}`);
+         topo = await response.json();
       } catch (error) {
         localError = error;
         console.warn("Não foi possível carregar ./mapa.json; tentando a cópia pública.", error);
@@ -1166,32 +1212,66 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     update();
   });
 
-  timeSlider.addEventListener("input", () => {
+  function stopRealTimeForEditing() {
     isRealTime = false;
+    sunMoveCheckbox.checked = false;
+  }
+  inputFullDate.addEventListener("change", () => {
+    if (!inputFullDate.value) return;
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(inputFullDate.value);
+    if (!match) return;
+    const [, y, m, d] = match.map(Number);
+    const check = new Date(0);
+    check.setFullYear(y, m - 1, d);
+    if (check.getFullYear() !== y || check.getMonth() !== m-1 || check.getDate() !== d) return;
+    stopRealTimeForEditing();
+    inputYear.value = y;
+    inputMonth.value = m;
+    updateDaysInSelect();
+    inputDay.value = d;
+    update();
+  });
+  inputExactTime.addEventListener("change", () => {
+    const match = /^(\d{2}):(\d{2})(?::(\d{2}))?$/.exec(inputExactTime.value);
+    if (!match) return;
+    const h = Number(match[1]), m = Number(match[2]), sec = Number(match[3] || 0);
+    if (h > 23 || m > 59 || sec > 59) return;
+    stopRealTimeForEditing();
+    timeSlider.value = h + m/60 + sec/3600;
+    update();
+  });
+  timeSlider.addEventListener("input", () => {
+    stopRealTimeForEditing();
     update();
   });
   
-  inputYear.addEventListener("change", () => { isRealTime = false; updateDaysInSelect(); update(); });
-  inputMonth.addEventListener("change", () => { isRealTime = false; updateDaysInSelect(); update(); });
-  inputDay.addEventListener("change", () => { isRealTime = false; update(); });
+  inputYear.addEventListener("change", () => { isRealTime = false; sunMoveCheckbox.checked = false; updateDaysInSelect(); update(); });
+  inputMonth.addEventListener("change", () => { isRealTime = false; sunMoveCheckbox.checked = false; updateDaysInSelect(); update(); });
+  inputDay.addEventListener("change", () => { isRealTime = false; sunMoveCheckbox.checked = false; update(); });
 
-  function adjustDate(days) {
-    isRealTime = false;
-    let date = getSimulatedDate();
-    date.setDate(date.getDate() + days);
-    inputYear.value = date.getFullYear();
-    inputMonth.value = date.getMonth() + 1;
-    updateDaysInSelect();
-    inputDay.value = date.getDate();
-    update();
-  }
+     function adjustCalendar(unit, amount) {
+     isRealTime = false;
+     sunMoveCheckbox.checked = false;
+     const date = getSimulatedDate();
+     const targetDay = date.getDate();
+     date.setDate(1);
+     if (unit === "month") date.setMonth(date.getMonth() + amount);
+     else date.setFullYear(date.getFullYear() + amount);
+     const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+     date.setDate(Math.min(targetDay, lastDay));
+     inputYear.value = date.getFullYear();
+     inputMonth.value = date.getMonth() + 1;
+     updateDaysInSelect();
+     inputDay.value = date.getDate();
+     update();
+   }
 
-  btnPrevYear.addEventListener("click", () => adjustDate(-365));
-  btnPrevMonth.addEventListener("click", () => adjustDate(-30));
-  btnNextMonth.addEventListener("click", () => adjustDate(30));
-  btnNextYear.addEventListener("click", () => adjustDate(365));
+   btnPrevYear.addEventListener("click", () => adjustCalendar("year", -1));
+   btnPrevMonth.addEventListener("click", () => adjustCalendar("month", -1));
+   btnNextMonth.addEventListener("click", () => adjustCalendar("month", 1));
+   btnNextYear.addEventListener("click", () => adjustCalendar("year", 1));
 
-  sunMoveCheckbox.addEventListener("change", () => {
+sunMoveCheckbox.addEventListener("change", () => {
     isRealTime = sunMoveCheckbox.checked;
     if (isRealTime) {
       const now = new Date();
@@ -1285,104 +1365,6 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 
   applyMapTransform();
   initMap();
-})();
-</script>
-
-<!-- Extensão aditiva: nenhuma função original do relógio ou da sombra foi modificada. -->
-<style>
-#atlasAstroTooltip {position:absolute;display:none;pointer-events:none;z-index:110;background:#15101c;color:#f0e9fb;border:1px solid #c4a1f0;border-radius:9px;padding:10px 12px;max-width:260px;font:12px/1.55 system-ui;box-shadow:0 8px 24px #0008}
-#atlasAuditPanel {margin:14px 0;padding:14px;background:var(--panel);border:1px solid var(--line);border-radius:12px;font-size:13px}
-#atlasAuditPanel summary{cursor:pointer;color:var(--accent);font-weight:700}
-#atlasAuditPanel button{margin:10px 0;padding:8px 12px;background:var(--soft);color:var(--ink);border:1px solid var(--line);border-radius:7px;cursor:pointer}
-#atlasAuditPanel output{white-space:pre-wrap;display:block;font-family:var(--f-mono);font-size:12px;line-height:1.6}
-</style>
-<script>
-(function () {
-  'use strict';
-  const wrap=document.getElementById('mapwrap');
-  const svg=document.getElementById('map');
-  if (!wrap || !svg) return;
-  const tip=document.createElement('div');
-  tip.id='atlasAstroTooltip'; tip.setAttribute('role','status'); wrap.appendChild(tip);
-  const panel=document.createElement('details');
-  panel.id='atlasAuditPanel';
-  panel.innerHTML='<summary>Auditoria astronômica · experimental (sem alterar o mapa)</summary><p style="margin-top:8px;color:var(--muted)">Diagnóstico da data escolhida. Não substitui a validação por efemérides independentes.</p><button type="button" id="atlasAuditRun">Verificar instante</button><output id="atlasAuditResult"></output>';
-  const controls=document.querySelector('.time-control');
-  if (controls) controls.insertAdjacentElement('afterend',panel);
-  function selectedDate(){
-    const y=Number(document.getElementById('inputYear').value);
-    const m=Number(document.getElementById('inputMonth').value);
-    const d=Number(document.getElementById('inputDay').value);
-    const hours=Number(document.getElementById('timeSlider').value);
-    if(!Number.isFinite(y)||!Number.isFinite(hours)||!Number.isInteger(m)||!Number.isInteger(d))return null;
-    const date=new Date(0);date.setFullYear(y,m-1,d);date.setHours(0,0,0,0);
-    date.setTime(date.getTime()+hours*3600000);
-    return Number.isFinite(date.getTime())?date:null;
-  }
-  function moonPhase(f){
-    if(f<0.035||f>0.965)return 'Lua nova';
-    if(f<0.215)return 'Crescente';
-    if(f<0.285)return 'Quarto crescente';
-    if(f<0.465)return 'Gibosa crescente';
-    if(f<0.535)return 'Lua cheia';
-    if(f<0.715)return 'Gibosa minguante';
-    if(f<0.785)return 'Quarto minguante';
-    return 'Minguante';
-  }
-  function inspect(event){
-    const rect=wrap.getBoundingClientRect();
-    const p=svg.createSVGPoint();p.x=event.clientX;p.y=event.clientY;
-    const matrix=svg.getScreenCTM();
-    if(!matrix){tip.style.display='none';return;}
-    const cursor=p.matrixTransform(matrix.inverse());
-    let nearest=null;
-    for(const [id,label] of [['moon','Lua'],['sun','Sol']]){
-      const el=document.getElementById(id);
-      if(!el||el.style.display==='none'||el.closest('g[style*="display: none"]'))continue;
-      const cx=Number(el.getAttribute('cx')),cy=Number(el.getAttribute('cy'));
-      const whole=document.getElementById('wholeMap');
-      const transform=whole?.transform?.baseVal?.consolidate()?.matrix;
-      const point=svg.createSVGPoint();point.x=cx;point.y=cy;
-      const mapped=transform?point.matrixTransform(transform):point;
-      const dist=Math.hypot(cursor.x-mapped.x,cursor.y-mapped.y);
-      if(dist<24&&(!nearest||dist<nearest.dist))nearest={id,label,dist};
-    }
-    const date=selectedDate();
-    if(!nearest||!date){tip.style.display='none';return;}
-    let content='<strong>'+nearest.label+'</strong><div>'+date.toLocaleString('pt-BR')+'</div>';
-    if(nearest.id==='moon'){
-      if(typeof SunCalc==='undefined'){content+='<div>Biblioteca lunar indisponível</div>';}
-      else{
-        const moon=SunCalc.getMoonIllumination(date);
-        content+='<div>Fase aproximada: '+moonPhase(moon.phase)+'</div><div>Disco iluminado: '+(moon.fraction*100).toFixed(1)+'%</div><div>Ciclo lunar: '+(moon.phase*100).toFixed(1)+'%</div>';
-      }
-    } else content+='<div>Posição visual calculada pelo mecanismo original do ATLAS.</div>';
-    tip.innerHTML=content;
-    tip.style.display='block';
-    tip.style.left=Math.max(0,Math.min(event.clientX-rect.left+15,rect.width-260))+'px';
-    tip.style.top=Math.max(0,event.clientY-rect.top+15)+'px';
-    // Tooltip original de países fica oculto somente quando o ponteiro está sobre um astro.
-    const old=document.getElementById('timeTooltip');if(old)old.style.display='none';
-  }
-  wrap.addEventListener('mousemove',inspect);
-  wrap.addEventListener('mouseleave',()=>{tip.style.display='none'});
-  document.getElementById('atlasAuditRun')?.addEventListener('click',()=>{
-    const date=selectedDate(),out=document.getElementById('atlasAuditResult');
-    if(!date){out.textContent='Data inválida.';return;}
-    const illumination=typeof SunCalc!=='undefined'?SunCalc.getMoonIllumination(date):null;
-    const deps=[...document.querySelectorAll('script[src]')].map(el=>el.getAttribute('src'));
-    out.textContent=[
-      'Data local selecionada: '+date.toLocaleString('pt-BR'),
-      'UTC: '+date.toISOString(),
-      'Lua iluminada (SunCalc): '+(illumination?(illumination.fraction*100).toFixed(2)+'%':'biblioteca indisponível'),
-      'Sombra: algoritmo original preservado; nenhuma alteração geométrica',
-      'Continentes: carregamento original de mapa.json com fallback online',
-      'Dependências externas: '+deps.length+' bibliotecas/scripts por URL',
-      'Validação independente: PENDENTE',
-      'Offline completo: NÃO VERIFICADO',
-      'Conflitos geográficos: NÃO CONCLUÍDOS'
-    ].join('\n');
-  });
 })();
 </script>
 </body>
