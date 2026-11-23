@@ -2,425 +2,548 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Atlas Polar — Relógio Celeste</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Young+Serif&display=swap">
 <style>
-  body { background: #0b0710; color: #f0e9fb; font-family: sans-serif; margin: 0; padding: 20px; overflow-x: hidden; user-select: none; }
-  h1 { font-family: serif; font-weight: 400; margin: 0 0 5px 0; }
-  .layout { display: grid; grid-template-columns: 1fr 300px; gap: 30px; max-width: 1200px; margin: 0 auto; align-items: start; }
-  .map-container { position: relative; width: 100%; max-width: 800px; aspect-ratio: 1; background: #110c18; border-radius: 50%; cursor: grab; }
-  .map-container:active { cursor: grabbing; }
-  .map-container.locked { cursor: default; }
-  .map-container.locked:active { cursor: default; }
-  svg { width: 100%; height: 100%; display: block; }
-  .sea { fill: #110c18; }
-  .c { fill: #2e2340; stroke: #0b0710; stroke-width: 1; }
-  .tropic-north { fill: none; stroke: #ef4444; stroke-width: 1.5; opacity: 0.8; }
-  .tropic-equator { fill: none; stroke: #eab308; stroke-width: 1.5; opacity: 0.8; }
-  .tropic-south { fill: none; stroke: #3b82f6; stroke-width: 1.5; opacity: 0.8; }
-  .sun-dot { fill: #ffcc00; filter: drop-shadow(0 0 15px #ffcc00); }
-  .moon-dot { fill: #e0e0e0; filter: drop-shadow(0 0 10px #fff); }
-  .moon-shadow { fill: #000; }
-  .pole { fill: #c4a1f0; }
-  .panel { background: #15101c; padding: 20px; border-radius: 12px; border: 1px solid #3a2d4c; }
-  .clock-display { font-size: 22px; font-weight: bold; margin-bottom: 20px; color: #c4a1f0; text-align: center; }
-  .btn { width: 100%; padding: 10px; background: #221a2e; color: #f0e9fb; border: 1px solid #3a2d4c; border-radius: 6px; cursor: pointer; margin-top: 10px; }
-  input[type="range"] { width: 100%; margin-top: 20px; accent-color: #c4a1f0; }
-  .lock-toggle { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; cursor: pointer; font-size: 14px; }
-  .time-inputs { display: flex; gap: 5px; align-items: center; justify-content: center; font-size: 14px; color: #a996c0; margin-bottom: 15px; }
-  .time-inputs input { background: #0b0710; color: #fff; border: 1px solid #3a2d4c; padding: 5px; border-radius: 4px; text-align: center; }
-  
-  /* ESTILO DO TOOLTIP */
-  .tooltip { position: absolute; pointer-events: none; background: rgba(21, 16, 28, 0.95); color: #f0e9fb; border: 1px solid #c4a1f0; padding: 10px; border-radius: 8px; display: none; z-index: 100; font-size: 13px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); white-space: nowrap; backdrop-filter: blur(4px); }
-  .tip-country { display: flex; align-items: center; gap: 8px; font-weight: bold; margin-bottom: 6px; color: #e9b8ff; font-size: 15px;}
-  .tip-country img { width: 24px; border-radius: 3px; box-shadow: 0 0 4px rgba(0,0,0,0.5); }
-  .tip-meta { color: #a996c0; font-size: 11px; margin-top: 4px; font-family: monospace; }
-  .tip-time { color: #ffcc00; font-size: 16px; font-weight: bold; margin-top: 4px; }
+:root {
+  --bg: #0b0710; --panel: #15101c; --soft: #221a2e; --ink: #f0e9fb; --muted: #a996c0;
+  --line: #3a2d4c; --sea: #110c18; --land: #2e2340; --accent: #c4a1f0; --sel: #e9b8ff;
+  --green: #4ade80; --star: #fffbe6; --const: #4da6ff;
+  --f-display: "Young Serif", Georgia, serif; 
+  --f-body: "Hanken Grotesk", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 20px 16px 40px; }
+.top { display: flex; flex-wrap: wrap; gap: 8px 32px; align-items: end; justify-content: space-between; margin-bottom: 20px; }
+h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw, 40px); margin-bottom: 6px; }
+.layout { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+.mapcol { position: sticky; top: 16px; min-width: 0; }
+.mapwrap { position: relative; width: min(100%, calc(100vh - 100px)); margin: 0 auto; user-select: none; touch-action: none; overflow: hidden; background: var(--bg); border-radius: 50%; }
+.mapwrap.locked { cursor: default; }
+.mapwrap:not(.locked) { cursor: grab; }
+.mapwrap:not(.locked):active { cursor: grabbing; }
+#map { display: block; width: 100%; height: 100%; }
+.sea { fill: var(--sea); }
+.c { fill: var(--land); stroke: var(--bg); stroke-width: .7; cursor: pointer; transition: opacity .2s; }
+.c:hover { stroke: var(--ink); stroke-width: 1.4; }
+.c.sel { stroke: var(--sel); stroke-width: 2.6; }
+.tropic-circle { fill:none; stroke-width:1.7; opacity:.82; pointer-events:none; }
+.tropic-north { stroke:#ef4444; } .tropic-equator { stroke:#eab308; } .tropic-south { stroke:#3b82f6; }
+.sun-dot { fill: #ffcc00; filter: drop-shadow(0 0 20px #ffcc00); pointer-events: none; }
+.moon-dot { fill: #e0e0e0; filter: drop-shadow(0 0 15px #fff); pointer-events: none; }
+.moon-shadow { fill: rgba(0, 0, 0, 0.8); pointer-events: none; }
+.pole { fill: var(--accent); pointer-events: none; filter: drop-shadow(0 0 6px var(--accent)); }
+.clock-display { margin-top: 16px; padding: 12px 18px; background: var(--soft); border: 1px solid var(--line); border-radius: 12px; font-family: var(--f-mono); color: var(--ink); text-align: center; }
+.clock-display .date { font-size: 14px; color: var(--accent); margin-bottom: 4px; font-weight: 600; }
+.clock-display .time { font-size: 28px; font-weight: 700; color: var(--ink); }
+.panel { min-width: 0; }
+.layerbox, .time-control { margin-top: 12px; padding: 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); }
+.layerhead { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.layerhead strong { font-family: var(--f-mono); font-size: 12px; text-transform: uppercase; }
+.layergrid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.layeritem { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); font-size: 12px; }
+.layeritem input { accent-color: var(--accent); }
+.time-machine { display: flex; gap: 8px; align-items: end; }
+.time-machine .field { flex: 1; display: flex; flex-direction: column; }
+.time-machine label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+.time-machine input, .time-machine select { width: 100%; font: inherit; padding: 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+.time-inputs { display: flex; gap: 5px; justify-content: center; margin: 10px 0; }
+.time-inputs input { background: var(--bg); color: var(--ink); border: 1px solid var(--line); padding: 5px; border-radius: 4px; text-align: center; }
+.time-display { color: var(--accent); font-family: var(--f-mono); font-weight: 600; margin: 8px 0; text-align: center; }
+.tooltip { position: absolute; pointer-events: none; background: var(--panel); color: var(--ink); border: 1px solid var(--accent); border-radius: 8px; padding: 10px; font-family: var(--f-mono); font-size: 13px; z-index: 100; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+.tip-country { display: flex; align-items: center; gap: 8px; font-weight: bold; margin-bottom: 6px; color: var(--sel); }
+.tip-country img { width: 24px; border-radius: 2px; }
+.tip-time { color: #ffcc00; font-size: 16px; font-weight: bold; }
+.tip-meta { color: var(--muted); font-size: 11px; }
+.locale-switch { display:flex; gap:8px; margin-bottom:14px; }
+.locale-switch button, .shadow-switch button { border:1px solid var(--line); background:var(--panel); color:var(--ink); border-radius:8px; padding:8px 14px; font:inherit; font-size:12px; font-weight:700; cursor:pointer; }
+.locale-switch button.active, .shadow-switch button.active { background:var(--accent); color:var(--bg); }
+.search input { width: 100%; padding: 11px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); margin-bottom: 10px;}
+.terms-btn { position: fixed; bottom: 20px; right: 20px; z-index: 1100; width: 48px; height: 48px; border-radius: 50%; background: var(--accent); color: var(--bg); border: none; cursor: pointer; font-size: 22px; font-weight: 700; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 16px rgba(196,161,240,0.4); }
+.modal-overlay { position: fixed; inset: 0; z-index: 2000; background: rgba(0,0,0,0.75); display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+.modal-overlay.open { display: flex; }
+.modal-box { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; max-width: 640px; width: 100%; max-height: 85vh; display: flex; flex-direction: column; }
+.modal-header { padding: 18px 22px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; }
+.modal-body { padding: 22px; overflow-y: auto; font-size: 14px; line-height: 1.7; }
+.modal-footer { padding: 14px 22px; border-top: 1px solid var(--line); display: flex; justify-content: flex-end; }
+.modal-footer button { padding: 10px 24px; border-radius: 8px; border: none; background: var(--accent); color: var(--bg); cursor: pointer; font-weight: bold;}
+.nav-buttons { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 10px; }
+.nav-buttons button { border: 1px solid var(--line); border-radius: 6px; background: var(--soft); color: var(--ink); padding: 6px 2px; cursor: pointer; font-size: 11px; }
+.btn-reset { width: 100%; margin-top:10px; padding:8px; border:1px solid var(--line); border-radius:8px; background:var(--soft); color:var(--ink); cursor:pointer; }
+.btn-now { width: 100%; margin-top: 10px; padding: 10px; border: none; border-radius: 8px; background: var(--accent); color: var(--bg); font-weight: bold; cursor: pointer; }
 </style>
 </head>
 <body>
+<div class="wrap">
+  <header class="top">
+    <div><h1>Atlas Polar</h1><p style="color:var(--muted)">Relógio celeste de precisão. O Sol é o eixo.</p></div>
+    <p id="stats" style="font-family:var(--f-mono);font-size:13px;color:var(--muted)">Carregando...</p>
+  </header>
 
-<div class="layout">
-  <div class="map-container" id="mapwrap">
-    <svg id="map" viewBox="0 0 800 800">
-      <defs>
-        <clipPath id="mapclip"><circle cx="400" cy="400" r="372"/></clipPath>
-        <clipPath id="moonclip"><circle id="moonClipCircle" cx="0" cy="0" r="12"/></clipPath>
-      </defs>
+  <main class="layout">
+    <section class="mapcol">
+      <div class="mapwrap locked" id="mapwrap">
+        <svg id="map" viewBox="0 0 800 800">
+          <defs>
+            <clipPath id="mapclip"><circle cx="400" cy="400" r="372"/></clipPath>
+            <clipPath id="moonclip"><circle id="moonClipCircle" cx="0" cy="0" r="12"/></clipPath>
+          </defs>
+          <circle class="sea" cx="400" cy="400" r="372" />
+          <g id="landGroup" clip-path="url(#mapclip)"></g>
+          <g id="skyGroup" clip-path="url(#mapclip)" pointer-events="none">
+            <circle id="sun" class="sun-dot" r="12" />
+            <circle id="moon" class="moon-dot" r="12" />
+            <circle id="moonShadow" class="moon-shadow" r="12" clip-path="url(#moonclip)" />
+          </g>
+          <image id="nightShadow" x="0" y="0" width="800" height="800" preserveAspectRatio="none" clip-path="url(#mapclip)" />
+          <circle class="tropic-circle tropic-north" cx="400" cy="400" r="137.5" />
+          <circle class="tropic-circle tropic-equator" cx="400" cy="400" r="186" />
+          <circle class="tropic-circle tropic-south" cx="400" cy="400" r="234.5" />
+          <circle class="pole" cx="400" cy="400" r="5" />
+          <g id="clockGroup">
+            <circle cx="400" cy="400" r="385" fill="none" stroke="var(--line)" stroke-width="1.5" />
+            <g id="clockTicks"></g>
+          </g>
+        </svg>
+        <div id="timeTooltip" class="tooltip"></div>
+      </div>
+
+      <section class="layerbox">
+        <div class="layerhead"><strong>Camadas do Atlas</strong></div>
+        <div class="layergrid" id="layerControls">
+          <label class="layeritem"><input type="checkbox" data-layer="borders" checked> Países</label>
+          <label class="layeritem"><input type="checkbox" data-layer="tropics" checked> Trópicos</label>
+          <label class="layeritem"><input type="checkbox" data-layer="dark" checked> Sombra (Noite)</label>
+          <label class="layeritem"><input type="checkbox" id="clockLock" data-layer="clockLock" checked> Travar Relógio</label>
+        </div>
+        <button class="btn-reset" id="btnReset">↺ Restaurar</button>
+      </section>
+
+      <section class="time-control">
+        <div class="layerhead"><strong>Máquina do Tempo</strong><span>∞</span></div>
+        <div class="time-machine">
+          <div class="field"><label>Ano</label><input id="inputYear" type="number" value="2026"></div>
+          <div class="field"><label>Mês</label><input id="inputMonth" type="number" value="11" min="1" max="12"></div>
+          <div class="field"><label>Dia</label><input id="inputDay" type="number" value="23" min="1" max="31"></div>
+        </div>
+        <div class="time-inputs">
+          <input type="number" id="inputHour" value="12" min="0" max="23" style="width:45px;">
+          :
+          <input type="number" id="inputMin" value="0" min="0" max="59" style="width:45px;">
+          :
+          <input type="number" id="inputSec" value="0" min="0" max="59" style="width:45px;">
+        </div>
+        <input id="timeSlider" type="range" min="0" max="23.99" value="12" step="0.01" style="width:100%; accent-color:var(--accent);">
+        <div class="nav-buttons">
+          <button id="btnPrevYear">-1 Ano</button><button id="btnPrevMonth">-1 Mês</button>
+          <button id="btnNextMonth">+1 Mês</button><button id="btnNextYear">+1 Ano</button>
+        </div>
+        <button class="btn-now" id="btnNow">⏱️ Sincronizar com o Agora</button>
+      </section>
+    </section>
+
+    <section class="panel">
+      <div class="locale-switch">
+        <button id="localeBrazil" class="active">BRASIL</button>
+        <button id="localeWorld">MUNDIAL</button>
+      </div>
+      <div class="search"><input id="q" type="search" placeholder="Buscar país..." autocomplete="off"></div>
       
-      <circle class="sea" cx="400" cy="400" r="372" />
-      <g id="landGroup" clip-path="url(#mapclip)"></g>
-      <g id="skyGroup" clip-path="url(#mapclip)" pointer-events="none">
-        <circle id="sun" class="sun-dot" r="12" />
-        <circle id="moon" class="moon-dot" r="12" />
-        <circle id="moonShadow" class="moon-shadow" r="12" clip-path="url(#moonclip)" />
-      </g>
-      <image id="nightShadow" x="0" y="0" width="800" height="800" preserveAspectRatio="none" clip-path="url(#mapclip)" />
-      <circle class="tropic-north" cx="400" cy="400" r="137.5" />
-      <circle class="tropic-equator" cx="400" cy="400" r="186" />
-      <circle class="tropic-south" cx="400" cy="400" r="234.5" />
-      <circle class="pole" cx="400" cy="400" r="5" />
-      <g id="clockGroup">
-        <circle cx="400" cy="400" r="385" fill="none" stroke="#3a2d4c" stroke-width="1.5" />
-        <g id="clockTicks"></g>
-      </g>
-    </svg>
-    <div id="timeTooltip" class="tooltip"></div>
-  </div>
+      <div class="clock-display">
+        <div class="date" id="clockDate">--/--/----</div>
+        <div class="time" id="clockTime">--:--:--</div>
+      </div>
+    </section>
+  </main>
+</div>
 
-  <div class="panel">
-    <div class="clock-display" id="clockDisplay">--/--/----</div>
-    
-    <label class="lock-toggle">
-      <input type="checkbox" id="lockToggle" checked> Travar Relógio (para consulta)
-    </label>
-
-    <div style="display:flex; gap:5px; margin-bottom: 10px;">
-      <input type="number" id="inputYear" value="2026" style="width:70px; background:#0b0710; color:#fff; border:1px solid #3a2d4c; padding:5px;">
-      <input type="number" id="inputMonth" value="11" style="width:45px; background:#0b0710; color:#fff; border:1px solid #3a2d4c; padding:5px;">
-      <input type="number" id="inputDay" value="23" style="width:45px; background:#0b0710; color:#fff; border:1px solid #3a2d4c; padding:5px;">
+<button class="terms-btn" id="termsBtn">§</button>
+<div class="modal-overlay" id="termsModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 style="font-family:var(--f-display); color:var(--accent);">Termos de Uso & Princípios</h2>
+      <button id="termsClose" style="background:none; border:none; color:var(--ink); font-size:20px; cursor:pointer;">✕</button>
     </div>
-    
-    <div class="time-inputs">
-      <input type="number" id="inputHour" value="12" min="0" max="23" style="width:45px;">
-      :
-      <input type="number" id="inputMin" value="0" min="0" max="59" style="width:45px;">
-      :
-      <input type="number" id="inputSec" value="0" min="0" max="59" style="width:45px;">
+    <div class="modal-body">
+      <h3 style="color:var(--accent); font-family:var(--f-display);">A comunicação não tem fronteiras</h3>
+      <p><strong>Princípio de continuidade do Atlas da Verdade</strong></p>
+      <p>O Atlas da Verdade não pretende substituir culturas, tradições, idiomas, costumes ou formas de organização social.</p>
+      <p>Cada povo deve conservar sua identidade, sua memória e sua autonomia.</p>
+      <p>A plataforma existe para aproximar realidades, não para uniformizá-las.</p>
+      <p>Sua função é permitir que a comunicação ultrapasse barreiras geográficas, linguísticas e técnicas, preservando a origem das informações e o contexto em que foram produzidas.</p>
+      <p>Não cabe ao Atlas determinar o que uma sociedade deve acreditar, como deve viver ou quais costumes deve preservar.</p>
+      <p>Cabe a ele oferecer instrumentos para que diferentes sociedades possam apresentar suas próprias informações, conhecer outras realidades e estabelecer relações de conhecimento.</p>
+      <p>A comunicação deve permanecer acessível, descentralizada e aberta à participação.</p>
+      <p>Sua continuidade não deve depender da vontade de um único país, instituição, grupo econômico ou autoridade central.</p>
+      <p>O projeto deve buscar padrões abertos, fontes identificáveis, infraestrutura distribuída, transparência técnica e possibilidade de colaboração independente.</p>
+      <p>A máquina não governa os povos. Não representa uma cultura superior. Não exige concordância.</p>
+      <p><strong>Ela conecta.</strong></p>
+      <p><strong>O conhecimento pode atravessar fronteiras sem que as fronteiras precisem desaparecer.</strong></p>
     </div>
-    <input type="range" id="timeSlider" min="0" max="23.99" value="12" step="0.01">
-    <button class="btn" id="btnNow">Sincronizar com o Agora</button>
+    <div class="modal-footer"><button id="termsAccept">Entendi e concordo</button></div>
   </div>
 </div>
 
-<!-- CARREGA OS DADOS DAS BANDEIRAS -->
 <script src="dados.js"></script>
-
 <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
 
 <script>
-const Astro = (function () {
-  function normaliza(graus) { return ((graus % 360) + 360) % 360; }
-  function gastDeg(date) {
-    const jd = date.getTime() / 86400000 + 2440587.5;
-    const T = (jd - 2451545.0) / 36525.0;
-    return normaliza(280.46061837 + 360.98564736629 * (jd - 2451545.0) + 0.000387933 * T * T);
-  }
-  function sunEquatorial(date) {
-    const jd = date.getTime() / 86400000 + 2440587.5;
-    const T = (jd - 2451545.0) / 36525.0;
-    const L0 = normaliza(280.46646 + T * (36000.76983 + 0.0003032 * T));
-    const M = normaliza(357.52911 + T * (35999.05029 - 0.0001537 * T)) * Math.PI / 180;
-    const C = (1.914602 - T * (0.004817 + 0.000014 * T)) * Math.sin(M) + (0.019993 - 0.000101 * T) * Math.sin(2 * M) + 0.000289 * Math.sin(3 * M);
-    const omega = (125.04 - 1934.136 * T) * Math.PI / 180;
-    const lambda = (L0 + C - 0.00569 - 0.00478 * Math.sin(omega)) * Math.PI / 180;
-    const eps = (23.439291 - 0.0130042 * T) * Math.PI / 180;
-    const dec = Math.asin(Math.sin(eps) * Math.sin(lambda));
-    const ra = Math.atan2(Math.cos(eps) * Math.sin(lambda), Math.cos(lambda));
-    return { ra: normaliza(ra * 180 / Math.PI), dec: dec * 180 / Math.PI };
-  }
-  function moonEquatorial(date) {
-    const jd = date.getTime() / 86400000 + 2440587.5;
-    const T = (jd - 2451545.0) / 36525.0;
-    const L = normaliza(218.316 + 481267.881 * T);
-    const M = normaliza(134.963 + 477198.867 * T) * Math.PI / 180;
-    const F = normaliza(93.272 + 483202.017 * T) * Math.PI / 180;
-    const lambda = (L + 6.289 * Math.sin(M)) * Math.PI / 180;
-    const beta = 5.128 * Math.sin(F) * Math.PI / 180;
-    const eps = (23.439291 - 0.0130042 * T) * Math.PI / 180;
-    const dec = Math.asin(Math.sin(beta) * Math.cos(eps) + Math.cos(beta) * Math.sin(eps) * Math.sin(lambda));
-    const ra = Math.atan2(Math.sin(lambda) * Math.cos(eps) - Math.tan(beta) * Math.sin(eps), Math.cos(lambda));
-    return { ra: normaliza(ra * 180 / Math.PI), dec: dec * 180 / Math.PI };
-  }
-  function moonPhase(date) {
-    const s = sunEquatorial(date), m = moonEquatorial(date);
-    return normaliza(m.ra - s.ra) / 360;
-  }
-  // Fórmula para a Hora Solar Exata
-  function equationOfTimeMinutes(date) {
-    const start = new Date(date.getFullYear(), 0, 0);
-    const day = Math.floor((date - start) / 86400000);
-    const hour = date.getHours() + date.getMinutes() / 60;
-    const gamma = 2 * Math.PI / 365 * (day - 1 + (hour - 12) / 24);
-    return 229.18 * (0.000075 + 0.001868 * Math.cos(gamma) - 0.032077 * Math.sin(gamma) - 0.014615 * Math.cos(2 * gamma) - 0.040849 * Math.sin(2 * gamma));
-  }
-  return { gastDeg, sunEquatorial, moonEquatorial, moonPhase, equationOfTimeMinutes };
-})();
+(function () {
+  "use strict";
+  
+  const Astro = (function () {
+    function normaliza(graus) { return ((graus % 360) + 360) % 360; }
+    function gastDeg(date) {
+      const jd = date.getTime() / 86400000 + 2440587.5;
+      const T = (jd - 2451545.0) / 36525.0;
+      return normaliza(280.46061837 + 360.98564736629 * (jd - 2451545.0) + 0.000387933 * T * T);
+    }
+    function sunEquatorial(date) {
+      const jd = date.getTime() / 86400000 + 2440587.5;
+      const T = (jd - 2451545.0) / 36525.0;
+      const L0 = normaliza(280.46646 + T * (36000.76983 + 0.0003032 * T));
+      const M = normaliza(357.52911 + T * (35999.05029 - 0.0001537 * T)) * Math.PI / 180;
+      const C = (1.914602 - T * (0.004817 + 0.000014 * T)) * Math.sin(M) + (0.019993 - 0.000101 * T) * Math.sin(2 * M) + 0.000289 * Math.sin(3 * M);
+      const omega = (125.04 - 1934.136 * T) * Math.PI / 180;
+      const lambda = (L0 + C - 0.00569 - 0.00478 * Math.sin(omega)) * Math.PI / 180;
+      const eps = (23.439291 - 0.0130042 * T) * Math.PI / 180;
+      const dec = Math.asin(Math.sin(eps) * Math.sin(lambda));
+      const ra = Math.atan2(Math.cos(eps) * Math.sin(lambda), Math.cos(lambda));
+      return { ra: normaliza(ra * 180 / Math.PI), dec: dec * 180 / Math.PI };
+    }
+    function moonEquatorial(date) {
+      const jd = date.getTime() / 86400000 + 2440587.5;
+      const T = (jd - 2451545.0) / 36525.0;
+      const L = normaliza(218.316 + 481267.881 * T);
+      const M = normaliza(134.963 + 477198.867 * T) * Math.PI / 180;
+      const F = normaliza(93.272 + 483202.017 * T) * Math.PI / 180;
+      const lambda = (L + 6.289 * Math.sin(M)) * Math.PI / 180;
+      const beta = 5.128 * Math.sin(F) * Math.PI / 180;
+      const eps = (23.439291 - 0.0130042 * T) * Math.PI / 180;
+      const dec = Math.asin(Math.sin(beta) * Math.cos(eps) + Math.cos(beta) * Math.sin(eps) * Math.sin(lambda));
+      const ra = Math.atan2(Math.sin(lambda) * Math.cos(eps) - Math.tan(beta) * Math.sin(eps), Math.cos(lambda));
+      return { ra: normaliza(ra * 180 / Math.PI), dec: dec * 180 / Math.PI };
+    }
+    function moonPhase(date) {
+      const s = sunEquatorial(date), m = moonEquatorial(date);
+      return normaliza(m.ra - s.ra) / 360;
+    }
+    function equationOfTimeMinutes(date) {
+      const start = new Date(date.getFullYear(), 0, 0);
+      const day = Math.floor((date - start) / 86400000);
+      const hour = date.getHours() + date.getMinutes() / 60;
+      const gamma = 2 * Math.PI / 365 * (day - 1 + (hour - 12) / 24);
+      return 229.18 * (0.000075 + 0.001868 * Math.cos(gamma) - 0.032077 * Math.sin(gamma) - 0.014615 * Math.cos(2 * gamma) - 0.040849 * Math.sin(2 * gamma));
+    }
+    return { gastDeg, sunEquatorial, moonEquatorial, moonPhase, equationOfTimeMinutes };
+  })();
 
-const SIZE = 800, CX = 400, CY = 400, R = 372;
-const proj = d3.geoAzimuthalEquidistant().rotate([0, -90]).scale(R / Math.PI).translate([CX, CY]).clipAngle(180);
-const path = d3.geoPath(proj);
+  const SIZE = 800, CX = 400, CY = 400, R = 372;
+  const proj = d3.geoAzimuthalEquidistant().rotate([0, -90]).scale(R / Math.PI).translate([CX, CY]).clipAngle(180);
+  const path = d3.geoPath(proj);
 
-const mapWrap = document.getElementById("mapwrap");
-const skyGroup = document.getElementById("skyGroup");
-const clockGroup = document.getElementById("clockGroup");
-const sunIcon = document.getElementById("sun");
-const solarShadow = document.getElementById("nightShadow");
-const timeTooltip = document.getElementById("timeTooltip");
-const shadowCanvas = document.createElement("canvas");
-shadowCanvas.width = shadowCanvas.height = 300;
-const sctx = shadowCanvas.getContext("2d");
-let shadowGrid = null;
-let countryFeatures = [];
+  const mapWrap = document.getElementById("mapwrap");
+  const skyGroup = document.getElementById("skyGroup");
+  const clockGroup = document.getElementById("clockGroup");
+  const sunIcon = document.getElementById("sun");
+  const solarShadow = document.getElementById("nightShadow");
+  const timeTooltip = document.getElementById("timeTooltip");
+  const shadowCanvas = document.createElement("canvas");
+  shadowCanvas.width = shadowCanvas.height = 300;
+  const sctx = shadowCanvas.getContext("2d");
+  let shadowGrid = null;
+  let countryFeatures = [];
 
-let isRotating = false;
-let startX = 0;
-let baseDate = new Date();
+  let isRotating = false;
+  let startX = 0;
+  let baseDate = new Date();
+  let activeDisplayLocale = "pt-BR";
 
-async function init() {
-  try {
-    const topo = await d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json");
-    countryFeatures = topojson.feature(topo, topo.objects.countries).features;
-    d3.select("#landGroup").selectAll("path").data(countryFeatures).join("path").attr("class", "c").attr("d", path);
+  async function init() {
+    try {
+      const topo = await d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json");
+      countryFeatures = topojson.feature(topo, topo.objects.countries).features;
+      d3.select("#landGroup").selectAll("path").data(countryFeatures).join("path").attr("class", "c").attr("d", path);
+      
+      drawClockTicks();
+      setupTooltip();
+      syncNow(); 
+      setInterval(() => { if(document.getElementById("btnNow").dataset.live === "true") syncNow(); }, 1000);
+      document.getElementById("stats").textContent = "Mapa carregado";
+    } catch(e) {
+      document.getElementById("stats").textContent = "Erro no mapa";
+    }
+  }
+
+  function drawClockTicks() {
+    const g = document.getElementById("clockTicks");
+    g.innerHTML = "";
+    for (let i = 0; i < 24; i++) {
+      const ang = (i / 24) * 2 * Math.PI;
+      const x = CX + 395 * Math.sin(ang);
+      const y = CY - 395 * Math.cos(ang);
+      const txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      txt.setAttribute("x", x); txt.setAttribute("y", y);
+      txt.setAttribute("fill", "var(--muted)"); txt.setAttribute("font-size", "10px");
+      txt.setAttribute("text-anchor", "middle"); txt.setAttribute("dominant-baseline", "middle");
+      txt.textContent = i.toString().padStart(2, '0');
+      g.appendChild(txt);
+    }
+  }
+
+  function getDate() {
+    const y = parseInt(document.getElementById("inputYear").value) || 2026;
+    const m = (parseInt(document.getElementById("inputMonth").value) || 1) - 1;
+    const d = parseInt(document.getElementById("inputDay").value) || 1;
+    const h = parseInt(document.getElementById("inputHour").value) || 0;
+    const min = parseInt(document.getElementById("inputMin").value) || 0;
+    const s = parseInt(document.getElementById("inputSec").value) || 0;
+    return new Date(y, m, d, h, min, s);
+  }
+
+  function update() {
+    const date = getDate();
+    const sun = Astro.sunEquatorial(date);
+    const moon = Astro.moonEquatorial(date);
+    const phase = Astro.moonPhase(date);
+    const sidereal = Astro.gastDeg(date);
+
+    const sunLon = ((sun.ra - sidereal + 540) % 360) - 180;
+    const angle = -sunLon; 
+
+    skyGroup.setAttribute("transform", `rotate(${angle} 400 400)`);
+    clockGroup.setAttribute("transform", `rotate(${angle} 400 400)`);
+
+    const sunX = CX + (R * (90 - sun.dec) / 180) * Math.sin(sun.ra * Math.PI / 180);
+    const sunY = CY - (R * (90 - sun.dec) / 180) * Math.cos(sun.ra * Math.PI / 180);
+    sunIcon.setAttribute("cx", sunX); sunIcon.setAttribute("cy", sunY);
+
+    const moonX = CX + (R * (90 - moon.dec) / 180) * Math.sin(moon.ra * Math.PI / 180);
+    const moonY = CY - (R * (90 - moon.dec) / 180) * Math.cos(moon.ra * Math.PI / 180);
+    document.getElementById("moon").setAttribute("cx", moonX); document.getElementById("moon").setAttribute("cy", moonY);
+    document.getElementById("moonClipCircle").setAttribute("cx", moonX); document.getElementById("moonClipCircle").setAttribute("cy", moonY);
+
+    const moonShadow = document.getElementById("moonShadow");
+    const angleToSun = Math.atan2(sunY - moonY, sunX - moonX);
+    const dist = (1 - phase) * 24;
+    moonShadow.setAttribute("cx", moonX - Math.cos(angleToSun) * dist);
+    moonShadow.setAttribute("cy", moonY - Math.sin(angleToSun) * dist);
+
+    drawShadow(date, sun, sunLon);
+
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const yy = date.getFullYear();
+    const hh = String(date.getHours()).padStart(2, '0');
+    const mString = String(date.getMinutes()).padStart(2, '0');
+    const ss = String(date.getSeconds()).padStart(2, '0');
     
-    drawClockTicks();
-    syncNow(); 
-    setInterval(() => { if(document.getElementById("btnNow").dataset.live === "true") syncNow(); }, 1000);
-  } catch(e) {
-    document.getElementById("clockDisplay").textContent = "Erro no mapa";
+    document.getElementById("clockDate").textContent = `${dd}/${mm}/${yy}`;
+    document.getElementById("clockTime").textContent = `${hh}:${mString}:${ss}`;
   }
-}
 
-function drawClockTicks() {
-  const g = document.getElementById("clockTicks");
-  g.innerHTML = "";
-  for (let i = 0; i < 24; i++) {
-    const ang = (i / 24) * 2 * Math.PI;
-    const x = CX + 395 * Math.sin(ang);
-    const y = CY - 395 * Math.cos(ang);
-    const txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
-    txt.setAttribute("x", x); txt.setAttribute("y", y);
-    txt.setAttribute("fill", "#a996c0"); txt.setAttribute("font-size", "10px");
-    txt.setAttribute("text-anchor", "middle"); txt.setAttribute("dominant-baseline", "middle");
-    txt.textContent = i.toString().padStart(2, '0');
-    g.appendChild(txt);
-  }
-}
-
-function getDate() {
-  const y = parseInt(document.getElementById("inputYear").value) || 2026;
-  const m = (parseInt(document.getElementById("inputMonth").value) || 1) - 1;
-  const d = parseInt(document.getElementById("inputDay").value) || 1;
-  const h = parseInt(document.getElementById("inputHour").value) || 0;
-  const min = parseInt(document.getElementById("inputMin").value) || 0;
-  const s = parseInt(document.getElementById("inputSec").value) || 0;
-  return new Date(y, m, d, h, min, s);
-}
-
-function update() {
-  const date = getDate();
-  const sun = Astro.sunEquatorial(date);
-  const moon = Astro.moonEquatorial(date);
-  const phase = Astro.moonPhase(date);
-  const sidereal = Astro.gastDeg(date);
-
-  const sunLon = ((sun.ra - sidereal + 540) % 360) - 180;
-  const angle = -sunLon; 
-
-  skyGroup.setAttribute("transform", `rotate(${angle} 400 400)`);
-  clockGroup.setAttribute("transform", `rotate(${angle} 400 400)`);
-
-  const sunX = CX + (R * (90 - sun.dec) / 180) * Math.sin(sun.ra * Math.PI / 180);
-  const sunY = CY - (R * (90 - sun.dec) / 180) * Math.cos(sun.ra * Math.PI / 180);
-  sunIcon.setAttribute("cx", sunX); sunIcon.setAttribute("cy", sunY);
-
-  const moonX = CX + (R * (90 - moon.dec) / 180) * Math.sin(moon.ra * Math.PI / 180);
-  const moonY = CY - (R * (90 - moon.dec) / 180) * Math.cos(moon.ra * Math.PI / 180);
-  document.getElementById("moon").setAttribute("cx", moonX); document.getElementById("moon").setAttribute("cy", moonY);
-  document.getElementById("moonClipCircle").setAttribute("cx", moonX); document.getElementById("moonClipCircle").setAttribute("cy", moonY);
-
-  const moonShadow = document.getElementById("moonShadow");
-  const angleToSun = Math.atan2(sunY - moonY, sunX - moonX);
-  const dist = (1 - phase) * 24;
-  moonShadow.setAttribute("cx", moonX - Math.cos(angleToSun) * dist);
-  moonShadow.setAttribute("cy", moonY - Math.sin(angleToSun) * dist);
-
-  drawShadow(date, sun, sunLon);
-
-  const dd = String(date.getDate()).padStart(2, '0');
-  const mm = String(date.getMonth() + 1).padStart(2, '0');
-  const yy = date.getFullYear();
-  const hh = String(date.getHours()).padStart(2, '0');
-  const mString = String(date.getMinutes()).padStart(2, '0');
-  const ss = String(date.getSeconds()).padStart(2, '0');
-  document.getElementById("clockDisplay").textContent = `${dd}/${mm}/${yy} ${hh}:${mString}:${ss}`;
-}
-
-function drawShadow(date, sun, sunLon) {
-  if (!shadowGrid) {
-    shadowGrid = new Array(300 * 300);
+  function drawShadow(date, sun, sunLon) {
+    if (!shadowGrid) {
+      shadowGrid = new Array(300 * 300);
+      for (let y = 0; y < 300; y++) {
+        for (let x = 0; x < 300; x++) {
+          shadowGrid[y * 300 + x] = proj.invert([x * (800/300), y * (800/300)]);
+        }
+      }
+    }
+    const imgData = sctx.createImageData(300, 300);
+    const sunDecRad = sun.dec * Math.PI / 180;
     for (let y = 0; y < 300; y++) {
       for (let x = 0; x < 300; x++) {
-        shadowGrid[y * 300 + x] = proj.invert([x * (800/300), y * (800/300)]);
+        const geo = shadowGrid[y * 300 + x];
+        if (!geo) continue;
+        const lat = geo[1] * Math.PI / 180;
+        const lon = geo[0] * Math.PI / 180;
+        const hourAngle = lon - sunLon * Math.PI / 180;
+        const cosZenith = Math.sin(lat) * Math.sin(sunDecRad) + Math.cos(lat) * Math.cos(sunDecRad) * Math.cos(hourAngle);
+        const elev = Math.asin(Math.max(-1, Math.min(1, cosZenith))) * 180 / Math.PI;
+        let alpha = 0;
+        if (elev < 0) {
+          if (elev >= -6) alpha = 60;
+          else if (elev >= -12) alpha = 120;
+          else alpha = 190;
+        }
+        const idx = (y * 300 + x) * 4;
+        imgData.data[idx] = 3; imgData.data[idx+1] = 6; imgData.data[idx+2] = 22;
+        imgData.data[idx+3] = alpha;
       }
     }
+    sctx.putImageData(imgData, 0, 0);
+    solarShadow.setAttribute("href", shadowCanvas.toDataURL("image/png"));
   }
-  
-  const imgData = sctx.createImageData(300, 300);
-  const sunDecRad = sun.dec * Math.PI / 180;
 
-  for (let y = 0; y < 300; y++) {
-    for (let x = 0; x < 300; x++) {
-      const geo = shadowGrid[y * 300 + x];
-      if (!geo) continue;
-      const lat = geo[1] * Math.PI / 180;
-      const lon = geo[0] * Math.PI / 180;
-      const hourAngle = lon - sunLon * Math.PI / 180;
-      const cosZenith = Math.sin(lat) * Math.sin(sunDecRad) + Math.cos(lat) * Math.cos(sunDecRad) * Math.cos(hourAngle);
-      const elev = Math.asin(Math.max(-1, Math.min(1, cosZenith))) * 180 / Math.PI;
-      let alpha = 0;
-      if (elev < 0) {
-        if (elev >= -6) alpha = 60;
-        else if (elev >= -12) alpha = 120;
-        else alpha = 190;
-      }
-      const idx = (y * 300 + x) * 4;
-      imgData.data[idx] = 3; imgData.data[idx+1] = 6; imgData.data[idx+2] = 22;
-      imgData.data[idx+3] = alpha;
-    }
-  }
-  sctx.putImageData(imgData, 0, 0);
-  solarShadow.setAttribute("href", shadowCanvas.toDataURL("image/png"));
-}
-
-// --- CONTROLES E ARRASTO ---
-document.getElementById("timeSlider").addEventListener("input", () => {
-  const val = parseFloat(document.getElementById("timeSlider").value);
-  document.getElementById("inputHour").value = Math.floor(val);
-  document.getElementById("inputMin").value = Math.floor((val % 1) * 60);
-  document.getElementById("inputSec").value = 0;
-  document.getElementById("btnNow").dataset.live = "false";
-  update();
-});
-
-["inputHour", "inputMin", "inputSec"].forEach(id => {
-  document.getElementById(id).addEventListener("input", () => {
-    const h = parseInt(document.getElementById("inputHour").value) || 0;
-    const m = parseInt(document.getElementById("inputMin").value) || 0;
-    document.getElementById("timeSlider").value = h + (m / 60);
+  document.getElementById("timeSlider").addEventListener("input", () => {
+    const val = parseFloat(document.getElementById("timeSlider").value);
+    document.getElementById("inputHour").value = Math.floor(val);
+    document.getElementById("inputMin").value = Math.floor((val % 1) * 60);
     document.getElementById("btnNow").dataset.live = "false";
     update();
   });
-});
 
-document.getElementById("inputYear").addEventListener("change", update);
-document.getElementById("inputMonth").addEventListener("change", update);
-document.getElementById("inputDay").addEventListener("change", update);
+  ["inputHour", "inputMin", "inputSec"].forEach(id => {
+    document.getElementById(id).addEventListener("input", () => {
+      const h = parseInt(document.getElementById("inputHour").value) || 0;
+      const m = parseInt(document.getElementById("inputMin").value) || 0;
+      document.getElementById("timeSlider").value = h + (m / 60);
+      document.getElementById("btnNow").dataset.live = "false";
+      update();
+    });
+  });
 
-document.getElementById("lockToggle").addEventListener("change", (e) => {
-  if (e.target.checked) mapWrap.classList.add("locked");
-  else mapWrap.classList.remove("locked");
-});
+  ["inputYear", "inputMonth", "inputDay"].forEach(id => {
+    document.getElementById(id).addEventListener("change", () => {
+      document.getElementById("btnNow").dataset.live = "false";
+      update();
+    });
+  });
 
-mapWrap.addEventListener("pointerdown", (e) => {
-  if (document.getElementById("lockToggle").checked) return; 
-  isRotating = true;
-  startX = e.clientX;
-  baseDate = getDate(); 
-  mapWrap.setPointerCapture(e.pointerId);
-});
+  document.getElementById("clockLock").addEventListener("change", (e) => {
+    if (e.target.checked) mapWrap.classList.add("locked");
+    else mapWrap.classList.remove("locked");
+  });
 
-mapWrap.addEventListener("pointermove", (e) => {
-  if (!isRotating) return;
-  const dx = e.clientX - startX;
-  const deltaHours = -dx; 
-  const newDate = new Date(baseDate.getTime() + deltaHours * 3600000);
-  
-  document.getElementById("inputYear").value = newDate.getFullYear();
-  document.getElementById("inputMonth").value = newDate.getMonth() + 1;
-  document.getElementById("inputDay").value = newDate.getDate();
-  document.getElementById("inputHour").value = newDate.getHours();
-  document.getElementById("inputMin").value = newDate.getMinutes();
-  document.getElementById("inputSec").value = newDate.getSeconds();
-  document.getElementById("timeSlider").value = newDate.getHours() + (newDate.getMinutes() / 60);
-  
-  document.getElementById("btnNow").dataset.live = "false";
-  update();
-});
+  mapWrap.addEventListener("pointerdown", (e) => {
+    if (document.getElementById("clockLock").checked) return; 
+    isRotating = true;
+    startX = e.clientX;
+    baseDate = getDate(); 
+    mapWrap.setPointerCapture(e.pointerId);
+  });
 
-mapWrap.addEventListener("pointerup", () => { isRotating = false; });
-mapWrap.addEventListener("pointercancel", () => { isRotating = false; });
-
-document.getElementById("btnNow").addEventListener("click", () => {
-  document.getElementById("btnNow").dataset.live = "true";
-  syncNow();
-});
-
-function syncNow() {
-  const d = new Date();
-  document.getElementById("inputYear").value = d.getFullYear();
-  document.getElementById("inputMonth").value = d.getMonth() + 1;
-  document.getElementById("inputDay").value = d.getDate();
-  document.getElementById("inputHour").value = d.getHours();
-  document.getElementById("inputMin").value = d.getMinutes();
-  document.getElementById("inputSec").value = d.getSeconds();
-  document.getElementById("timeSlider").value = d.getHours() + (d.getMinutes() / 60);
-  update();
-}
-
-// --- TOOLTIP (BANDEIRA E HORA DO PAÍS) ---
-mapWrap.addEventListener("mousemove", (e) => {
-  if (isRotating || !document.getElementById("lockToggle").checked) { 
-    timeTooltip.style.display = "none"; return; 
-  }
-  
-  const rect = mapWrap.getBoundingClientRect();
-  const rawX = ((e.clientX - rect.left) / rect.width) * SIZE;
-  const rawY = ((e.clientY - rect.top) / rect.height) * SIZE;
-  
-  if (Math.hypot(rawX - CX, rawY - CY) > R) { timeTooltip.style.display = "none"; return; }
-  
-  const geo = proj.invert([rawX, rawY]);
-  if (!geo) { timeTooltip.style.display = "none"; return; }
-  
-  const [lon, lat] = geo;
-  const date = getDate();
-  
-  const country = countryFeatures.find(f => d3.geoContains(f, [lon, lat]));
-  let countryHtml = "";
-  
-  if (country && window.Dados && Dados.iso) {
-    const isoCode = Dados.iso[String(country.id).padStart(3, '0')];
-    let name = "Desconhecido";
-    if (isoCode) {
-      try {
-        const names = new Intl.DisplayNames(['pt-BR'], { type: "region" });
-        name = names.of(isoCode.toUpperCase()) || country.properties.name;
-      } catch (_) { name = country.properties.name; }
-    } else {
-      name = country.properties.name;
-    }
+  mapWrap.addEventListener("pointermove", (e) => {
+    if (!isRotating) return;
+    const dx = e.clientX - startX;
+    const deltaHours = -dx; 
+    const newDate = new Date(baseDate.getTime() + deltaHours * 3600000);
     
-    // Carrega a bandeira
-    const flagImg = isoCode ? `<img src="https://flagcdn.com/w40/${isoCode}.png" alt="">` : '';
-    countryHtml = `<div class="tip-country">${flagImg}<span>${name}</span></div>`;
+    document.getElementById("inputYear").value = newDate.getFullYear();
+    document.getElementById("inputMonth").value = newDate.getMonth() + 1;
+    document.getElementById("inputDay").value = newDate.getDate();
+    document.getElementById("inputHour").value = newDate.getHours();
+    document.getElementById("inputMin").value = newDate.getMinutes();
+    document.getElementById("inputSec").value = newDate.getSeconds();
+    document.getElementById("timeSlider").value = newDate.getHours() + (newDate.getMinutes() / 60);
+    
+    document.getElementById("btnNow").dataset.live = "false";
+    update();
+  });
+
+  mapWrap.addEventListener("pointerup", () => { isRotating = false; });
+  mapWrap.addEventListener("pointercancel", () => { isRotating = false; });
+
+  document.getElementById("btnNow").addEventListener("click", () => {
+    document.getElementById("btnNow").dataset.live = "true";
+    syncNow();
+  });
+
+  function syncNow() {
+    const d = new Date();
+    document.getElementById("inputYear").value = d.getFullYear();
+    document.getElementById("inputMonth").value = d.getMonth() + 1;
+    document.getElementById("inputDay").value = d.getDate();
+    document.getElementById("inputHour").value = d.getHours();
+    document.getElementById("inputMin").value = d.getMinutes();
+    document.getElementById("inputSec").value = d.getSeconds();
+    document.getElementById("timeSlider").value = d.getHours() + (d.getMinutes() / 60);
+    update();
   }
-  
-  // Calcula a hora solar do local exato
-  const utcMins = date.getUTCHours() * 60 + date.getUTCMinutes() + date.getUTCSeconds() / 60;
-  const eqTime = Astro.equationOfTimeMinutes(date);
-  let totalMins = ((utcMins + lon * 4 + eqTime) % 1440 + 1440) % 1440;
-  const hSun = Math.floor(totalMins / 60);
-  const mSun = Math.floor(totalMins % 60);
-  const solarTimeStr = `${String(hSun).padStart(2,"0")}:${String(mSun).padStart(2,"0")}`;
 
-  const coords = `${Math.abs(lat).toFixed(2)}°${lat >= 0 ? "N" : "S"}, ${Math.abs(lon).toFixed(2)}°${lon >= 0 ? "E" : "W"}`;
-  
-  timeTooltip.innerHTML = `
-    ${countryHtml}
-    <div class="tip-time">${solarTimeStr} <span style="font-size:10px;color:#a996c0;font-weight:normal;">(Hora Solar)</span></div>
-    <div class="tip-meta">${coords}</div>
-  `;
-  
-  timeTooltip.style.display = "block";
-  timeTooltip.style.left = (e.clientX - rect.left + 15) + "px";
-  timeTooltip.style.top = (e.clientY - rect.top + 15) + "px";
-});
+  document.getElementById("btnPrevYear").addEventListener("click", () => { document.getElementById("inputYear").value = parseInt(document.getElementById("inputYear").value) - 1; update(); });
+  document.getElementById("btnPrevMonth").addEventListener("click", () => { let m = parseInt(document.getElementById("inputMonth").value) - 1; if(m<1){m=12; document.getElementById("inputYear").value--;} document.getElementById("inputMonth").value = m; update(); });
+  document.getElementById("btnNextMonth").addEventListener("click", () => { let m = parseInt(document.getElementById("inputMonth").value) + 1; if(m>12){m=1; document.getElementById("inputYear").value++;} document.getElementById("inputMonth").value = m; update(); });
+  document.getElementById("btnNextYear").addEventListener("click", () => { document.getElementById("inputYear").value = parseInt(document.getElementById("inputYear").value) + 1; update(); });
 
-mapWrap.addEventListener("mouseleave", () => { timeTooltip.style.display = "none"; });
+  document.getElementById("btnReset").addEventListener("click", () => {
+    document.getElementById("clockLock").checked = true;
+    mapWrap.classList.add("locked");
+    document.getElementById("btnNow").dataset.live = "true";
+    syncNow();
+  });
 
-init();
+  document.getElementById("layerControls").addEventListener("change", (e) => {
+    const key = e.target.dataset.layer, on = e.target.checked;
+    if (key === "borders") document.getElementById("landGroup").style.display = on ? "" : "none";
+    if (key === "tropics") document.querySelectorAll(".tropic-circle").forEach(el => el.style.display = on ? "" : "none");
+    if (key === "dark") solarShadow.style.display = on ? "" : "none";
+  });
+
+  function setupTooltip() {
+    mapWrap.addEventListener("mousemove", (e) => {
+      if (isRotating || !document.getElementById("clockLock").checked) { 
+        timeTooltip.style.display = "none"; return; 
+      }
+      const rect = mapWrap.getBoundingClientRect();
+      const rawX = ((e.clientX - rect.left) / rect.width) * SIZE;
+      const rawY = ((e.clientY - rect.top) / rect.height) * SIZE;
+      
+      if (Math.hypot(rawX - CX, rawY - CY) > R) { timeTooltip.style.display = "none"; return; }
+      
+      const geo = proj.invert([rawX, rawY]);
+      if (!geo) { timeTooltip.style.display = "none"; return; }
+      
+      const [lon, lat] = geo;
+      const date = getDate();
+      
+      const country = countryFeatures.find(f => d3.geoContains(f, [lon, lat]));
+      let countryHtml = "";
+      
+      if (country && window.Dados && Dados.iso) {
+        const isoCode = Dados.iso[String(country.id).padStart(3, '0')];
+        let name = "Desconhecido";
+        if (isoCode) {
+          try {
+            const names = new Intl.DisplayNames([activeDisplayLocale], { type: "region" });
+            name = names.of(isoCode.toUpperCase()) || country.properties.name;
+          } catch (_) { name = country.properties.name; }
+        } else {
+          name = country.properties.name;
+        }
+        const flagImg = isoCode ? `<img src="https://flagcdn.com/w40/${isoCode}.png" alt="">` : '';
+        countryHtml = `<div class="tip-country">${flagImg}<span>${name}</span></div>`;
+      }
+      
+      const utcMins = date.getUTCHours() * 60 + date.getUTCMinutes() + date.getUTCSeconds() / 60;
+      const eqTime = Astro.equationOfTimeMinutes(date);
+      let totalMins = ((utcMins + lon * 4 + eqTime) % 1440 + 1440) % 1440;
+      const hSun = Math.floor(totalMins / 60);
+      const mSun = Math.floor(totalMins % 60);
+      const solarTimeStr = `${String(hSun).padStart(2,"0")}:${String(mSun).padStart(2,"0")}`;
+
+      const coords = `${Math.abs(lat).toFixed(2)}°${lat >= 0 ? "N" : "S"}, ${Math.abs(lon).toFixed(2)}°${lon >= 0 ? "E" : "W"}`;
+      
+      timeTooltip.innerHTML = `
+        ${countryHtml}
+        <div class="tip-time">${solarTimeStr} <span style="font-size:10px;color:#a996c0;font-weight:normal;">(Hora Solar)</span></div>
+        <div class="tip-meta">${coords}</div>
+      `;
+      
+      timeTooltip.style.display = "block";
+      timeTooltip.style.left = (e.clientX - rect.left + 15) + "px";
+      timeTooltip.style.top = (e.clientY - rect.top + 15) + "px";
+    });
+    mapWrap.addEventListener("mouseleave", () => { timeTooltip.style.display = "none"; });
+  }
+
+  // Modal Termos
+  document.getElementById("termsBtn").addEventListener("click", () => document.getElementById("termsModal").classList.add("open"));
+  document.getElementById("termsClose").addEventListener("click", () => document.getElementById("termsModal").classList.remove("open"));
+  document.getElementById("termsAccept").addEventListener("click", () => document.getElementById("termsModal").classList.remove("open"));
+
+  // Idioma
+  document.getElementById("localeBrazil").addEventListener("click", () => { activeDisplayLocale = "pt-BR"; document.getElementById("localeBrazil").classList.add("active"); document.getElementById("localeWorld").classList.remove("active"); });
+  document.getElementById("localeWorld").addEventListener("click", () => { activeDisplayLocale = navigator.language || "en"; document.getElementById("localeWorld").classList.add("active"); document.getElementById("localeBrazil").classList.remove("active"); });
+
+  init();
+})();
 </script>
 </body>
 </html>
