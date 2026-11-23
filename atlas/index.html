@@ -1,4 +1,529 @@
-loading="lazy">` : "";
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Atlas Polar — Relógio Celeste</title>
+<!-- O arquivo mapa.json deve permanecer nesta mesma pasta (/atlas/). -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Young+Serif&display=swap">
+<style>
+:root {
+  --bg: #0b0710; --panel: #15101c; --soft: #221a2e; --ink: #f0e9fb; --muted: #a996c0;
+  --line: #3a2d4c; --sea: #110c18; --land: #2e2340; --accent: #c4a1f0; --sel: #e9b8ff;
+  --green: #4ade80; --hist: #8b5fc7; --star: #fffbe6; --const: #4da6ff;
+  --f-display: "Young Serif", Georgia, serif; 
+  --f-body: "Hanken Grotesk", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1400px; margin: 0 auto; padding: 20px 16px 40px; }
+
+.top { display: flex; flex-wrap: wrap; gap: 8px 32px; align-items: end; justify-content: space-between; margin-bottom: 20px; }
+.top > div { min-width: 0; flex: 1 1 420px; }
+h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw, 40px); margin-bottom: 6px; }
+.lede { color: var(--muted); margin-bottom: 20px; max-width: 62ch; }
+.stats { font-family: var(--f-mono); font-size: 13px; color: var(--muted); }
+
+.layout { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+.mapcol { position: sticky; top: 16px; min-width: 0; }
+.mapwrap { position: relative; width: min(100%, calc(100vh - 100px)); aspect-ratio: 1 / 1; height: auto; margin: 0 auto; user-select: none; touch-action: none; overflow: hidden; background: var(--bg); border-radius: 50%; }
+#map { display: block; width: 100%; height: 100%; }
+.mapwrap.fullscreen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; max-width: none; z-index: 1000; border-radius: 0; background: var(--bg); }
+#map { display: block; width: 100%; height: 100%; }
+
+.sea { fill: var(--sea); }
+.c { fill: var(--land); stroke: var(--bg); stroke-width: .7; cursor: pointer; transition: opacity .2s; }
+.c:hover { stroke: var(--ink); stroke-width: 1.4; }
+.c.sel { stroke: var(--sel); stroke-width: 2.6; }
+.c.ring { fill: #e8def6 !important; stroke: var(--line); stroke-width: 1; }
+
+.grid-line { stroke: var(--green); stroke-width: 1.2; opacity: 0.4; pointer-events: none; }
+.grid-circle { fill: none; stroke: var(--green); stroke-width: 1; opacity: 0.3; pointer-events: none; }
+.tropic-circle { fill:none; stroke-width:1.7; opacity:.82; pointer-events:none; }
+.tropic-north { stroke:#ef4444; }
+.tropic-equator { stroke:#eab308; }
+.tropic-south { stroke:#3b82f6; }
+.ring { fill: none; stroke: var(--line); stroke-width: 2; pointer-events: none; }
+.pole { fill: var(--accent); pointer-events: none; filter: drop-shadow(0 0 6px var(--accent)); }
+
+.timezone-line { stroke: var(--accent); stroke-width: 0.5; opacity: 0.2; pointer-events: none; }
+
+.star { fill: var(--star); pointer-events: none; }
+.star-bright { fill: #ffffff; filter: drop-shadow(0 0 3px #fff); }
+.star-label { font-family: var(--f-mono); font-size: 9px; fill: #fff; paint-order: stroke; stroke: #000; stroke-width: 2px; pointer-events: none; }
+.constellation-line { stroke: var(--const); stroke-width: 1.5; opacity: 0.8; fill: none; pointer-events: none; }
+
+.sun-dot { fill: #ffcc00; filter: drop-shadow(0 0 20px #ffcc00); pointer-events: none; }
+.moon-dot { fill: #e0e0e0; filter: drop-shadow(0 0 15px #fff); pointer-events: none; }
+.moon-shadow { fill: rgba(0, 0, 0, 0.8); pointer-events: none; }
+
+.map-controls { position: absolute; top: 12px; right: 12px; display: flex; flex-direction: column; gap: 6px; z-index: 50; }
+.map-controls button { width: 40px; height: 40px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
+.map-controls button:hover { background: var(--soft); border-color: var(--accent); }
+.map-controls button.active { background: var(--accent); color: var(--bg); }
+
+.clock-display { margin-top: 16px; padding: 12px 18px; background: var(--soft); border: 1px solid var(--line); border-radius: 12px; font-family: var(--f-mono); color: var(--ink); text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+.clock-display .date { font-size: 14px; color: var(--accent); margin-bottom: 4px; font-weight: 600; }
+.clock-display .time { font-size: 28px; font-weight: 700; color: var(--ink); letter-spacing: 0.05em; }
+.clock-display .label { font-size: 10px; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.1em; }
+
+.tooltip { position: absolute; pointer-events: none; background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; font-family: var(--f-mono); font-size: 12px; z-index: 100; display: none; white-space: nowrap; }
+
+.panel { min-width: 0; }
+.search label { display: block; font-size: 12px; font-family: var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.search input { width: 100%; font: inherit; padding: 11px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); }
+
+.layerbox { margin: 12px 0 0; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+.layerhead { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; }
+.layerhead strong { font-family: var(--f-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
+.layerhead span { font-size: 11px; color: var(--muted); }
+.layergrid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.layeritem { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); font-size: 12px; min-width: 0; }
+.layeritem input { accent-color: var(--accent); margin: 0; flex: 0 0 auto; }
+.layeritem .swatch { width: 10px; height: 10px; border-radius: 3px; background: var(--swatch, var(--accent)); flex: 0 0 auto; }
+
+.timeline, .time-control { margin-top: 12px; padding: 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); }
+.timeline h3 { font-family: var(--f-display); font-size: 18px; font-weight: 400; margin: 0 0 4px; }
+.timeline p { margin: 0; color: var(--muted); font-size: 12.5px; }
+.yearline, .time-display { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin: 8px 0 2px; }
+.yearline output, .time-display { color: var(--accent); font-family: var(--f-mono); font-weight: 600; }
+.timeline input, .time-control input { width: 100%; accent-color: var(--accent); margin: 8px 0; }
+.info-box { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); display: none; }
+.footer-box { max-width: 1280px; margin: 0 auto 28px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+
+.time-machine { display: flex; gap: 8px; align-items: end; }
+.time-machine .field { flex: 1; display: flex; flex-direction: column; }
+.time-machine label { font-size: 11px; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .05em; }
+.time-machine input, .time-machine select { width: 100%; font: inherit; padding: 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); font-size: 14px; }
+.nav-buttons { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 10px; }
+.nav-buttons button { border: 1px solid var(--line); border-radius: 6px; background: var(--soft); color: var(--ink); font: inherit; font-size: 11px; padding: 6px 2px; cursor: pointer; transition: background 0.2s; }
+.nav-buttons button:hover { background: var(--accent); color: var(--bg); }
+
+.readout-box { margin-top: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); font-size: 13px; }
+.readout-box .row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.readout-box .row:last-child { border-bottom: none; }
+.readout-box .label { color: var(--muted); }
+.readout-box .value { font-family: var(--f-mono); font-weight: 600; color: var(--accent); }
+
+/* --- Botão e Modal de Termos de Uso --- */
+.terms-btn {
+  position: fixed; bottom: 20px; right: 20px; z-index: 1100;
+  width: 48px; height: 48px; border-radius: 50%;
+  background: var(--accent); color: var(--bg);
+  border: none; cursor: pointer; font-size: 22px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 16px rgba(196,161,240,0.4);
+  transition: transform 0.2s;
+  font-family: var(--f-display);
+}
+.terms-btn:hover { transform: scale(1.1); }
+
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 2000;
+  background: rgba(0,0,0,0.75);
+  display: none; align-items: center; justify-content: center;
+  padding: 20px; backdrop-filter: blur(4px);
+}
+.modal-overlay.open { display: flex; }
+.modal-box {
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: 16px; max-width: 640px; width: 100%;
+  max-height: 85vh; display: flex; flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  animation: modalIn 0.25s ease;
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(20px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.modal-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 18px 22px; border-bottom: 1px solid var(--line); flex-shrink: 0;
+}
+.modal-header h2 {
+  font-family: var(--f-display); font-weight: 400; font-size: 22px;
+  color: var(--accent); margin: 0;
+}
+.modal-close {
+  width: 36px; height: 36px; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--soft);
+  color: var(--ink); font-size: 18px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s, border-color 0.2s;
+  line-height: 1;
+}
+.modal-close:hover { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+.modal-body {
+  padding: 22px; overflow-y: auto; flex: 1;
+  font-size: 14px; line-height: 1.7; color: var(--ink);
+  scrollbar-width: thin; scrollbar-color: var(--accent) var(--soft);
+}
+.modal-body::-webkit-scrollbar { width: 8px; }
+.modal-body::-webkit-scrollbar-track { background: var(--soft); border-radius: 4px; }
+.modal-body::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 4px; }
+.modal-body h3 {
+  font-family: var(--f-display); font-weight: 400; font-size: 17px;
+  color: var(--accent); margin: 20px 0 10px;
+}
+.modal-body h3:first-child { margin-top: 0; }
+.modal-body p { margin-bottom: 12px; }
+.modal-body strong { color: var(--sel); }
+.modal-footer {
+  padding: 14px 22px; border-top: 1px solid var(--line);
+  display: flex; justify-content: flex-end; flex-shrink: 0;
+}
+.modal-footer button {
+  padding: 10px 24px; border-radius: 8px; border: none;
+  background: var(--accent); color: var(--bg);
+  font: inherit; font-weight: 600; cursor: pointer;
+  transition: opacity 0.2s;
+}
+.modal-footer button:hover { opacity: 0.85; }
+
+@media (max-width: 979px) {
+  .layout { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  .mapcol { position: static; }
+  .mapwrap { width: 100%; }
+  .clock-display { margin-top: 12px; }
+}
+
+/* Controles adicionados para a engrenagem do Atlas */
+.locale-switch { display:flex; gap:8px; margin-bottom:14px; }
+.locale-switch button, .shadow-switch button { border:1px solid var(--line); background:var(--panel); color:var(--ink); border-radius:8px; padding:8px 14px; font:inherit; font-size:12px; font-weight:700; cursor:pointer; }
+.locale-switch button.active, .shadow-switch button.active { background:var(--accent); color:var(--bg); border-color:var(--accent); }
+.shadow-control { margin-top:12px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.shadow-control strong { font-size:12px; color:var(--muted); }
+.shadow-switch { display:flex; gap:6px; }
+.tooltip { white-space:normal; max-width:min(300px,80vw); line-height:1.5; }
+.tooltip .tip-country { display:flex; align-items:center; gap:8px; font-weight:700; margin-bottom:4px; }
+.tooltip .tip-country img, .country-flag { width:24px; height:auto; border-radius:2px; vertical-align:middle; }
+.tooltip .tip-meta { color:var(--muted); }
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Atlas Polar</h1>
+      <p class="lede">Relógio celeste de precisão. Navegue pelo tempo passado e futuro.</p>
+    </div>
+    <p class="stats" id="stats">Carregando...</p>
+  </header>
+
+  <main class="layout">
+    <section class="mapcol">
+      <div class="mapwrap" id="mapwrap">
+        <div class="map-controls">
+          <button id="btnZoomIn" title="Aproximar">+</button>
+          <button id="btnZoomOut" title="Afastar">−</button>
+          <button id="btnFullscreen" title="Tela Cheia">⛶</button>
+        </div>
+
+        <svg id="map" viewBox="0 0 800 800">
+          <defs>
+            <clipPath id="mapclip"><circle cx="400" cy="400" r="372"/></clipPath>
+            <clipPath id="moonclip"><circle id="moonClipCircle" cx="0" cy="0" r="12"/></clipPath>
+          </defs>
+          
+          <g id="wholeMap" transform="translate(0,0) scale(1)">
+            <circle class="sea" cx="400" cy="400" r="372" />
+            
+            <g id="landGroup" clip-path="url(#mapclip)"></g>
+
+            <g id="skyGroup" clip-path="url(#mapclip)" pointer-events="none">
+              <image id="solarLight" x="0" y="0" width="800" height="800" preserveAspectRatio="none" style="pointer-events:none" />
+              <image id="nightShadow" x="0" y="0" width="800" height="800" preserveAspectRatio="none" style="pointer-events:none" />
+              <g id="constellations"></g>
+              <g id="stars"></g>
+              <g id="starLabels"></g>
+              <g id="sunLayer">
+                <circle id="sun" class="sun-dot" r="12" />
+              </g>
+              <g id="moonLayer">
+                <circle id="moon" class="moon-dot" r="12" />
+                <circle id="moonShadow" class="moon-shadow" r="12" clip-path="url(#moonclip)" />
+              </g>
+            </g>
+
+            <g id="staticGroup">
+              <g id="timezoneLayer"></g>
+
+              <g id="gridLayer">
+                <g id="graticuleLayer" clip-path="url(#mapclip)"></g>
+                <g id="gridCircles">
+                  <circle class="tropic-circle tropic-north" cx="400" cy="400" r="137.5" />
+                  <circle class="tropic-circle tropic-equator" cx="400" cy="400" r="186" />
+                  <circle class="tropic-circle tropic-south" cx="400" cy="400" r="234.5" />
+                </g>
+                <g id="visualLayer">
+                  <g id="gridCross">
+                    <line class="grid-line" x1="400" y1="40" x2="400" y2="760" />
+                    <line class="grid-line" x1="40" y1="400" x2="760" y2="400" />
+                  </g>
+                  <g id="gridStar6">
+                    <polygon points="400,40 711.8,580 88.2,580" fill="none" class="grid-line" style="opacity:0.6;" />
+                    <polygon points="711.8,220 400,760 88.2,220" fill="none" class="grid-line" style="opacity:0.6;" />
+                  </g>
+                </g>
+                <circle class="ring" cx="400" cy="400" r="370" />
+              </g>
+
+              <g id="clockLayer">
+                <circle cx="400" cy="400" r="385" fill="none" stroke="var(--line)" stroke-width="1.5" />
+                <g id="clockTicks"></g>
+              </g>
+
+              <circle class="pole" cx="400" cy="400" r="5" />
+              <text x="400" y="12" text-anchor="middle" fill="var(--accent)" font-size="12" font-family="var(--f-mono)" font-weight="bold">N</text>
+              <text x="400" y="795" text-anchor="middle" fill="var(--muted)" font-size="12" font-family="var(--f-mono)">S</text>
+            </g>
+          </g>
+        </svg>
+        <div id="timeTooltip" class="tooltip"></div>
+      </div>
+
+      <p style="text-align:center; margin-top:12px; font-size:13px; color:var(--muted);">
+        Centro = Polo Norte · Borda = Polo Sul<br>
+        Destrave o relógio para arrastar o céu e alterar a mesma data/hora da Máquina do Tempo.
+      </p>
+
+      <section class="layerbox">
+        <div class="layerhead"><strong>Camadas do Atlas</strong><span>ligar / desligar</span></div>
+        <div class="layergrid" id="layerControls">
+          <label class="layeritem"><input type="checkbox" data-layer="borders" checked><i class="swatch" style="--swatch:#9670c8"></i>Países</label>
+          <label class="layeritem"><input type="checkbox" data-layer="graticule" checked><i class="swatch" style="--swatch:#8993a8"></i>Lat/Long</label>
+          <label class="layeritem"><input type="checkbox" data-layer="tropics" checked><i class="swatch" style="--swatch:#e5c94f"></i>Trópicos</label>
+          <label class="layeritem"><input type="checkbox" data-layer="visual" checked><i class="swatch" style="--swatch:#8cff48"></i>Visual</label>
+          <label class="layeritem"><input type="checkbox" data-layer="stars" checked><i class="swatch" style="--swatch:#fffbe6"></i>Céu Estelar</label>
+          <label class="layeritem"><input type="checkbox" data-layer="light" checked><i class="swatch" style="--swatch:#ffcc00"></i>Sol</label>
+          <label class="layeritem"><input type="checkbox" data-layer="dark" checked><i class="swatch" style="--swatch:#000000"></i>Sombra (Noite)</label>
+          <label class="layeritem"><input type="checkbox" data-layer="moon" checked><i class="swatch" style="--swatch:#e0e0e0"></i>Lua</label>
+          <label class="layeritem"><input type="checkbox" data-layer="timezones" checked><i class="swatch" style="--swatch:#a996c0"></i>Fusos Horários</label>
+          <label class="layeritem"><input type="checkbox" id="clockLock" data-layer="clockLock" checked><i class="swatch" style="--swatch:#c4a1f0"></i>Travar Relógio</label>
+          <label class="layeritem"><input type="checkbox" data-layer="sunMove" checked><i class="swatch" style="--swatch:#ffaa00"></i>Tempo Real</label>
+        </div>
+        <div class="shadow-control">
+          <strong>Sombra:</strong>
+          <div class="shadow-switch" role="group" aria-label="Modo da sombra">
+            <button type="button" id="shadowSimple" class="active" aria-pressed="true">SIMPLES</button>
+            <button type="button" id="shadowTechnical" aria-pressed="false">TÉCNICA</button>
+          </div>
+        </div>
+        <button type="button" id="btnReset" style="margin-top:10px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--soft);color:var(--ink);font:inherit;font-size:12px;cursor:pointer;">↺ Restaurar</button>
+      </section>
+
+      <section class="time-control">
+        <div class="layerhead"><strong>Máquina do Tempo</strong><span>∞</span></div>
+        <div class="time-machine">
+          <div class="field">
+            <label for="inputYear">Ano</label>
+            <input id="inputYear" type="number" value="2026" min="-9999" max="9999">
+          </div>
+          <div class="field">
+            <label for="inputMonth">Mês</label>
+            <select id="inputMonth">
+              <option value="1">Jan</option><option value="2">Fev</option><option value="3">Mar</option>
+              <option value="4">Abr</option><option value="5">Mai</option><option value="6">Jun</option>
+              <option value="7">Jul</option><option value="8">Ago</option><option value="9">Set</option>
+              <option value="10">Out</option><option value="11">Nov</option><option value="12">Dez</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="inputDay">Dia</label>
+            <select id="inputDay"></select>
+          </div>
+        </div>
+
+        <div class="time-display" id="timeDisplay">12:00</div>
+        <input id="timeSlider" type="range" min="0" max="23.99" value="12" step="0.01">
+
+        <div class="nav-buttons">
+          <button id="btnPrevYear" title="Ano Anterior">-1 Ano</button>
+          <button id="btnPrevMonth" title="Mês Anterior">-1 Mês</button>
+          <button id="btnNextMonth" title="Próximo Mês">+1 Mês</button>
+          <button id="btnNextYear" title="Próximo Ano">+1 Ano</button>
+        </div>
+
+        <button id="btnNow" style="margin-top:10px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--accent);color:var(--bg);font:inherit;font-size:12px;cursor:pointer;font-weight:600;width:100%;">⏱️ Sincronizar com o Agora</button>
+      </section>
+
+      <section class="readout-box">
+        <div class="row">
+          <span class="label">Tzolkin (Maia)</span>
+          <span class="value" id="readTzolkin">--</span>
+        </div>
+        <div class="row">
+          <span class="label">Sol Tropical (Astrol.)</span>
+          <span class="value" id="readAstro">--</span>
+        </div>
+      </section>
+
+    </section>
+
+    <section class="panel">
+      <div class="locale-switch" role="group" aria-label="Idioma">
+        <button type="button" id="localeBrazil" class="active" aria-pressed="true">BRASIL</button>
+        <button type="button" id="localeWorld" aria-pressed="false">MUNDIAL</button>
+      </div>
+      <div class="search">
+        <label for="q" id="searchLabel">Buscar país</label>
+        <input id="q" type="search" placeholder="Brasil, Japão, Egito…" autocomplete="off">
+      </div>
+      
+      <div class="clock-display">
+        <div class="date" id="clockDate">--/--/----</div>
+        <div class="time" id="clockTime">--:--:--</div>
+        <div class="label" id="clockLabel">LOCAL</div>
+      </div>
+
+      <div id="view" style="margin-top:22px;">
+        <h2 id="chooseCountryTitle" style="font-family:var(--f-display); font-weight:400; font-size:26px; margin-bottom:6px;">Escolha um país</h2>
+        <p id="chooseCountryHelp" style="color:var(--muted); margin-bottom:18px; max-width:56ch;">Clique no mapa ou use a busca.</p>
+      </div>
+      <div id="countryInfo" class="info-box"></div>
+    </section>
+  </main>
+  
+  <section class="footer-box">
+    <div class="layerhead"><strong>Estrutura expansível · macro → micro</strong><span>modelo de camadas</span></div>
+    <p style="margin:0;color:var(--muted);font-size:13px">Cada camada pode conter grupos, subcamadas, filtros e registros sem alterar a base do mapa.</p>
+  </section>
+</div>
+
+<!-- Botão flutuante de Termos de Uso -->
+<button class="terms-btn" id="termsBtn" title="Termos de Uso" aria-label="Abrir Termos de Uso">§</button>
+
+<!-- Modal de Termos de Uso -->
+<div class="modal-overlay" id="termsModal" role="dialog" aria-modal="true" aria-labelledby="termsTitle">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 id="termsTitle">Termos de Uso & Princípios</h2>
+      <button class="modal-close" id="termsClose" aria-label="Fechar">✕</button>
+    </div>
+    <div class="modal-body">
+      <h3>A comunicação não tem fronteiras</h3>
+      <p><strong>Princípio de continuidade do Atlas da Verdade</strong></p>
+      <p>O Atlas da Verdade não pretende substituir culturas, tradições, idiomas, costumes ou formas de organização social.</p>
+      <p>Cada povo deve conservar sua identidade, sua memória e sua autonomia.</p>
+      <p>A plataforma existe para aproximar realidades, não para uniformizá-las.</p>
+      <p>Sua função é permitir que a comunicação ultrapasse barreiras geográficas, linguísticas e técnicas, preservando a origem das informações e o contexto em que foram produzidas.</p>
+      <p>Não cabe ao Atlas determinar o que uma sociedade deve acreditar, como deve viver ou quais costumes deve preservar.</p>
+      <p>Cabe a ele oferecer instrumentos para que diferentes sociedades possam apresentar suas próprias informações, conhecer outras realidades e estabelecer relações de conhecimento.</p>
+      <p>A comunicação deve permanecer acessível, descentralizada e aberta à participação.</p>
+      <p>Sua continuidade não deve depender da vontade de um único país, instituição, grupo econômico ou autoridade central.</p>
+      <p>O projeto deve buscar padrões abertos, fontes identificáveis, infraestrutura distribuída, transparência técnica e possibilidade de colaboração independente.</p>
+      <p>A máquina não governa os povos. Não representa uma cultura superior. Não exige concordância.</p>
+      <p><strong>Ela conecta.</strong></p>
+      <p><strong>O conhecimento pode atravessar fronteiras sem que as fronteiras precisem desaparecer.</strong></p>
+      <p>A comunicação entre os povos não é uma imposição cultural. É uma possibilidade de entendimento.</p>
+      <p>O Atlas existe para ampliar essa possibilidade.</p>
+    </div>
+    <div class="modal-footer">
+      <button id="termsAccept">Entendi e concordo</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/suncalc@1.9.0/suncalc.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  const SIZE = 800, CX = 400, CY = 400, R = 372;
+  const proj = d3.geoAzimuthalEquidistant().rotate([0, -90]).scale(R / Math.PI).translate([CX, CY]).clipAngle(180);
+  const path = d3.geoPath(proj);
+  let mapPaths = new Map();
+
+  const wholeMap = document.getElementById("wholeMap");
+  const landGroup = document.getElementById("landGroup");
+  const skyGroup = document.getElementById("skyGroup");
+  const mapWrap = document.getElementById("mapwrap");
+  const clockLockCheckbox = document.getElementById("clockLock");
+  const sunMoveCheckbox = document.querySelector('[data-layer="sunMove"]');
+  const btnReset = document.getElementById("btnReset");
+  const btnNow = document.getElementById("btnNow");
+  
+  const starsGroup = document.getElementById("stars");
+  const constGroup = document.getElementById("constellations");
+  const labelsGroup = document.getElementById("starLabels");
+  
+  const solarLight = document.getElementById("solarLight");
+  const solarShadow = document.getElementById("nightShadow");
+  const sunIcon = document.getElementById("sun");
+  const moonIcon = document.getElementById("moon");
+  const moonShadow = document.getElementById("moonShadow");
+  const moonClipCircle = document.getElementById("moonClipCircle");
+  
+  const timeSlider = document.getElementById("timeSlider");
+  const timeDisplay = document.getElementById("timeDisplay");
+  const timeTooltip = document.getElementById("timeTooltip");
+  
+  const clockDate = document.getElementById("clockDate");
+  const clockTime = document.getElementById("clockTime");
+  const clockLabel = document.getElementById("clockLabel");
+
+  const inputYear = document.getElementById("inputYear");
+  const inputMonth = document.getElementById("inputMonth");
+  const inputDay = document.getElementById("inputDay");
+  const btnPrevYear = document.getElementById("btnPrevYear");
+  const btnPrevMonth = document.getElementById("btnPrevMonth");
+  const btnNextMonth = document.getElementById("btnNextMonth");
+  const btnNextYear = document.getElementById("btnNextYear");
+
+  const readTzolkin = document.getElementById("readTzolkin");
+  const readAstro = document.getElementById("readAstro");
+
+  const RES = 300;
+  let shadowGeoGrid = null;
+  function getShadowGeoGrid() {
+    if (shadowGeoGrid) return shadowGeoGrid;
+    shadowGeoGrid = new Array(RES * RES);
+    for (let y = 0; y < RES; y++) {
+      for (let x = 0; x < RES; x++) {
+        const px = x * (SIZE / RES), py = y * (SIZE / RES);
+        shadowGeoGrid[y * RES + x] = proj.invert([px, py]);
+      }
+    }
+    return shadowGeoGrid;
+  }
+  const shadowCanvas = document.createElement("canvas");
+  shadowCanvas.width = shadowCanvas.height = RES;
+  const sctx = shadowCanvas.getContext("2d");
+
+  const localOffsetHours = -new Date().getTimezoneOffset() / 60;
+  const ISO_NUMERIC_TO_ALPHA2 = {"533":"aw","004":"af","024":"ao","660":"ai","248":"ax","008":"al","020":"ad","784":"ae","032":"ar","051":"am","016":"as","010":"aq","260":"tf","028":"ag","036":"au","040":"at","031":"az","108":"bi","056":"be","204":"bj","535":"bq","854":"bf","050":"bd","100":"bg","048":"bh","044":"bs","070":"ba","652":"bl","112":"by","084":"bz","060":"bm","068":"bo","076":"br","052":"bb","096":"bn","064":"bt","074":"bv","072":"bw","140":"cf","124":"ca","166":"cc","756":"ch","152":"cl","156":"cn","384":"ci","120":"cm","180":"cd","178":"cg","184":"ck","170":"co","174":"km","132":"cv","188":"cr","192":"cu","531":"cw","162":"cx","136":"ky","196":"cy","203":"cz","276":"de","262":"dj","212":"dm","208":"dk","214":"do","012":"dz","218":"ec","818":"eg","232":"er","732":"eh","724":"es","233":"ee","231":"et","246":"fi","242":"fj","238":"fk","250":"fr","234":"fo","583":"fm","266":"ga","826":"gb","268":"ge","831":"gg","288":"gh","292":"gi","324":"gn","312":"gp","270":"gm","624":"gw","226":"gq","300":"gr","308":"gd","304":"gl","320":"gt","254":"gf","316":"gu","328":"gy","344":"hk","334":"hm","340":"hn","191":"hr","332":"ht","348":"hu","360":"id","833":"im","356":"in","086":"io","372":"ie","364":"ir","368":"iq","352":"is","376":"il","380":"it","388":"jm","832":"je","400":"jo","392":"jp","398":"kz","404":"ke","417":"kg","116":"kh","296":"ki","659":"kn","410":"kr","414":"kw","418":"la","422":"lb","430":"lr","434":"ly","662":"lc","438":"li","144":"lk","426":"ls","440":"lt","442":"lu","428":"lv","446":"mo","663":"mf","504":"ma","492":"mc","498":"md","450":"mg","462":"mv","484":"mx","584":"mh","807":"mk","466":"ml","470":"mt","104":"mm","499":"me","496":"mn","580":"mp","508":"mz","478":"mr","500":"ms","474":"mq","480":"mu","454":"mw","458":"my","175":"yt","516":"na","540":"nc","562":"ne","574":"nf","566":"ng","558":"ni","570":"nu","528":"nl","578":"no","524":"np","520":"nr","554":"nz","512":"om","586":"pk","591":"pa","612":"pn","604":"pe","608":"ph","585":"pw","598":"pg","616":"pl","630":"pr","408":"kp","620":"pt","600":"py","275":"ps","258":"pf","634":"qa","638":"re","642":"ro","643":"ru","646":"rw","682":"sa","729":"sd","686":"sn","702":"sg","239":"gs","654":"sh","744":"sj","090":"sb","694":"sl","222":"sv","674":"sm","706":"so","666":"pm","688":"rs","728":"ss","678":"st","740":"sr","703":"sk","705":"si","752":"se","748":"sz","534":"sx","690":"sc","760":"sy","796":"tc","148":"td","768":"tg","764":"th","762":"tj","772":"tk","795":"tm","626":"tl","776":"to","780":"tt","788":"tn","792":"tr","798":"tv","158":"tw","834":"tz","800":"ug","804":"ua","581":"um","858":"uy","840":"us","860":"uz","336":"va","670":"vc","862":"ve","092":"vg","850":"vi","704":"vn","548":"vu","876":"wf","882":"ws","887":"ye","710":"za","894":"zm","716":"zw"};
+
+  const UI_TEXT = {
+    pt: { search:"Buscar país", choose:"Escolha um país", chooseHelp:"Clique no mapa ou use a busca.", countries:"Países", latlong:"Lat/Long", tropics:"Trópicos", visual:"Visual", stars:"Céu Estelar", sun:"Sol", night:"Sombra (Noite)", moon:"Lua", zones:"Fusos Horários", lock:"Travar Relógio", realTime:"Tempo Real", reset:"↺ Restaurar", terms:"Termos de Uso", agree:"Entendi e concordo", back:"← Todos os países", local:"LOCAL", shadow:"Sombra:", solarTime:"hora solar", simple:"SIMPLES", technical:"TÉCNICA", placeholder:"Brasil, Japão, Egito…" },
+    en: { search:"Search country", choose:"Choose a country", chooseHelp:"Click the map or use search.", countries:"Countries", latlong:"Lat/Long", tropics:"Tropics", visual:"Visual", stars:"Star field", sun:"Sun", night:"Night shadow", moon:"Moon", zones:"Time zones", lock:"Lock Clock", realTime:"Live Time", reset:"↺ Reset", terms:"Terms of Use", agree:"I understand and agree", back:"← All countries", local:"LOCAL", shadow:"Shadow:", solarTime:"solar time", simple:"SIMPLE", technical:"TECHNICAL", placeholder:"Brazil, Japan, Egypt…" },
+    es: { search:"Buscar país", choose:"Elige un país", chooseHelp:"Haz clic en el mapa o usa la búsqueda.", countries:"Países", latlong:"Lat/Long", tropics:"Trópicos", visual:"Visual", stars:"Cielo estrellado", sun:"Sol", night:"Sombra (noche)", moon:"Luna", zones:"Husos horarios", lock:"Bloquear reloj", realTime:"Tiempo real", reset:"↺ Restaurar", terms:"Términos de uso", agree:"Entiendo y acepto", back:"← Todos los países", local:"LOCAL", shadow:"Sombra:", solarTime:"hora solar", simple:"SIMPLE", technical:"TÉCNICA", placeholder:"Brasil, Japón, Egipto…" }
+  };
+
+  function uiLanguage() {
+    if (localeMode === "br") return "pt";
+    const lang = (worldLocale || "en").slice(0,2).toLowerCase();
+    return UI_TEXT[lang] ? lang : "en";
+  }
+  function countryIso(feature) {
+    const key = String(feature?.id ?? "").padStart(3, "0");
+    return ISO_NUMERIC_TO_ALPHA2[key] || null;
+  }
+  function countryName(feature) {
+    const iso = countryIso(feature);
+    const fallback = feature?.properties?.name || "";
+    if (!iso) return fallback;
+    try {
+      const names = new Intl.DisplayNames([activeDisplayLocale], { type:"region" });
+      return names.of(iso.toUpperCase()) || fallback;
+    } catch (_) { return fallback; }
+  }
+  function flagMarkup(feature, className="country-flag") {
+    const iso = countryIso(feature);
+    return iso ? `<img class="${className}" src="https://flagcdn.com/w40/${iso}.png" alt="" loading="lazy">` : "";
   }
   function applyLocale() {
     const lang = uiLanguage();
@@ -760,6 +1285,104 @@ loading="lazy">` : "";
 
   applyMapTransform();
   initMap();
+})();
+</script>
+
+<!-- Extensão aditiva: nenhuma função original do relógio ou da sombra foi modificada. -->
+<style>
+#atlasAstroTooltip {position:absolute;display:none;pointer-events:none;z-index:110;background:#15101c;color:#f0e9fb;border:1px solid #c4a1f0;border-radius:9px;padding:10px 12px;max-width:260px;font:12px/1.55 system-ui;box-shadow:0 8px 24px #0008}
+#atlasAuditPanel {margin:14px 0;padding:14px;background:var(--panel);border:1px solid var(--line);border-radius:12px;font-size:13px}
+#atlasAuditPanel summary{cursor:pointer;color:var(--accent);font-weight:700}
+#atlasAuditPanel button{margin:10px 0;padding:8px 12px;background:var(--soft);color:var(--ink);border:1px solid var(--line);border-radius:7px;cursor:pointer}
+#atlasAuditPanel output{white-space:pre-wrap;display:block;font-family:var(--f-mono);font-size:12px;line-height:1.6}
+</style>
+<script>
+(function () {
+  'use strict';
+  const wrap=document.getElementById('mapwrap');
+  const svg=document.getElementById('map');
+  if (!wrap || !svg) return;
+  const tip=document.createElement('div');
+  tip.id='atlasAstroTooltip'; tip.setAttribute('role','status'); wrap.appendChild(tip);
+  const panel=document.createElement('details');
+  panel.id='atlasAuditPanel';
+  panel.innerHTML='<summary>Auditoria astronômica · experimental (sem alterar o mapa)</summary><p style="margin-top:8px;color:var(--muted)">Diagnóstico da data escolhida. Não substitui a validação por efemérides independentes.</p><button type="button" id="atlasAuditRun">Verificar instante</button><output id="atlasAuditResult"></output>';
+  const controls=document.querySelector('.time-control');
+  if (controls) controls.insertAdjacentElement('afterend',panel);
+  function selectedDate(){
+    const y=Number(document.getElementById('inputYear').value);
+    const m=Number(document.getElementById('inputMonth').value);
+    const d=Number(document.getElementById('inputDay').value);
+    const hours=Number(document.getElementById('timeSlider').value);
+    if(!Number.isFinite(y)||!Number.isFinite(hours)||!Number.isInteger(m)||!Number.isInteger(d))return null;
+    const date=new Date(0);date.setFullYear(y,m-1,d);date.setHours(0,0,0,0);
+    date.setTime(date.getTime()+hours*3600000);
+    return Number.isFinite(date.getTime())?date:null;
+  }
+  function moonPhase(f){
+    if(f<0.035||f>0.965)return 'Lua nova';
+    if(f<0.215)return 'Crescente';
+    if(f<0.285)return 'Quarto crescente';
+    if(f<0.465)return 'Gibosa crescente';
+    if(f<0.535)return 'Lua cheia';
+    if(f<0.715)return 'Gibosa minguante';
+    if(f<0.785)return 'Quarto minguante';
+    return 'Minguante';
+  }
+  function inspect(event){
+    const rect=wrap.getBoundingClientRect();
+    const p=svg.createSVGPoint();p.x=event.clientX;p.y=event.clientY;
+    const matrix=svg.getScreenCTM();
+    if(!matrix){tip.style.display='none';return;}
+    const cursor=p.matrixTransform(matrix.inverse());
+    let nearest=null;
+    for(const [id,label] of [['moon','Lua'],['sun','Sol']]){
+      const el=document.getElementById(id);
+      if(!el||el.style.display==='none'||el.closest('g[style*="display: none"]'))continue;
+      const cx=Number(el.getAttribute('cx')),cy=Number(el.getAttribute('cy'));
+      const whole=document.getElementById('wholeMap');
+      const transform=whole?.transform?.baseVal?.consolidate()?.matrix;
+      const point=svg.createSVGPoint();point.x=cx;point.y=cy;
+      const mapped=transform?point.matrixTransform(transform):point;
+      const dist=Math.hypot(cursor.x-mapped.x,cursor.y-mapped.y);
+      if(dist<24&&(!nearest||dist<nearest.dist))nearest={id,label,dist};
+    }
+    const date=selectedDate();
+    if(!nearest||!date){tip.style.display='none';return;}
+    let content='<strong>'+nearest.label+'</strong><div>'+date.toLocaleString('pt-BR')+'</div>';
+    if(nearest.id==='moon'){
+      if(typeof SunCalc==='undefined'){content+='<div>Biblioteca lunar indisponível</div>';}
+      else{
+        const moon=SunCalc.getMoonIllumination(date);
+        content+='<div>Fase aproximada: '+moonPhase(moon.phase)+'</div><div>Disco iluminado: '+(moon.fraction*100).toFixed(1)+'%</div><div>Ciclo lunar: '+(moon.phase*100).toFixed(1)+'%</div>';
+      }
+    } else content+='<div>Posição visual calculada pelo mecanismo original do ATLAS.</div>';
+    tip.innerHTML=content;
+    tip.style.display='block';
+    tip.style.left=Math.max(0,Math.min(event.clientX-rect.left+15,rect.width-260))+'px';
+    tip.style.top=Math.max(0,event.clientY-rect.top+15)+'px';
+    // Tooltip original de países fica oculto somente quando o ponteiro está sobre um astro.
+    const old=document.getElementById('timeTooltip');if(old)old.style.display='none';
+  }
+  wrap.addEventListener('mousemove',inspect);
+  wrap.addEventListener('mouseleave',()=>{tip.style.display='none'});
+  document.getElementById('atlasAuditRun')?.addEventListener('click',()=>{
+    const date=selectedDate(),out=document.getElementById('atlasAuditResult');
+    if(!date){out.textContent='Data inválida.';return;}
+    const illumination=typeof SunCalc!=='undefined'?SunCalc.getMoonIllumination(date):null;
+    const deps=[...document.querySelectorAll('script[src]')].map(el=>el.getAttribute('src'));
+    out.textContent=[
+      'Data local selecionada: '+date.toLocaleString('pt-BR'),
+      'UTC: '+date.toISOString(),
+      'Lua iluminada (SunCalc): '+(illumination?(illumination.fraction*100).toFixed(2)+'%':'biblioteca indisponível'),
+      'Sombra: algoritmo original preservado; nenhuma alteração geométrica',
+      'Continentes: carregamento original de mapa.json com fallback online',
+      'Dependências externas: '+deps.length+' bibliotecas/scripts por URL',
+      'Validação independente: PENDENTE',
+      'Offline completo: NÃO VERIFICADO',
+      'Conflitos geográficos: NÃO CONCLUÍDOS'
+    ].join('\n');
+  });
 })();
 </script>
 </body>
