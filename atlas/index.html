@@ -129,7 +129,50 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 
 <!-- NOSSOS SCRIPTS LOCAIS -->
 <script src="dados.js"></script>
-<script src="astronomia.js" defer></script>
+<script>
+window.Astro = (function () {
+  function normaliza(graus) { return ((graus % 360) + 360) % 360; }
+  function gastDeg(date) {
+    const jd = date.getTime() / 86400000 + 2440587.5;
+    const T = (jd - 2451545.0) / 36525.0;
+    const gmst = 280.46061837 + 360.98564736629 * (jd - 2451545.0) + 0.000387933 * T * T;
+    return normaliza(gmst);
+  }
+  function sunEquatorial(date) {
+    const jd = date.getTime() / 86400000 + 2440587.5;
+    const T = (jd - 2451545.0) / 36525.0;
+    const L0 = normaliza(280.46646 + T * (36000.76983 + 0.0003032 * T));
+    const M = normaliza(357.52911 + T * (35999.05029 - 0.0001537 * T)) * Math.PI / 180;
+    const C = (1.914602 - T * (0.004817 + 0.000014 * T)) * Math.sin(M) + (0.019993 - 0.000101 * T) * Math.sin(2 * M) + 0.000289 * Math.sin(3 * M);
+    const omega = (125.04 - 1934.136 * T) * Math.PI / 180;
+    const lambda = (L0 + C - 0.00569 - 0.00478 * Math.sin(omega)) * Math.PI / 180;
+    const eps = (23.439291 - 0.0130042 * T) * Math.PI / 180;
+    const dec = Math.asin(Math.sin(eps) * Math.sin(lambda));
+    const ra = Math.atan2(Math.cos(eps) * Math.sin(lambda), Math.cos(lambda));
+    return { ra: normaliza(ra * 180 / Math.PI), dec: dec * 180 / Math.PI };
+  }
+  function moonEquatorial(date) {
+    const jd = date.getTime() / 86400000 + 2440587.5;
+    const T = (jd - 2451545.0) / 36525.0;
+    const L = normaliza(218.316 + 481267.881 * T);
+    const M = normaliza(134.963 + 477198.867 * T) * Math.PI / 180;
+    const F = normaliza(93.272 + 483202.017 * T) * Math.PI / 180;
+    const lambda = (L + 6.289 * Math.sin(M)) * Math.PI / 180;
+    const beta = 5.128 * Math.sin(F) * Math.PI / 180;
+    const eps = (23.439291 - 0.0130042 * T) * Math.PI / 180;
+    const dec = Math.asin(Math.sin(beta) * Math.cos(eps) + Math.cos(beta) * Math.sin(eps) * Math.sin(lambda));
+    const ra = Math.atan2(Math.sin(lambda) * Math.cos(eps) - Math.tan(beta) * Math.sin(eps), Math.cos(lambda));
+    return { ra: normaliza(ra * 180 / Math.PI), dec: dec * 180 / Math.PI };
+  }
+  function moonPhase(date) {
+    const sun = sunEquatorial(date);
+    const moon = moonEquatorial(date);
+    const elong = normaliza(moon.ra - sun.ra);
+    return elong / 360;
+  }
+  return { gastDeg, sunEquatorial, moonEquatorial, moonPhase };
+})();
+</script>
 <!-- O D3 É NECESSÁRIO APENAS PARA DESENHAR O MAPA E A PROJEÇÃO (PODE SER BAIXADO LOCALMENTE DEPOIS) -->
 <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
