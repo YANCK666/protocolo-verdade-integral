@@ -1,0 +1,268 @@
+{
+  "epoch": "J2000",
+  "source": "Catálogo aproximado herdado do Teste 15; não auditado",
+  "stars": [
+    {
+      "name": "Antares",
+      "ra": 16.49,
+      "dec": -26.432,
+      "bright": true
+    },
+    {
+      "name": "Regulus",
+      "ra": 10.139,
+      "dec": 11.967,
+      "bright": true
+    },
+    {
+      "name": "Denebola",
+      "ra": 11.818,
+      "dec": 14.572
+    },
+    {
+      "name": "Hamal",
+      "ra": 2.119,
+      "dec": 23.462,
+      "bright": true,
+      "zodiac": true
+    },
+    {
+      "name": "Sheratan",
+      "ra": 1.911,
+      "dec": 20.808,
+      "bright": true,
+      "zodiac": true
+    },
+    {
+      "name": "Mesarthim",
+      "ra": 1.892,
+      "dec": 19.294,
+      "bright": true,
+      "zodiac": true
+    },
+    {
+      "name": "Aldebaran",
+      "ra": 4.599,
+      "dec": 16.509,
+      "bright": true,
+      "zodiac": true
+    },
+    {
+      "name": "Elnath",
+      "ra": 5.438,
+      "dec": 28.608,
+      "bright": true,
+      "zodiac": true
+    },
+    {
+      "name": "Alcyone",
+      "ra": 3.791,
+      "dec": 24.105,
+      "bright": true,
+      "zodiac": true
+    },
+    {
+      "name": "Castor",
+      "ra": 7.577,
+      "dec": 31.888,
+      "bright": true,
+      "zodiac": true
+    },
+    {
+      "name": "Pollux",
+      "ra": 7.755,
+      "dec": 28.026,
+      "bright": true,
+      "zodiac": true
+    },
+    {
+      "name": "Alhena",
+      "ra": 6.629,
+      "dec": 16.399,
+      "bright": true,
+      "zodiac": true
+    },
+    {
+      "name": "Acubens",
+      "ra": 8.975,
+      "dec": 11.858,
+      "bright": true,
+      "zodiac": true
+    },
+    {
+      "name": "Asellus Borealis",
+      "ra": 8.721,
+      "dec": 21.468,
+      "bright": true,
+      "zodiac": true
+    },
+    {
+      "name": "Asellus Australis",
+      "ra": 8.745,
+      "dec": 18.154,
+      "bright": true,
+      "zodiac": true
+    },
+    {
+      "name": "Algieba",
+      "ra": 10.333,
+      "dec": 19.842,
+      "bright": true,
+      "zodiac": true
+    },
+    {
+      "name": "Zosma",
+      "ra": 11.235,
+      "dec": 20.524,
+      "bright": true,
+      "zodiac": true
+    },
+    {
+      "name": "Spica",
+      "ra": 13.42,
+      "dec": -11.161,
+      "bright": true,
+      "zodiac": true
+    },
+    {
+      "name": "Porrima",
+      "ra": 12.694,
+      "dec": -1.449,
+      "bright": true,
+      "zodiac": true
+    },
+    {
+      "name": "Vindemiatrix",
+      "ra": 13.036,
+      "dec": 10.959,
+      "bright": true,
+      "zodiac": true
+    },
+    {
+      "name": "Zubenelgenubi",
+      "ra": 14.848,
+      "dec": -16.042,
+      "bright": true,
+      "zodiac": true
+    },
+    {
+      "name": "Zubeneschamali",
+      "ra": 15.283,
+      "dec": -9.383,
+      "bright": true,
+      "zodiac": true
+    },
+    {
+      "name": "Dschubba",
+      "ra": 16.005,
+      "dec": -22.622,
+      "bright": true,
+      "zodiac": true
+    },
+    {
+      "name": "Shaula",
+      "ra": 17.56,
+      "dec": -37.104,
+      "bright": true,
+      "zodiac": true
+    },
+    {
+      "name": "Sargas",
+      "ra": 17.622,
+      "dec": -42.998,
+      "bright": true,
+      "zodiac": true
+    },
+    {
+      "name": "Kaus Australis",
+      "ra": 18.403,
+      "dec": -34.384,
+      "bright": true,
+      "zodiac": true
+    },
+    {
+      "name": "Nunki",
+      "ra": 18.921,
+      "dec": -26.297,
+      "bright": true,
+      "zodiac": true
+    },
+    {
+      "name": "Kaus Media",
+      "ra": 18.35,
+      "dec": -29.828,
+      "bright": true,
+      "zodiac": true
+    },
+    {
+      "name": "Kaus Borealis",
+      "ra": 18.466,
+      "dec": -25.422,
+      "bright": true,
+      "zodiac": true
+    },
+    {
+      "name": "Deneb Algedi",
+      "ra": 21.784,
+      "dec": -16.127,
+      "bright": true,
+      "zodiac": true
+    },
+    {
+      "name": "Dabih",
+      "ra": 20.35,
+      "dec": -14.781,
+      "bright": true,
+      "zodiac": true
+    },
+    {
+      "name": "Algedi",
+      "ra": 20.301,
+      "dec": -12.545,
+      "bright": true,
+      "zodiac": true
+    },
+    {
+      "name": "Sadalmelik",
+      "ra": 22.096,
+      "dec": -0.32,
+      "bright": true,
+      "zodiac": true
+    },
+    {
+      "name": "Sadalsuud",
+      "ra": 21.526,
+      "dec": -5.571,
+      "bright": true,
+      "zodiac": true
+    },
+    {
+      "name": "Skat",
+      "ra": 22.911,
+      "dec": -15.821,
+      "bright": true,
+      "zodiac": true
+    },
+    {
+      "name": "Alrescha",
+      "ra": 2.034,
+      "dec": 2.764,
+      "bright": true,
+      "zodiac": true
+    },
+    {
+      "name": "Fumalsamakah",
+      "ra": 23.064,
+      "dec": 3.82,
+      "bright": true,
+      "zodiac": true
+    },
+    {
+      "name": "Eta Piscium",
+      "ra": 1.525,
+      "dec": 15.346,
+      "bright": true,
+      "zodiac": true
+    }
+  ]
+}
