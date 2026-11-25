@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Atlas Polar — Relógio Celeste</title>
+<title>Atlas Polar — Relógio Celeste | Teste 20</title>
 <!-- O arquivo mapa.json deve permanecer nesta mesma pasta (/atlas/). -->
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Young+Serif&display=swap">
 <style>
@@ -50,7 +50,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 
 .timezone-line { stroke: var(--accent); stroke-width: 0.5; opacity: 0.2; pointer-events: none; }
 
-.star { fill: var(--star); pointer-events: none; }
+.star { fill: #fffbe6; opacity: .95; pointer-events: none; }
 .star-bright { fill: #ffffff; filter: drop-shadow(0 0 3px #fff); }
 .star-label { font-family: var(--f-mono); font-size: 9px; fill: #fff; paint-order: stroke; stroke: #000; stroke-width: 2px; pointer-events: none; }
 .constellation-line { stroke: var(--const); stroke-width: 1.5; opacity: 0.8; fill: none; pointer-events: none; }
@@ -439,7 +439,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
         <h2 id="chooseCountryTitle" style="font-family:var(--f-display); font-weight:400; font-size:26px; margin-bottom:6px;">Escolha um país</h2>
         <p id="chooseCountryHelp" style="color:var(--muted); margin-bottom:18px; max-width:56ch;">Clique no mapa ou use a busca.</p>
       </div>
-      <section class="layerbox" id="atlasExplorer"><div class="layerhead"><strong>Explorador do Atlas</strong><span>−∞ ← 0 → +∞</span></div><div id="atlasLayers"></div><div class="layergrid"><label class="layeritem"><input id="zLines" type="checkbox" checked> Traçados</label><label class="layeritem"><input id="zNames" type="checkbox" checked> Nomes das constelações</label><label class="layeritem"><input id="zArt" type="checkbox"> Símbolos zodiacais</label><label class="layeritem"><input id="starNames" type="checkbox"> Nomes das estrelas</label></div><div id="atlasSelection" class="readout-box">Toque ou clique no mapa.</div><p style="font-size:11px;color:var(--muted)">Camadas lógicas; distâncias e brilho são dados, não alturas físicas do disco.</p></section><div id="countryInfo" class="info-box"></div>
+      <section class="layerbox" id="atlasExplorer"><div class="layerhead"><strong>Explorador do Atlas</strong><span>−∞ ← 0 → +∞</span></div><div id="atlasLayers"></div><div class="layergrid"><label class="layeritem"><input id="atlasStarDots" type="checkbox" checked> Estrelas (pontos)</label><label class="layeritem"><input id="zLines" type="checkbox" checked> Traçados</label><label class="layeritem"><input id="zNames" type="checkbox" checked> Nomes das constelações</label><label class="layeritem"><input id="zArt" type="checkbox"> Símbolos zodiacais</label><label class="layeritem"><input id="starNames" type="checkbox"> Nomes das estrelas</label></div><div id="atlasSelection" class="readout-box">Toque ou clique no mapa.</div><p style="font-size:11px;color:var(--muted)">Camadas lógicas; distâncias e brilho são dados, não alturas físicas do disco.</p></section><div id="countryInfo" class="info-box"></div>
     </section>
   </main>
   
@@ -723,7 +723,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
         const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
         circle.dataset.atlasName=star.name; circle.setAttribute("cx", x);
         circle.setAttribute("cy", y);
-        circle.setAttribute("r", star.mag!=null?Math.max(.35,2.6-star.mag*.36):star.bright ? 3.5 : 2);
+        circle.setAttribute("r", star.mag!=null?Math.max(1.15,3.6-star.mag*.40):star.bright ? 3.5 : 2);
         circle.setAttribute("class", star.bright ? "star star-bright" : "star");
         starsGroup.appendChild(circle);
 
@@ -758,7 +758,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
     });
   }
 
-  function syncSkyControls(){const on=document.querySelector('[data-layer="stars"]').checked;for(const [id,control] of [["constellations","zLines"],["zodiacNames","zNames"],["zodiacArt","zArt"],["starLabels","starNames"]])document.getElementById(id).style.display=on&&document.getElementById(control).checked?"":"none";}
+  function syncSkyControls(){const on=document.querySelector('[data-layer="stars"]').checked;for(const [id,control] of [["constellations","zLines"],["zodiacNames","zNames"],["zodiacArt","zArt"],["starLabels","starNames"]])document.getElementById(id).style.display=on&&document.getElementById(control).checked?"":"none";starsGroup.style.display=on&&document.getElementById("atlasStarDots").checked?"":"none";}
   function normalizeDegrees(value) { return ((value % 360) + 360) % 360; }
   function clamp(value, min, max) { return Math.max(min, Math.min(max, value)); }
   function smoothstep(edge0, edge1, x) {
@@ -1482,11 +1482,12 @@ sunMoveCheckbox.addEventListener("change", () => {
   function refreshAtlasSelection(date){
     if(!atlasSelected)return;const {geo,hits,country}=atlasSelected;const out=document.getElementById("atlasSelection");
     const lines=[...hits,country?countryName(country):"Ponto geográfico",`${geo[1].toFixed(4)}°, ${geo[0].toFixed(4)}°`,`Hora solar: ${solarTimeAt(date,geo[0])}`,date.toISOString()];
+    const elev=elevationAt20(geo);if(elev!==null)lines.push(`Elevação NOAA ETOPO 2022: ${Math.round(elev).toLocaleString("pt-BR")} m`);
     const lib=window.Astronomy;
     if(lib)for(const name of hits){const body=Object.keys(PLANET_NAMES).find(k=>PLANET_NAMES[k]===name)||({Sol:"Sun",Lua:"Moon"})[name];if(!body)continue;try{const eq=lib.Equator(body,date,new lib.Observer(geo[1],geo[0],0),true,true);lines.push(`${name}: ${(eq.dist*149597870.7).toLocaleString("pt-BR",{maximumFractionDigits:0})} km`);if(body!=="Sun"){const i=lib.Illumination(body,date);lines.push(`Magnitude: ${i.mag.toFixed(2)}`);}}catch(e){lines.push(`${name}: dados adicionais indisponíveis`);}}
     out.style.whiteSpace="pre-wrap";out.textContent=lines.join("\n");
   }
-  for(const id of ["zLines","zNames","zArt","starNames"])document.getElementById(id).addEventListener("change",syncSkyControls);
+  for(const id of ["atlasStarDots","zLines","zNames","zArt","starNames"])document.getElementById(id).addEventListener("change",syncSkyControls);
   document.getElementById("layerControls").addEventListener("change",syncSkyControls);
   syncSkyControls();
   applyMapTransform();
@@ -1574,10 +1575,10 @@ sunMoveCheckbox.addEventListener("change", () => {
   document.addEventListener('fullscreenchange',()=>set3(document.fullscreenElement===mapWrap));window.addEventListener('resize',()=>{if(mode3)layout3();});
   const oldLock3=document.getElementById('cameraLock').onclick;document.getElementById('cameraLock').onclick=()=>{oldLock3();if(mode3&&cameraLocked)reset3();};
   for(const [id,f] of [['btnZoomIn',1.25],['btnZoomOut',.8]]){const b=document.getElementById(id),old=b.onclick;b.onclick=()=>{if(!mode3)return old();if(cameraLocked)setCamera(false);scale3=clamp(scale3*f,.2,15);layout3();};}
-  mapWrap.addEventListener('pointerdown',e=>{if(!mode3||cameraLocked||e.button!==0||e.target.closest('.atlas-volume15 i,button,input,select,#universalSearch,#timeOverlay,#atlasHeightPanel,#atlasVisualPanel,#atlasObjectPanel'))return;drag3={id:e.pointerId,x:e.clientX,y:e.clientY};mapWrap.setPointerCapture(e.pointerId);e.preventDefault();});
+  mapWrap.addEventListener('pointerdown',e=>{if(!mode3||cameraLocked||e.button!==0||e.target.closest('.atlas-volume15 i,button,input,select,#universalSearch,#timeOverlay,#atlasHeightPanel,#atlasVisualPanel,#atlasObjectPanel,#atlasLayerPanel'))return;drag3={id:e.pointerId,x:e.clientX,y:e.clientY};mapWrap.setPointerCapture(e.pointerId);e.preventDefault();});
   mapWrap.addEventListener('pointermove',e=>{if(!drag3||drag3.id!==e.pointerId)return;const x=e.clientX-drag3.x,y=e.clientY-drag3.y;if(e.shiftKey){dx3+=x;dy3+=y;}else{yaw3+=x*.35;tilt3=clamp(tilt3-y*.35,-175,175);}drag3.x=e.clientX;drag3.y=e.clientY;layout3();});
   for(const ev of ['pointerup','pointercancel','lostpointercapture'])mapWrap.addEventListener(ev,()=>drag3=null);
-  mapWrap.addEventListener('wheel',e=>{if(!mode3||e.target.closest('#universalSearch,#timeOverlay,#atlasHeightPanel,#atlasVisualPanel,#atlasObjectPanel'))return;e.preventDefault();if(!cameraLocked){scale3=clamp(scale3*(e.deltaY<0?1.12:.89),.2,15);layout3();}},{passive:false});
+  mapWrap.addEventListener('wheel',e=>{if(!mode3||e.target.closest('#universalSearch,#timeOverlay,#atlasHeightPanel,#atlasVisualPanel,#atlasObjectPanel,#atlasLayerPanel'))return;e.preventDefault();if(!cameraLocked){scale3=clamp(scale3*(e.deltaY<0?1.12:.89),.2,15);layout3();}},{passive:false});
 
   // Teste 12: dados locais opcionais, sem substituir o mapa base.
   const adminRows=[];
@@ -1585,15 +1586,16 @@ sunMoveCheckbox.addEventListener("change", () => {
   const visualGroup=d3.select('#atlasTerritoryVisual');
   const visualDefs=d3.select(svg.querySelector('defs')).append('g').attr('id','atlasVisualDefs');
   const visualPanel=document.createElement('section');visualPanel.id='atlasVisualPanel';visualPanel.className='atlas-extra-panel';visualPanel.hidden=true;
-  visualPanel.innerHTML=`<header><strong>Visualização · +2 Território</strong><button type="button">×</button></header><label>Base <select id="atlasBase"><option value="map">Cartográfico</option><option value="satellite">Satélite real</option><option value="relief">Relevo (dados locais)</option></select></label><label>Bandeiras <select id="atlasFlags"><option value="none">Desativadas</option><option value="country">Nacionais</option><option value="state">Estaduais</option><option value="all">Todos</option></select></label><label>Opacidade <input id="atlasOpacity" type="range" min="0" max="100" value="80"></label><label><input id="atlasAdmin" type="checkbox"> Divisões administrativas locais</label><label><input id="atlasClimate" type="checkbox"> Clima histórico</label><p id="atlasVisualStatus" role="status"></p><small>−1 reservado · 0 Polaris · +1 céu · +2 território. Dados históricos somente quando documentados.</small>`;
+  visualPanel.innerHTML=`<header><strong>Visualização · +2 Território</strong><button type="button">×</button></header><label>Base <select id="atlasBase"><option value="map">Cartográfico</option><option value="satellite">Satélite real</option><option value="relief">Relevo (dados locais)</option></select></label><label>Bandeiras <select id="atlasFlags"><option value="none">Desativadas</option><option value="country">Nacionais</option><option value="state">Estaduais</option><option value="all">Todos</option></select></label><label>Opacidade <input id="atlasOpacity" type="range" min="0" max="100" value="100"></label><label><input id="atlasAdmin" type="checkbox"> Divisões administrativas locais</label><label><input id="atlasClimate" type="checkbox"> Clima histórico</label><p id="atlasVisualStatus" role="status"></p><small>−1 reservado · 0 Polaris · +1 céu · +2 território. Dados históricos somente quando documentados.</small>`;
   mapWrap.append(visualPanel);draggablePanel(visualPanel);visualPanel.querySelector('header button').onclick=()=>visualPanel.hidden=true;
   const vb=document.createElement('button');vb.textContent='▤';vb.title='Modos de visualização';document.getElementById('mapSearchButton').after(vb);vb.onclick=()=>visualPanel.hidden=!visualPanel.hidden;
-  const vq=id=>document.getElementById(id);let visualAssets={},visualSeq=0,selectedAdmin=null;
+  const localVisual20={satellite:{src:"./earth.png",projection:"atlas-azimuthal-45",source:"NASA — textura local"},relief:{src:"./relief.png",projection:"atlas-azimuthal-45",source:"Natural Earth — relevo local"}};
+  const vq=id=>document.getElementById(id);let visualAssets={...localVisual20},visualSeq=0,selectedAdmin=null;
   // Bandeiras vetoriais de demonstração, locais: Brasil e São Paulo.
   function flagSVG(code){const shapes={br:'<rect width="100" height="70" fill="#009739"/><path d="M50 7 92 35 50 63 8 35Z" fill="#ffdf00"/><circle cx="50" cy="35" r="17" fill="#002776"/><path d="M34 31 Q50 27 66 40" fill="none" stroke="white" stroke-width="4"/>', 'br-sp':Array.from({length:13},(_,i)=>`<rect y="${i*70/13}" width="100" height="${70/13}" fill="${i%2?'white':'black'}"/>`).join('')+'<rect width="40" height="38" fill="#d00"/><circle cx="20" cy="19" r="12" fill="white"/><path d="M15 10 25 12 29 18 22 24 20 30 15 22 11 17Z" fill="#174a9c"/>'};return shapes[code]?'data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 70">'+shapes[code]+'</svg>'):null;}
-  async function loadVisualCatalog(){for(const [key,url] of Object.entries({admin:'geography/admin1.geojson',flags:'flags/catalog.json',assets:'geography/visualizations.json'})){try{const data=await fetchJSON(url);if(key==='admin'&&data.type==='FeatureCollection'){for(const f of data.features){const p=f.properties||{};if(p.name)adminRows.push({name:p.name,alias:p.country||'',type:'Divisão administrativa · '+(p.country||''),kind:'admin',feature:normalizeGeo(f),code:p.flag_id||p.iso_3166_2});}}else if(key==='flags')Object.assign(localFlags,data);else if(key==='assets')visualAssets=data;}catch(_){}}renderVisual();}
+  async function loadVisualCatalog(){for(const [key,url] of Object.entries({admin:'geography/admin1.geojson',flags:'flags/catalog.json',assets:'geography/visualizations.json'})){try{const data=await fetchJSON(url);if(key==='admin'&&data.type==='FeatureCollection'){for(const f of data.features){const p=f.properties||{};if(p.name)adminRows.push({name:p.name,alias:p.country||'',type:'Divisão administrativa · '+(p.country||''),kind:'admin',feature:normalizeGeo(f),code:p.flag_id||p.iso_3166_2});}}else if(key==='flags')Object.assign(localFlags,data);else if(key==='assets')visualAssets={...data,...localVisual20};}catch(_){}}renderVisual();}
   function renderVisual(){const seq=++visualSeq;visualGroup.selectAll('*').remove();visualDefs.selectAll('*').remove();const base=vq('atlasBase').value, flags=vq('atlasFlags').value, opacity=+vq('atlasOpacity').value/100;const notes=[];
-    if(base!=='map'){const a=visualAssets[base];if(a?.src&&a.projection==='atlas-azimuthal-45'){visualGroup.append('image').attr('href',a.src).attr('width',800).attr('height',800).on('error',()=>{if(seq===visualSeq)vq('atlasVisualStatus').textContent='Imagem local indisponível; base cartográfica preservada.';});notes.push((a.date||'Data não informada')+' · '+(a.source||'Fonte não informada'));}else notes.push('Pacote '+base+' indisponível; base cartográfica preservada.');}
+    if(base!=='map'){const a=visualAssets[base];if(a?.src&&a.projection==='atlas-azimuthal-45'){visualGroup.append('image').attr('href',a.src).attr('x',CX-R).attr('y',CY-R).attr('width',2*R).attr('height',2*R).attr('preserveAspectRatio','none').attr('opacity',opacity).on('error',()=>{if(seq===visualSeq)vq('atlasVisualStatus').textContent='Imagem local indisponível; base cartográfica preservada.';});notes.push((a.date||'Data não informada')+' · '+(a.source||'Fonte não informada'));}else notes.push('Pacote '+base+' indisponível; base cartográfica preservada.');}
     let rows=flags==='state'?[]:countryFeatures.map(f=>({feature:f,code:countryIso(f)}));if(selectedAdmin&&['state','all'].includes(flags))rows.push(selectedAdmin);let count=0,missing=0;
     if(flags!=='none')for(const r of rows){const code=String(r.code||'').toLowerCase(),src=localFlags[code]||flagSVG(code)||(code.length===2?'https://flagcdn.com/w320/'+code+'.png':null);if(!src||typeof src!=='string'){missing++;continue;}const f=normalizeGeo(r.feature),d=path(f),b=path.bounds(f);if(!d||!b.flat().every(Number.isFinite)||b[1][0]<=b[0][0]||b[1][1]<=b[0][1])continue;const id='atlasFlagClip'+count++;visualDefs.append('clipPath').attr('id',id).attr('clipPathUnits','userSpaceOnUse').append('path').attr('d',d).attr('clip-rule','evenodd');visualGroup.append('image').attr('href',src).attr('x',b[0][0]).attr('y',b[0][1]).attr('width',b[1][0]-b[0][0]).attr('height',b[1][1]-b[0][1]).attr('preserveAspectRatio','xMidYMid slice').attr('clip-path',`url(#${id})`).attr('opacity',opacity).on('error',function(){this.remove();});}
     if(flags!=='none')notes.push(count+' bandeiras solicitadas · catálogo local prioritário; nacionais restantes dependem de internet.'+(missing?' · '+missing+' sem imagem':'')+(flags==='state'&&!selectedAdmin?' · Pesquise e selecione um estado.':''));
@@ -1609,8 +1611,9 @@ sunMoveCheckbox.addEventListener("change", () => {
   const sphereDefs=d3.select(svg.querySelector('defs'));for(const [id,color] of [['atlasSunSphere','#ffb900'],['atlasMoonSphere','#a7a7b5'],['atlasPlanetSphere','#d17c49']]){const g=sphereDefs.append('radialGradient').attr('id',id).attr('cx','32%').attr('cy','28%').attr('r','72%');g.append('stop').attr('offset','0%').attr('stop-color','#fff8e8');g.append('stop').attr('offset','40%').attr('stop-color',color);g.append('stop').attr('offset','100%').attr('stop-color','#302438');}
   vq('sun').style.fill='url(#atlasSunSphere)';vq('moon').style.fill='url(#atlasMoonSphere)';
   new MutationObserver(()=>{for(const c of planetLayer.querySelectorAll('circle'))if(c.getAttribute('fill')!=='url(#atlasPlanetSphere)')c.setAttribute('fill','url(#atlasPlanetSphere)');}).observe(planetLayer,{childList:true});
+  const layerPanel=document.createElement('section');layerPanel.id='atlasLayerPanel';layerPanel.className='atlas-extra-panel';layerPanel.hidden=true;layerPanel.innerHTML='<header><strong>Camadas do ATLAS</strong><button type="button">×</button></header><div id="atlasLayerMirror"></div>';mapWrap.append(layerPanel);draggablePanel(layerPanel);layerPanel.querySelector('button').onclick=()=>layerPanel.hidden=true;const lb=document.createElement('button');lb.textContent='☷';lb.title='Camadas';document.getElementById('mapSearchButton').after(lb);lb.onclick=()=>{layerPanel.hidden=!layerPanel.hidden;syncLayerMirror();};const mirror=layerPanel.querySelector('#atlasLayerMirror');const controls19=[...document.querySelectorAll('#layerControls input'),...['showPlanets','showPlanetNames','atlasStarDots','zLines','zNames','zArt','starNames','stateToggle','atlasAdmin','atlasClimate'].map(id=>document.getElementById(id)).filter(Boolean),poleToggle];const names19={showPlanets:'Planetas',showPlanetNames:'Nomes dos planetas',stateToggle:'Estados do Brasil',atlasAdmin:'Divisões mundiais locais',atlasClimate:'Clima histórico'};const pairs19=controls19.map(c=>{const label=document.createElement('label');const box=document.createElement('input');box.type='checkbox';label.append(box,document.createTextNode(' '+(names19[c.id]||c.closest('label')?.textContent.trim()||(c===poleToggle?'Polaris':c.id))));mirror.append(label);box.onchange=()=>{c.checked=box.checked;c.dispatchEvent(new Event('change',{bubbles:true}));c.dispatchEvent(new Event('input',{bubbles:true}));syncLayerMirror();};return [c,box];});function syncLayerMirror(){for(const [c,b] of pairs19)b.checked=c.checked;}document.addEventListener('change',syncLayerMirror);syncLayerMirror();
   const skyStatus=document.createElement('p');skyStatus.style.fontSize='11px';document.getElementById('atlasExplorer').append(skyStatus);
-  async function loadStarCatalog(){try{const data=await fetchJSON('astronomy/stars.json');if(data.epoch!=='J2000'||!Array.isArray(data.stars))throw Error('Formato inválido');const rows=data.stars.filter(r=>typeof r.name==='string'&&Number.isFinite(r.ra)&&r.ra>=0&&r.ra<24&&Number.isFinite(r.dec)&&Math.abs(r.dec)<=90);if(!rows.length)throw Error('Catálogo vazio');STARS.splice(0,STARS.length,...rows);try{const [c,l,b]=await Promise.all([fetchJSON("astronomy/constellations.json"),fetchJSON("astronomy/constellations.lines.json"),fetchJSON("astronomy/constellations.bounds.json")]);fullConst=c.features;fullLines=l.features;fullBounds=b.features;}catch(e){console.warn(e);}skyStatus.textContent=STARS.length+' estrelas · '+data.source;lastAstroKey='';update();}catch(e){skyStatus.textContent='Catálogo local indisponível; usando estrelas herdadas.';}}
+  async function loadStarCatalog(){try{const data=await fetchJSON('astronomy/stars.json');if(data.epoch!=='J2000'||!Array.isArray(data.stars))throw Error('Formato inválido');const rows=data.stars.filter(r=>typeof r.name==='string'&&Number.isFinite(r.ra)&&r.ra>=0&&r.ra<24&&Number.isFinite(r.dec)&&Math.abs(r.dec)<=90);if(!rows.length)throw Error('Catálogo vazio');STARS.splice(0,STARS.length,...rows);try{const [c,l,b]=await Promise.all([fetchJSON("astronomy/constellations.json"),fetchJSON("astronomy/constellations.lines.json"),fetchJSON("astronomy/constellations.bounds.json")]);fullConst=c.features;fullLines=l.features;fullBounds=b.features;}catch(e){console.warn(e);}skyStatus.textContent=STARS.length+' estrelas · '+data.source;lastAstroKey='';update();skyStatus.textContent+=' · ' + starsGroup.childElementCount + ' pontos desenhados';}catch(e){skyStatus.textContent='Catálogo local indisponível; usando estrelas herdadas.';}}
 
   // Teste 17: foco territorial e referência celeste independente da câmera.
   const miniSky=document.createElement('aside');miniSky.id='atlasSkyMini';miniSky.hidden=true;
@@ -1623,6 +1626,11 @@ sunMoveCheckbox.addEventListener("change", () => {
   miniSky.addEventListener('click',e=>{e.stopPropagation();clearTerritoryFocus();setCamera(true);if(mode3)reset3();});
   for(const ev of ['pointerdown','pointermove','pointerup','wheel'])miniSky.addEventListener(ev,e=>e.stopPropagation());
   new MutationObserver(queueMini).observe(skyGroup,{subtree:true,childList:true,attributes:true});
+  // Teste 20: grade de elevação local, sem confundir profundidade com altitude estrutural.
+  let elevation20=null;
+  function elevationAt20(geo){if(!elevation20)return null;const p=proj(geo);if(!p)return null;const {view,w,h}=elevation20;const x=Math.floor((p[0]-CX+R)/(2*R)*w),y=Math.floor((p[1]-CY+R)/(2*R)*h);if(x<0||y<0||x>=w||y>=h)return null;const v=view.getFloat32((y*w+x)*4,true);return Number.isFinite(v)?v:null;}
+  async function loadElevation20(){try{const m=await fetchJSON('./elevation.json');if(m.format!=='float32'||m.byteOrder!=='little-endian'||m.projection!=='azimuthal-equidistant'||m.centerLatitude!==90||m.angle!==45||m.layout!=='row-major'||m.unit!=='meters'||!Number.isInteger(m.width)||!Number.isInteger(m.height)||m.width<=0||m.height<=0)throw Error('Metadados incompatíveis');const r=await fetch('./elevation.bin');if(!r.ok)throw Error('HTTP '+r.status);const b=await r.arrayBuffer();if(b.byteLength!==m.width*m.height*4)throw Error('Tamanho incompatível');elevation20={view:new DataView(b),w:m.width,h:m.height};refreshAtlasSelection(getSimulatedDate());}catch(e){console.warn('Elevação local indisponível:',e);}}
+  loadElevation20();
   loadStarCatalog();
   loadVisualCatalog();
   initMap();
