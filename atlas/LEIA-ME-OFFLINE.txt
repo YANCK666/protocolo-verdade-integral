@@ -1,0 +1,4 @@
+Teste 22 — cache offline parcial
+Copie os arquivos para atlas/. A primeira abertura precisa de internet no GitHub Pages, ou use python -m http.server 8000 na pasta atlas e abra http://localhost:8000. Não use file://.
+Astronomy Engine 2.1.19: baixe https://cdn.jsdelivr.net/npm/astronomy-engine@2.1.19/astronomy.browser.min.js e salve como astronomy.browser.min.js na pasta atlas. A biblioteca não foi incluída: rede indisponível no ambiente de geração. O CDN permanece como fallback.
+Bandeiras e regiões são armazenadas quando consultadas. IBGE e OpenStreetMap continuam online. Cache sujeito à quota do navegador.

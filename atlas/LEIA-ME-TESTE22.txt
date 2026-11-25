@@ -1,0 +1,18 @@
+ATLAS — Teste 22 — Integração Geral
+
+Pacote incremental para a Revisão D. Não contém novamente as bases já instaladas.
+1. Faça backup da pasta atlas fora do repositório.
+2. Extraia este ZIP em Downloads. Copie os quatro arquivos para C:\GitHub\protocolo-verdade-integral\atlas, substituindo index.html se solicitado.
+3. No GitHub Desktop, confira os arquivos alterados, faça commit e Push origin.
+4. Aguarde o deploy do GitHub Pages e abra https://yanck666.github.io/protocolo-verdade-integral/atlas/ . Recarregue com Ctrl+F5.
+
+ROTEIRO DE TESTES
+- Bandeiras: Brasil, Austrália, ilhas e regiões sem bandeira; verificar preenchimento e contornos.
+- Pesquisa: selecionar país, estados, estado individual; verificar zoom e bandeiras dos demais países.
+- Camadas: ativar/desativar todas, pesquisa territorial, mini mapa móvel e retorno à visão completa.
+- Território: capital, moeda, idioma e horários; testar Brasil e Austrália e países com vários fusos.
+- Tempo: pausa, avanço, retrocesso, agora, velocidades e datas anteriores a Cristo.
+- Astronomia: Sol, Lua, planetas, estrelas, constelações; conferir calculadora com referência independente.
+- Cache: abrir online, consultar regiões, depois testar offline. Astronomy Engine, IBGE e OpenStreetMap podem depender da rede.
+
+VALIDAÇÃO: sintaxe dos blocos JavaScript e sw.js verificada com Node; arquivos essenciais do cache conferidos no ZIP original. Execução visual, desempenho e precisão astronômica ainda não validados. Informações territoriais contemporâneas; fusos regionais específicos inicialmente Brasil e Austrália. Calculadora não compara estrelas individuais; eclipse solar global não implica visibilidade local. Autonomia híbrida conforme acordado.
