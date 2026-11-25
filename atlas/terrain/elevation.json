@@ -1,0 +1,15 @@
+{
+  "width": 1024,
+  "height": 1024,
+  "format": "float32",
+  "byteOrder": "little-endian",
+  "unit": "meters",
+  "projection": "azimuthal-equidistant",
+  "centerLatitude": 90,
+  "angle": 45,
+  "layout": "row-major",
+  "noData": "NaN",
+  "source": "NOAA ETOPO 2022",
+  "minimum": -10244.849609375,
+  "maximum": 6524.9716796875
+}
