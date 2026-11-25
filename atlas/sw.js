@@ -1,4 +1,4 @@
-const CACHE='atlas-t22-offline-v1';
+const CACHE='atlas-t22-offline-v2';
 const CORE=["./index.html", "./", "./astronomy/constellations.bounds.json", "./astronomy/constellations.json", "./astronomy/constellations.lines.json", "./astronomy/LICENSE-D3-Celestial.txt", "./astronomy/stars.json", "./flags/catalog.json", "./flags/desconhecida.svg", "./flags/regional-public.json", "./flags/regional.json", "./geography/regions/index.json", "./libs/d3.min.js", "./libs/suncalc.js", "./libs/topojson-client.min.js", "./mapa.json", "./satellite/earth.png", "./terrain/elevation.bin", "./terrain/elevation.json", "./terrain/relief.png"];
 self.addEventListener('install',e=>e.waitUntil((async()=>{const c=await caches.open(CACHE); await c.addAll(CORE); await self.skipWaiting();})()));
 self.addEventListener('activate',e=>e.waitUntil((async()=>{for(const k of await caches.keys())if(k.startsWith('atlas-t22-')&&k!==CACHE)await caches.delete(k);await self.clients.claim();})()));

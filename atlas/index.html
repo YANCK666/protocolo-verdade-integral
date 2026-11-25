@@ -504,7 +504,7 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4vw
 <script src="libs/topojson-client.min.js"></script>
 <script src="libs/suncalc.js"></script>
 <!-- Para funcionamento offline, baixe a distribuição browser do Astronomy Engine como astronomy.browser.min.js na pasta /atlas/. -->
-<script src="./astronomy.browser.min.js" onload="window.dispatchEvent(new Event('atlas-astronomy-ready'))" onerror="this.onerror=null;this.onload=function(){window.dispatchEvent(new Event('atlas-astronomy-ready'))};this.src='https://cdn.jsdelivr.net/npm/astronomy-engine@2.1.19/astronomy.browser.min.js'"></script>
+<script src="https://cdn.jsdelivr.net/npm/astronomy-engine@2.1.19/astronomy.browser.min.js" onload="window.dispatchEvent(new Event('atlas-astronomy-ready'))" onerror="this.onerror=null;this.onload=function(){window.dispatchEvent(new Event('atlas-astronomy-ready'))};this.src='./astronomy.browser.min.js'"></script>
 <script>
 (function () {
   "use strict";
